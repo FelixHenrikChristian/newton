@@ -23,6 +23,7 @@ import warp as wp
 
 from ..geometry.broad_phase_nxn import BroadPhaseAllPairs, BroadPhaseExplicit
 from ..geometry.broad_phase_sap import BroadPhaseSAP
+from ..geometry.broad_phase_bvh import BroadPhaseBVH
 from ..geometry.collision_core import compute_tight_aabb_from_support
 from ..geometry.contact_data import ContactData
 from ..geometry.kernels import create_soft_contacts
@@ -65,7 +66,6 @@ class ContactWriterData:
     out_stiffness: wp.array(dtype=float)
     out_damping: wp.array(dtype=float)
     out_friction: wp.array(dtype=float)
-
 
 @wp.func
 def write_contact(
@@ -352,7 +352,7 @@ def _estimate_rigid_contact_max(model: Model) -> int:
     return max(1000, total_contacts)
 
 
-BROAD_PHASE_MODES = ("nxn", "sap", "explicit")
+BROAD_PHASE_MODES = ("nxn", "sap", "explicit", "bvh")
 
 
 def _normalize_broad_phase_mode(mode: str) -> str:
@@ -362,15 +362,17 @@ def _normalize_broad_phase_mode(mode: str) -> str:
     return mode_str
 
 
-def _infer_broad_phase_mode_from_instance(broad_phase: BroadPhaseAllPairs | BroadPhaseSAP | BroadPhaseExplicit) -> str:
+def _infer_broad_phase_mode_from_instance(broad_phase: BroadPhaseAllPairs | BroadPhaseSAP | BroadPhaseExplicit | BroadPhaseBVH) -> str:
     if isinstance(broad_phase, BroadPhaseAllPairs):
         return "nxn"
     if isinstance(broad_phase, BroadPhaseSAP):
         return "sap"
     if isinstance(broad_phase, BroadPhaseExplicit):
         return "explicit"
+    if isinstance(broad_phase, BroadPhaseBVH):
+        return "bvh"
     raise TypeError(
-        "broad_phase must be a BroadPhaseAllPairs, BroadPhaseSAP, or BroadPhaseExplicit instance "
+        "broad_phase must be a BroadPhaseAllPairs, BroadPhaseSAP, BroadPhaseExplicit, or BroadPhaseBVH instance "
         f"(got {type(broad_phase)!r})"
     )
 
@@ -398,10 +400,11 @@ class CollisionPipeline:
         soft_contact_max: int | None = None,
         soft_contact_margin: float = 0.01,
         requires_grad: bool | None = None,
-        broad_phase: Literal["nxn", "sap", "explicit"]
+        broad_phase: Literal["nxn", "sap", "explicit", "bvh"]
         | BroadPhaseAllPairs
         | BroadPhaseSAP
         | BroadPhaseExplicit
+        | BroadPhaseBVH
         | None = None,
         narrow_phase: NarrowPhase | None = None,
         sdf_hydroelastic_config: HydroelasticSDF.Config | None = None,
@@ -539,6 +542,16 @@ class CollisionPipeline:
                 if shape_world is None:
                     raise ValueError("model.shape_world is required for broad_phase=SAP")
                 self.broad_phase = BroadPhaseSAP(shape_world, shape_flags=shape_flags, device=device)
+                self.shape_pairs_filtered = None
+                self.shape_pairs_max = (shape_count * (shape_count - 1)) // 2
+                self.shape_pairs_excluded = self._build_excluded_pairs(model)
+                self.shape_pairs_excluded_count = (
+                    self.shape_pairs_excluded.shape[0] if self.shape_pairs_excluded is not None else 0
+                )
+            elif self.broad_phase_mode == "bvh":
+                if shape_world is None:
+                    raise ValueError("model.shape_world is required for broad_phase=BVH")
+                self.broad_phase = BroadPhaseBVH(shape_world, shape_flags=shape_flags, device=device)
                 self.shape_pairs_filtered = None
                 self.shape_pairs_max = (shape_count * (shape_count - 1)) // 2
                 self.shape_pairs_excluded = self._build_excluded_pairs(model)
@@ -734,6 +747,18 @@ class CollisionPipeline:
                     device=self.device,
                     filter_pairs=self.shape_pairs_excluded,
                     num_filter_pairs=self.shape_pairs_excluded_count,
+                )
+            elif isinstance(self.broad_phase, BroadPhaseBVH):
+                self.broad_phase.launch(
+                    self.narrow_phase.shape_aabb_lower,
+                    self.narrow_phase.shape_aabb_upper,
+                    None,  # AABBs are pre-expanded, no additional margin needed
+                    model.shape_collision_group,
+                    model.shape_world,
+                    model.shape_count,
+                    self.broad_phase_shape_pairs,
+                    self.broad_phase_pair_count,
+                    device=self.device,
                 )
             else:  # BroadPhaseExplicit
                 self.broad_phase.launch(

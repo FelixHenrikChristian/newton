@@ -16,6 +16,7 @@
 from .broad_phase_common import test_group_pair, test_world_and_group_pair
 from .broad_phase_nxn import BroadPhaseAllPairs, BroadPhaseExplicit
 from .broad_phase_sap import BroadPhaseSAP
+from .broad_phase_bvh import BroadPhaseBVH
 from .collision_primitive import (
     collide_box_box,
     collide_capsule_box,
@@ -46,6 +47,7 @@ __all__ = [
     "BroadPhaseAllPairs",
     "BroadPhaseExplicit",
     "BroadPhaseSAP",
+    "BroadPhaseBVH",
     "GeoType",
     "Heightfield",
     "Mesh",

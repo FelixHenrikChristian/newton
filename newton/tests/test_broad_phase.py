@@ -20,7 +20,7 @@ import numpy as np
 import warp as wp
 
 from newton._src.geometry.flags import ShapeFlags
-from newton.geometry import BroadPhaseAllPairs, BroadPhaseExplicit, BroadPhaseSAP
+from newton.geometry import BroadPhaseAllPairs, BroadPhaseExplicit, BroadPhaseSAP, BroadPhaseBVH
 
 # NOTE: The test_group_pair and test_world_and_group_pair functions below are copied
 # from newton._src.geometry.broad_phase_common because they need to be available as
@@ -2147,6 +2147,156 @@ class TestBroadPhase(unittest.TestCase):
 
         self.assertTrue(has_sphere_b_ground, "SAP: Sphere B (large margin) should overlap ground")
         self.assertFalse(has_sphere_a_ground, "SAP: Sphere A (small margin) should NOT overlap ground")
+
+    def test_bvh_broadphase(self):
+        """Test BVH broad phase and verify consistency with NxN results."""
+        verbose = False
+
+        # Create random bounding boxes
+        ngeom = 30
+
+        rng = np.random.Generator(np.random.PCG64(42))
+
+        centers = rng.random((ngeom, 3)) * 3.0
+        sizes = rng.random((ngeom, 3)) * 2.0
+        geom_bounding_box_lower = centers - sizes
+        geom_bounding_box_upper = centers + sizes
+
+        np_geom_cutoff = np.zeros(ngeom, dtype=np.float32)
+        num_groups = 5
+        np_collision_group = rng.integers(1, num_groups + 1, size=ngeom, dtype=np.int32)
+
+        # Overwrite n random elements with -1
+        minus_one_count = int(sqrt(ngeom))
+        random_indices = rng.choice(ngeom, size=minus_one_count, replace=False)
+        np_collision_group[random_indices] = -1
+
+        pairs_np = find_overlapping_pairs_np(
+            geom_bounding_box_lower, geom_bounding_box_upper, np_geom_cutoff, np_collision_group
+        )
+
+        if verbose:
+            print(f"Expected {len(pairs_np)} pairs from numpy verification")
+
+        num_lower_tri_elements = ngeom * (ngeom - 1) // 2
+
+        geom_lower = wp.array(geom_bounding_box_lower, dtype=wp.vec3)
+        geom_upper = wp.array(geom_bounding_box_upper, dtype=wp.vec3)
+        geom_cutoff = wp.array(np_geom_cutoff)
+        collision_group = wp.array(np_collision_group)
+        num_candidate_pair = wp.array([0], dtype=wp.int32)
+        max_candidate_pair = num_lower_tri_elements
+        candidate_pair = wp.array(np.zeros((max_candidate_pair, 2), dtype=wp.int32), dtype=wp.vec2i)
+
+        # Create shape world array with all shapes in world 0
+        shape_world = wp.array(np.full(ngeom, 0, dtype=np.int32), dtype=wp.int32)
+
+        # Initialize BroadPhaseBVH
+        bvh_broadphase = BroadPhaseBVH(shape_world)
+
+        bvh_broadphase.launch(
+            geom_lower,
+            geom_upper,
+            geom_cutoff,
+            collision_group,
+            shape_world,
+            ngeom,
+            candidate_pair,
+            num_candidate_pair,
+        )
+
+        wp.synchronize()
+
+        pairs_wp = candidate_pair.numpy()
+        num_candidate_pair_result = num_candidate_pair.numpy()[0]
+
+        if verbose:
+            print(f"BVH found {num_candidate_pair_result} pairs")
+
+        # Verify results
+        if len(pairs_np) != num_candidate_pair_result:
+            print(f"len(pairs_np)={len(pairs_np)}, num_candidate_pair={num_candidate_pair_result}")
+
+        self.assertEqual(len(pairs_np), num_candidate_pair_result)
+
+        # Ensure every element in pairs_wp is also present in pairs_np
+        pairs_np_set = {tuple(pair) for pair in pairs_np}
+        for pair in pairs_wp[:num_candidate_pair_result]:
+            self.assertIn(tuple(pair), pairs_np_set, f"Pair {tuple(pair)} from BVH not found in numpy pairs")
+
+    def test_bvh_broadphase_multiple_worlds(self):
+        """Test BVH broad phase with objects in different worlds."""
+        verbose = False
+
+        ngeom = 50
+        num_worlds = 4
+
+        rng = np.random.Generator(np.random.PCG64(123))
+
+        centers = rng.random((ngeom, 3)) * 5.0
+        sizes = rng.random((ngeom, 3)) * 1.5
+        geom_bounding_box_lower = centers - sizes
+        geom_bounding_box_upper = centers + sizes
+
+        np_geom_cutoff = np.zeros(ngeom, dtype=np.float32)
+
+        num_groups = 5
+        np_collision_group = rng.integers(1, num_groups + 1, size=ngeom, dtype=np.int32)
+
+        num_shared = int(sqrt(ngeom))
+        shared_indices = rng.choice(ngeom, size=num_shared, replace=False)
+        np_collision_group[shared_indices] = -1
+
+        np_shape_world = rng.integers(0, num_worlds, size=ngeom, dtype=np.int32)
+
+        num_global = max(3, ngeom // 10)
+        global_indices = rng.choice(ngeom, size=num_global, replace=False)
+        np_shape_world[global_indices] = -1
+
+        pairs_np = find_overlapping_pairs_np(
+            geom_bounding_box_lower, geom_bounding_box_upper, np_geom_cutoff, np_collision_group, np_shape_world
+        )
+
+        if verbose:
+            print(f"Expected {len(pairs_np)} pairs from numpy verification")
+
+        num_lower_tri_elements = ngeom * (ngeom - 1) // 2
+
+        geom_lower = wp.array(geom_bounding_box_lower, dtype=wp.vec3)
+        geom_upper = wp.array(geom_bounding_box_upper, dtype=wp.vec3)
+        geom_cutoff = wp.array(np_geom_cutoff)
+        collision_group = wp.array(np_collision_group)
+        shape_world = wp.array(np_shape_world, dtype=wp.int32)
+        num_candidate_pair = wp.array([0], dtype=wp.int32)
+        candidate_pair = wp.array(np.zeros((num_lower_tri_elements, 2), dtype=wp.int32), dtype=wp.vec2i)
+
+        bvh_broadphase = BroadPhaseBVH(shape_world)
+
+        bvh_broadphase.launch(
+            geom_lower,
+            geom_upper,
+            geom_cutoff,
+            collision_group,
+            shape_world,
+            ngeom,
+            candidate_pair,
+            num_candidate_pair,
+        )
+
+        wp.synchronize()
+
+        pairs_wp = candidate_pair.numpy()
+        num_candidate_pair_result = num_candidate_pair.numpy()[0]
+
+        if verbose:
+            print(f"BVH found {num_candidate_pair_result} pairs")
+
+        self.assertEqual(len(pairs_np), num_candidate_pair_result)
+
+        pairs_np_set = {tuple(pair) for pair in pairs_np}
+        for pair in pairs_wp[:num_candidate_pair_result]:
+            self.assertIn(tuple(pair), pairs_np_set, f"Pair {tuple(pair)} from BVH not found in numpy pairs")
+
 
 
 if __name__ == "__main__":

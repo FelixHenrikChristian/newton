@@ -11,6 +11,7 @@ newton.geometry
 
    BroadPhaseAllPairs
    BroadPhaseExplicit
+   BroadPhaseBVH
    BroadPhaseSAP
    HydroelasticSDF
    NarrowPhase

@@ -327,7 +327,7 @@ def create_parser():
         "--broad-phase",
         type=str,
         default="explicit",
-        choices=["nxn", "sap", "explicit"],
+        choices=["nxn", "sap", "explicit", "bvh"],
         help="Broad phase for collision detection.",
     )
     parser.add_argument(

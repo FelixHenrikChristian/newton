@@ -340,6 +340,8 @@ Broad Phase and Shape Compatibility
      - All-pairs AABB broad phase. O(N²), optimal for small scenes (<100 shapes).
    * - **SAP**
      - Sweep-and-prune AABB broad phase. O(N log N), better for larger scenes with spatial coherence.
+   * - **BVH**
+     - BVH-based AABB broad phase. O(N log N) build, O(log N) query, good for non-uniform object distributions.
    * - **EXPLICIT**
      - Uses precomputed shape pairs (default). Combines static pair efficiency with advanced contact algorithms.
 
@@ -355,6 +357,9 @@ Broad Phase and Shape Compatibility
 
     # SAP for larger scenes
     pipeline = CollisionPipeline(model, broad_phase="sap")
+
+    # BVH for non-uniform or large scenes
+    pipeline = CollisionPipeline(model, broad_phase="bvh")
 
     contacts = pipeline.contacts()
     pipeline.collide(state, contacts)
@@ -1008,6 +1013,7 @@ Performance
 
 - Use **EXPLICIT** (default) when collision pairs are limited (<100 shapes with most pairs filtered)
 - Use **SAP** for >100 shapes with spatial coherence
+- Use **BVH** for large or non-uniformly distributed scenes (O(N log N) build, O(log N) query)
 - Use **NxN** for small scenes (<100 shapes) or uniform spatial distribution
 - Minimize global entities (world=-1) as they interact with all worlds
 - Use positive collision groups to reduce candidate pairs
