@@ -47,7 +47,6 @@ if parent_dir not in sys.path:
 from asv_runner.benchmarks.mark import skip_benchmark_if
 
 import newton
-from newton import BroadPhaseMode
 
 
 def build_model_many_shapes(num_shapes: int, device, seed: int = 42):
@@ -95,15 +94,9 @@ class BenchBroadPhase:
         self.device = "cuda:0" if wp.get_cuda_device_count() > 0 else "cpu"
         self.model = build_model_many_shapes(num_shapes, self.device)
         self.state = self.model.state()
-        self.pipeline_nxn = newton.CollisionPipeline.from_model(
-            self.model, broad_phase_mode=BroadPhaseMode.NXN
-        )
-        self.pipeline_sap = newton.CollisionPipeline.from_model(
-            self.model, broad_phase_mode=BroadPhaseMode.SAP
-        )
-        self.pipeline_bvh = newton.CollisionPipeline.from_model(
-            self.model, broad_phase_mode=BroadPhaseMode.BVH
-        )
+        self.pipeline_nxn = newton.CollisionPipeline(self.model, broad_phase="nxn")
+        self.pipeline_sap = newton.CollisionPipeline(self.model, broad_phase="sap")
+        self.pipeline_bvh = newton.CollisionPipeline(self.model, broad_phase="bvh")
         # One full collide per pipeline to fill AABBs and warm up
         self.model.collide(self.state, collision_pipeline=self.pipeline_nxn)
         self.model.collide(self.state, collision_pipeline=self.pipeline_sap)
@@ -120,42 +113,17 @@ class BenchBroadPhase:
     def _launch_broad_phase_only(self, pipeline):
         """Run only the broad phase launch (AABBs already filled in setup)."""
         pipeline.broad_phase_pair_count.zero_()
-        if pipeline.nxn_broadphase is not None:
-            pipeline.nxn_broadphase.launch(
-                pipeline.shape_aabb_lower,
-                pipeline.shape_aabb_upper,
-                None,
-                self.model.shape_collision_group,
-                self.model.shape_world,
-                self.model.shape_count,
-                pipeline.broad_phase_shape_pairs,
-                pipeline.broad_phase_pair_count,
-                device=pipeline.device,
-            )
-        elif pipeline.sap_broadphase is not None:
-            pipeline.sap_broadphase.launch(
-                pipeline.shape_aabb_lower,
-                pipeline.shape_aabb_upper,
-                None,
-                self.model.shape_collision_group,
-                self.model.shape_world,
-                self.model.shape_count,
-                pipeline.broad_phase_shape_pairs,
-                pipeline.broad_phase_pair_count,
-                device=pipeline.device,
-            )
-        else:
-            pipeline.bvh_broadphase.launch(
-                pipeline.shape_aabb_lower,
-                pipeline.shape_aabb_upper,
-                None,
-                self.model.shape_collision_group,
-                self.model.shape_world,
-                self.model.shape_count,
-                pipeline.broad_phase_shape_pairs,
-                pipeline.broad_phase_pair_count,
-                device=pipeline.device,
-            )
+        pipeline.broad_phase.launch(
+            pipeline.narrow_phase.shape_aabb_lower,
+            pipeline.narrow_phase.shape_aabb_upper,
+            None,
+            self.model.shape_collision_group,
+            self.model.shape_world,
+            self.model.shape_count,
+            pipeline.broad_phase_shape_pairs,
+            pipeline.broad_phase_pair_count,
+            device=pipeline.device,
+        )
 
     @skip_benchmark_if(wp.get_cuda_device_count() == 0)
     def time_broad_phase_nxn(self, num_shapes):

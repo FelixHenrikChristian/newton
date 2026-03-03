@@ -2297,6 +2297,477 @@ class TestBroadPhase(unittest.TestCase):
         for pair in pairs_wp[:num_candidate_pair_result]:
             self.assertIn(tuple(pair), pairs_np_set, f"Pair {tuple(pair)} from BVH not found in numpy pairs")
 
+    def test_bvh_broadphase_with_shape_flags(self):
+        """Test BVH broad phase with ShapeFlags filtering.
+
+        This test verifies that:
+        - Shapes without COLLIDE_SHAPES flag are correctly filtered out
+        - Filtering works correctly with multiple worlds
+        - num_regular_worlds is correctly computed after filtering
+        - Edge case: filtering out all positive-world geometries but keeping -1
+        """
+        verbose = False
+
+        ngeom = 50
+        world_count = 4
+
+        rng = np.random.Generator(np.random.PCG64(456))
+
+        centers = rng.random((ngeom, 3)) * 5.0
+        sizes = rng.random((ngeom, 3)) * 1.5
+        geom_bounding_box_lower = centers - sizes
+        geom_bounding_box_upper = centers + sizes
+
+        np_geom_cutoff = np.zeros(ngeom, dtype=np.float32)
+
+        num_groups = 5
+        np_collision_group = rng.integers(1, num_groups + 1, size=ngeom, dtype=np.int32)
+
+        num_shared = int(sqrt(ngeom))
+        shared_indices = rng.choice(ngeom, size=num_shared, replace=False)
+        np_collision_group[shared_indices] = -1
+
+        np_shape_world = rng.integers(0, world_count, size=ngeom, dtype=np.int32)
+
+        num_global = max(3, ngeom // 10)
+        global_indices = rng.choice(ngeom, size=num_global, replace=False)
+        np_shape_world[global_indices] = -1
+
+        # Create shape flags: ~70% COLLIDE_SHAPES, 30% visual-only
+        np_shape_flags = np.zeros(ngeom, dtype=np.int32)
+        colliding_indices = rng.choice(ngeom, size=int(0.7 * ngeom), replace=False)
+        np_shape_flags[colliding_indices] = ShapeFlags.COLLIDE_SHAPES
+
+        # Critical test: filter out all world 0 geometries
+        world_0_mask = np_shape_world == 0
+        np_shape_flags[world_0_mask] = 0
+
+        colliding_mask = (np_shape_flags & ShapeFlags.COLLIDE_SHAPES) != 0
+
+        if verbose:
+            print(f"\nBVH ShapeFlags test: {ngeom} geoms, {np.sum(colliding_mask)} colliding")
+
+        # Compute expected pairs using numpy (with shape flags filtering)
+        pairs_np = find_overlapping_pairs_np(
+            geom_bounding_box_lower,
+            geom_bounding_box_upper,
+            np_geom_cutoff,
+            np_collision_group,
+            np_shape_world,
+            np_shape_flags,
+        )
+
+        if verbose:
+            print(f"Expected {len(pairs_np)} pairs")
+
+        num_lower_tri_elements = ngeom * (ngeom - 1) // 2
+
+        geom_lower = wp.array(geom_bounding_box_lower, dtype=wp.vec3)
+        geom_upper = wp.array(geom_bounding_box_upper, dtype=wp.vec3)
+        geom_cutoff = wp.array(np_geom_cutoff)
+        collision_group = wp.array(np_collision_group)
+        shape_world = wp.array(np_shape_world, dtype=wp.int32)
+        shape_flags = wp.array(np_shape_flags, dtype=wp.int32)
+        candidate_pair_count = wp.array([0], dtype=wp.int32)
+        candidate_pair = wp.array(np.zeros((num_lower_tri_elements, 2), dtype=wp.int32), dtype=wp.vec2i)
+
+        # Initialize BVH with shape_flags
+        bvh_broadphase = BroadPhaseBVH(shape_world, shape_flags=shape_flags)
+
+        # Verify num_regular_worlds is correct after filtering
+        colliding_worlds = np.unique(np_shape_world[colliding_mask])
+        colliding_worlds = colliding_worlds[colliding_worlds >= 0]
+        expected_num_regular_worlds = len(colliding_worlds)
+
+        self.assertEqual(
+            bvh_broadphase.num_regular_worlds,
+            expected_num_regular_worlds,
+            f"num_regular_worlds mismatch: expected {expected_num_regular_worlds} "
+            f"(after filtering), got {bvh_broadphase.num_regular_worlds}",
+        )
+
+        bvh_broadphase.launch(
+            geom_lower,
+            geom_upper,
+            geom_cutoff,
+            collision_group,
+            shape_world,
+            ngeom,
+            candidate_pair,
+            candidate_pair_count,
+        )
+
+        wp.synchronize()
+
+        pairs_wp = candidate_pair.numpy()
+        num_candidate_pair_result = candidate_pair_count.numpy()[0]
+
+        if verbose:
+            print(f"BVH found {num_candidate_pair_result} pairs")
+
+        # Verify count matches
+        self.assertEqual(
+            len(pairs_np),
+            num_candidate_pair_result,
+            f"Expected {len(pairs_np)} pairs, got {num_candidate_pair_result}",
+        )
+
+        # Ensure every BVH pair is also in numpy pairs
+        pairs_np_set = {tuple(pair) for pair in pairs_np}
+        for pair in pairs_wp[:num_candidate_pair_result]:
+            self.assertIn(tuple(pair), pairs_np_set, f"Pair {tuple(pair)} from BVH not found in numpy pairs")
+
+        # Verify no pairs contain filtered-out geometries
+        for pair in pairs_wp[:num_candidate_pair_result]:
+            body_a, body_b = pair[0], pair[1]
+            flag_a = np_shape_flags[body_a]
+            flag_b = np_shape_flags[body_b]
+            self.assertTrue(
+                (flag_a & ShapeFlags.COLLIDE_SHAPES) != 0,
+                f"Pair contains filtered geometry {body_a} with flag {flag_a}",
+            )
+            self.assertTrue(
+                (flag_b & ShapeFlags.COLLIDE_SHAPES) != 0,
+                f"Pair contains filtered geometry {body_b} with flag {flag_b}",
+            )
+
+    def test_bvh_edge_cases(self):
+        """Test BVH broad phase with tricky edge cases to verify GPU code correctness.
+
+        This test includes:
+        - Boundary conditions (AABBs exactly touching)
+        - Various cutoff distances that create/prevent overlaps
+        - Complex world/group interactions
+        - Duplicate pair prevention (especially for shared geometries)
+        - Mixed global (-1) and world-specific entities
+        - Large number of geometries to stress-test BVH
+        """
+        verbose = False
+
+        # Create a carefully crafted scenario with edge cases
+        base_cases = 26
+        num_clusters = 12
+        cluster_size = 10
+        num_isolated = 25
+        ngeom = base_cases + (num_clusters * cluster_size) + num_isolated
+
+        # Case 1: Two boxes exactly touching along x-axis - should overlap
+        box1_lower = np.array([0.0, 0.0, 0.0])
+        box1_upper = np.array([1.0, 1.0, 1.0])
+        box2_lower = np.array([1.0, 0.0, 0.0])
+        box2_upper = np.array([2.0, 1.0, 1.0])
+
+        # Case 2: Boxes with gap, but cutoff makes them overlap
+        box3_lower = np.array([2.15, 0.0, 0.0])
+        box3_upper = np.array([3.0, 1.0, 1.0])
+        box4_lower = np.array([3.25, 0.0, 0.0])
+        box4_upper = np.array([4.0, 1.0, 1.0])
+
+        # Case 3: Overlapping chain
+        box5_lower = np.array([5.0, 0.0, 0.0])
+        box5_upper = np.array([6.5, 1.0, 1.0])
+        box6_lower = np.array([6.0, 0.0, 0.0])
+        box6_upper = np.array([7.5, 1.0, 1.0])
+        box7_lower = np.array([7.0, 0.0, 0.0])
+        box7_upper = np.array([8.5, 1.0, 1.0])
+        box8_lower = np.array([8.0, 0.0, 0.0])
+        box8_upper = np.array([9.5, 1.0, 1.0])
+
+        # Case 4: Multiple boxes in same location (duplicate prevention)
+        box9_lower = np.array([10.0, 0.0, 0.0])
+        box9_upper = np.array([11.0, 1.0, 1.0])
+        box10_lower = np.array([10.1, 0.1, 0.1])
+        box10_upper = np.array([10.9, 0.9, 0.9])
+        box11_lower = np.array([10.2, 0.2, 0.2])
+        box11_upper = np.array([10.8, 0.8, 0.8])
+
+        # Case 5: Global entities (duplicate prevention critical)
+        box12_lower = np.array([15.0, 0.0, 0.0])
+        box12_upper = np.array([16.0, 1.0, 1.0])
+        box13_lower = np.array([15.2, 0.2, 0.2])
+        box13_upper = np.array([15.8, 0.8, 0.8])
+
+        # Case 6: Mixed global and world-specific
+        box14_lower = np.array([18.0, 0.0, 0.0])
+        box14_upper = np.array([19.0, 1.0, 1.0])
+        box15_lower = np.array([18.2, 0.2, 0.2])
+        box15_upper = np.array([18.8, 0.8, 0.8])
+        box16_lower = np.array([18.4, 0.4, 0.4])
+        box16_upper = np.array([18.6, 0.6, 0.6])
+
+        # Case 7: Collision group edge cases
+        box17_lower = np.array([22.0, 0.0, 0.0])
+        box17_upper = np.array([23.0, 1.0, 1.0])
+        box18_lower = np.array([22.1, 0.1, 0.1])
+        box18_upper = np.array([22.9, 0.9, 0.9])
+        box19_lower = np.array([22.2, 0.2, 0.2])
+        box19_upper = np.array([22.8, 0.8, 0.8])
+        box20_lower = np.array([22.3, 0.3, 0.3])
+        box20_upper = np.array([22.7, 0.7, 0.7])
+
+        # Case 8: Different worlds, overlapping (should NOT collide)
+        box21_lower = np.array([26.0, 0.0, 0.0])
+        box21_upper = np.array([27.0, 1.0, 1.0])
+        box22_lower = np.array([26.2, 0.2, 0.2])
+        box22_upper = np.array([26.8, 0.8, 0.8])
+
+        # Case 9: Reverse order in space
+        box23_lower = np.array([30.0, 0.0, 0.0])
+        box23_upper = np.array([31.0, 1.0, 1.0])
+        box24_lower = np.array([29.0, 0.0, 0.0])
+        box24_upper = np.array([30.5, 1.0, 1.0])
+
+        # Case 10: Zero collision group (never collides)
+        box25_lower = np.array([33.0, 0.0, 0.0])
+        box25_upper = np.array([34.0, 1.0, 1.0])
+        box26_lower = np.array([33.2, 0.2, 0.2])
+        box26_upper = np.array([33.8, 0.8, 0.8])
+
+        base_lowers = [
+            box1_lower, box2_lower, box3_lower, box4_lower,
+            box5_lower, box6_lower, box7_lower, box8_lower,
+            box9_lower, box10_lower, box11_lower,
+            box12_lower, box13_lower,
+            box14_lower, box15_lower, box16_lower,
+            box17_lower, box18_lower, box19_lower, box20_lower,
+            box21_lower, box22_lower,
+            box23_lower, box24_lower,
+            box25_lower, box26_lower,
+        ]
+        base_uppers = [
+            box1_upper, box2_upper, box3_upper, box4_upper,
+            box5_upper, box6_upper, box7_upper, box8_upper,
+            box9_upper, box10_upper, box11_upper,
+            box12_upper, box13_upper,
+            box14_upper, box15_upper, box16_upper,
+            box17_upper, box18_upper, box19_upper, box20_upper,
+            box21_upper, box22_upper,
+            box23_upper, box24_upper,
+            box25_upper, box26_upper,
+        ]
+
+        # Add overlapping clusters (stress test for BVH)
+        rng = np.random.Generator(np.random.PCG64(888))
+        cluster_lowers = []
+        cluster_uppers = []
+        cluster_cutoffs = []
+        cluster_groups = []
+        cluster_worlds = []
+
+        for cluster_id in range(num_clusters):
+            x_base = 100.0 + cluster_id * 8.0
+            cluster_center = np.array([x_base, rng.random() * 10.0, rng.random() * 10.0])
+
+            if cluster_id < 4:
+                cluster_world = -1  # Global (tests duplicate prevention)
+            else:
+                cluster_world = cluster_id % 5
+
+            cluster_group = (cluster_id % 4) + 1
+
+            for i in range(cluster_size):
+                offset = rng.random(3) * 0.6
+                lower = cluster_center - 0.6 + offset
+                upper = cluster_center + 0.6 + offset
+                cluster_lowers.append(lower)
+                cluster_uppers.append(upper)
+                cluster_cutoffs.append(0.0 if i % 3 != 0 else 0.1)
+                cluster_groups.append(cluster_group if i % 5 != 0 else -1)
+                cluster_worlds.append(cluster_world)
+
+        # Add isolated geometries (tests BVH correctly skips far objects)
+        isolated_lowers = []
+        isolated_uppers = []
+        isolated_cutoffs = []
+        isolated_groups = []
+        isolated_worlds = []
+
+        for i in range(num_isolated):
+            center = np.array([300.0 + i * 6.0, rng.random() * 5.0, rng.random() * 5.0])
+            isolated_lowers.append(center - 0.25)
+            isolated_uppers.append(center + 0.25)
+            isolated_cutoffs.append(0.0)
+            isolated_groups.append((i % 6) + 1)
+            isolated_worlds.append(i % 4)
+
+        all_lowers = base_lowers + cluster_lowers + isolated_lowers
+        all_uppers = base_uppers + cluster_uppers + isolated_uppers
+
+        geom_bounding_box_lower = np.array(all_lowers)
+        geom_bounding_box_upper = np.array(all_uppers)
+
+        base_cutoffs = [
+            0.0, 0.0,      # box1-2: exactly touching
+            0.0, 0.15,     # box3-4: gap of 0.25, cutoff 0.15
+            0.0, 0.0, 0.0, 0.0,  # box5-8: chain
+            0.0, 0.0, 0.0,  # box9-11: nested
+            0.0, 0.0,      # box12-13: global (duplicate prevention)
+            0.0, 0.0, 0.0,  # box14-16: mixed
+            0.0, 0.0, 0.0, 0.0,  # box17-20: groups
+            0.0, 0.0,      # box21-22: different worlds
+            0.0, 0.0,      # box23-24: reverse
+            0.0, 0.0,      # box25-26: zero group
+        ]
+        np_geom_cutoff = np.array(base_cutoffs + cluster_cutoffs + isolated_cutoffs, dtype=np.float32)
+
+        base_groups = [
+            1, 1,           # box1-2
+            2, 2,           # box3-4
+            1, 1, 1, 1,    # box5-8
+            1, 1, 1,        # box9-11
+            -1, -2,         # box12-13: both negative (SHOULD collide)
+            -1, 1, 2,       # box14-16
+            1, 2, -1, -2,   # box17-20
+            1, 1,           # box21-22: same group, different worlds
+            1, 1,           # box23-24
+            0, 0,           # box25-26: zero group
+        ]
+        np_collision_group = np.array(base_groups + cluster_groups + isolated_groups, dtype=np.int32)
+
+        base_worlds = [
+            0, 0,           # box1-2
+            0, 0,           # box3-4
+            0, 0, 0, 0,    # box5-8
+            0, 0, 0,        # box9-11
+            -1, -1,         # box12-13: BOTH global
+            -1, 1, 2,       # box14-16
+            0, 0, 0, 0,    # box17-20
+            0, 1,           # box21-22: different worlds
+            0, 0,           # box23-24
+            0, 0,           # box25-26
+        ]
+        np_shape_world = np.array(base_worlds + cluster_worlds + isolated_worlds, dtype=np.int32)
+
+        if verbose:
+            print(f"\n=== BVH Edge Case Test Setup ===")
+            print(f"Total geometries: {ngeom}")
+
+        # Compute expected pairs using numpy
+        pairs_np = find_overlapping_pairs_np(
+            geom_bounding_box_lower, geom_bounding_box_upper, np_geom_cutoff, np_collision_group, np_shape_world
+        )
+
+        if verbose:
+            print(f"\nExpected {len(pairs_np)} pairs from numpy verification")
+
+        # Setup Warp arrays
+        num_lower_tri_elements = ngeom * (ngeom - 1) // 2
+        geom_lower = wp.array(geom_bounding_box_lower, dtype=wp.vec3)
+        geom_upper = wp.array(geom_bounding_box_upper, dtype=wp.vec3)
+        geom_cutoff = wp.array(np_geom_cutoff)
+        collision_group = wp.array(np_collision_group)
+        shape_world = wp.array(np_shape_world, dtype=wp.int32)
+        candidate_pair_count = wp.array([0], dtype=wp.int32)
+        candidate_pair = wp.array(np.zeros((num_lower_tri_elements, 2), dtype=wp.int32), dtype=wp.vec2i)
+
+        # Initialize and launch BVH broad phase
+        bvh_broadphase = BroadPhaseBVH(shape_world)
+        bvh_broadphase.launch(
+            geom_lower,
+            geom_upper,
+            geom_cutoff,
+            collision_group,
+            shape_world,
+            ngeom,
+            candidate_pair,
+            candidate_pair_count,
+        )
+
+        wp.synchronize()
+
+        # Get results
+        pairs_wp = candidate_pair.numpy()
+        num_candidate_pair_result = candidate_pair_count.numpy()[0]
+
+        if verbose:
+            print(f"\nBVH found {num_candidate_pair_result} pairs")
+
+        # Verify: check for duplicate pairs
+        pairs_wp_set = {tuple(pairs_wp[i]) for i in range(num_candidate_pair_result)}
+        self.assertEqual(
+            len(pairs_wp_set), num_candidate_pair_result, "Duplicate pairs detected in BVH broad phase results"
+        )
+
+        # Verify: check count matches
+        if len(pairs_np) != num_candidate_pair_result:
+            pairs_np_set = {tuple(pair) for pair in pairs_np}
+            missing = pairs_np_set - pairs_wp_set
+            extra = pairs_wp_set - pairs_np_set
+
+            if missing:
+                print(f"\nMissing pairs ({len(missing)}):")
+                for pair in list(missing)[:10]:
+                    a, b = pair
+                    print(
+                        f"  ({a}, {b}): worlds ({np_shape_world[a]}, {np_shape_world[b]}) "
+                        f"groups ({np_collision_group[a]}, {np_collision_group[b]})"
+                    )
+
+            if extra:
+                print(f"\nExtra pairs ({len(extra)}):")
+                for pair in list(extra)[:10]:
+                    a, b = pair
+                    print(
+                        f"  ({a}, {b}): worlds ({np_shape_world[a]}, {np_shape_world[b]}) "
+                        f"groups ({np_collision_group[a]}, {np_collision_group[b]})"
+                    )
+
+        self.assertEqual(
+            len(pairs_np), num_candidate_pair_result, f"Expected {len(pairs_np)} pairs, got {num_candidate_pair_result}"
+        )
+
+        # Verify: all BVH pairs are in numpy pairs
+        pairs_np_set = {tuple(pair) for pair in pairs_np}
+        for pair in pairs_wp[:num_candidate_pair_result]:
+            pair_tuple = tuple(pair)
+            self.assertIn(pair_tuple, pairs_np_set, f"Pair {pair_tuple} from BVH not found in numpy pairs")
+
+        if verbose:
+            print(f"\n✓ Test passed! All {len(pairs_np)} pairs matched, no duplicates.")
+
+    def test_bvh_per_shape_gap(self):
+        """Test BVH broad phase correctly handles per-shape contact gaps."""
+        # Same setup as test_per_shape_gap_broad_phase but for BVH
+        ground_aabb_lower = wp.vec3(-1000.0, -1000.0, 0.0)
+        ground_aabb_upper = wp.vec3(1000.0, 1000.0, 0.0)
+
+        sphere_a_aabb_lower = wp.vec3(-0.2, -0.2, 0.04)
+        sphere_a_aabb_upper = wp.vec3(0.2, 0.2, 0.44)
+
+        sphere_b_aabb_lower = wp.vec3(10.0 - 0.2, -0.2, 0.04)
+        sphere_b_aabb_upper = wp.vec3(10.0 + 0.2, 0.2, 0.44)
+
+        aabb_lower = wp.array([ground_aabb_lower, sphere_a_aabb_lower, sphere_b_aabb_lower], dtype=wp.vec3)
+        aabb_upper = wp.array([ground_aabb_upper, sphere_a_aabb_upper, sphere_b_aabb_upper], dtype=wp.vec3)
+
+        shape_gap = wp.array([0.01, 0.02, 0.06], dtype=wp.float32)
+        collision_group = wp.array([1, 1, 1], dtype=wp.int32)
+        shape_world = wp.array([0, 0, 0], dtype=wp.int32)
+
+        bvh_bp = BroadPhaseBVH(shape_world)
+        pairs_bvh = wp.zeros(100, dtype=wp.vec2i)
+        pair_count_bvh = wp.zeros(1, dtype=wp.int32)
+
+        bvh_bp.launch(
+            aabb_lower,
+            aabb_upper,
+            shape_gap,
+            collision_group,
+            shape_world,
+            3,
+            pairs_bvh,
+            pair_count_bvh,
+        )
+        wp.synchronize()
+
+        pairs_np = pairs_bvh.numpy()
+        count_bvh = pair_count_bvh.numpy()[0]
+
+        has_sphere_b_ground = any((p[0] == 0 and p[1] == 2) or (p[0] == 2 and p[1] == 0) for p in pairs_np[:count_bvh])
+        has_sphere_a_ground = any((p[0] == 0 and p[1] == 1) or (p[0] == 1 and p[1] == 0) for p in pairs_np[:count_bvh])
+
+        self.assertTrue(has_sphere_b_ground, "BVH: Sphere B (large margin) should overlap ground")
+        self.assertFalse(has_sphere_a_ground, "BVH: Sphere A (small margin) should NOT overlap ground")
 
 
 if __name__ == "__main__":

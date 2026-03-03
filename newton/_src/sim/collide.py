@@ -759,6 +759,8 @@ class CollisionPipeline:
                     self.broad_phase_shape_pairs,
                     self.broad_phase_pair_count,
                     device=self.device,
+                    filter_pairs=self.shape_pairs_excluded,
+                    num_filter_pairs=self.shape_pairs_excluded_count,
                 )
             else:  # BroadPhaseExplicit
                 self.broad_phase.launch(
