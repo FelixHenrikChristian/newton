@@ -19,6 +19,10 @@ Provides O(N log N) construction and O(log N) per-query broad phase by building
 independent BVH trees for each simulation world.  Shared shapes (world -1) are
 replicated into every world's tree so that cross-world queries are unnecessary.
 
+AABB gathering and BVH querying are each batched into a single kernel launch
+across all worlds (2D grid: ``world_count × max_shapes_per_world``) to minimise
+GPU launch overhead when many worlds are present.
+
 See Also:
     :class:`BroadPhaseAllPairs` in ``broad_phase_nxn.py`` for simpler O(N²) approach.
     :class:`BroadPhaseSAP` in ``broad_phase_sap.py`` for sweep-and-prune approach.
@@ -42,21 +46,32 @@ wp.set_module_options({"enable_backward": False})
 
 
 @wp.kernel
-def _bvh_gather_aabbs_kernel(
+def _bvh_gather_aabbs_batched_kernel(
     shape_lower: wp.array(dtype=wp.vec3, ndim=1),
     shape_upper: wp.array(dtype=wp.vec3, ndim=1),
     shape_gap: wp.array(dtype=float, ndim=1),
     world_index_map: wp.array(dtype=int, ndim=1),
-    slice_start: int,
+    world_slice_ends: wp.array(dtype=int, ndim=1),
+    max_shapes_per_world: int,
     # Outputs
     out_lower: wp.array(dtype=wp.vec3, ndim=1),
     out_upper: wp.array(dtype=wp.vec3, ndim=1),
 ):
-    """Gather shape AABBs for one world into its own arrays.
+    """Gather shape AABBs for all worlds into a flat buffer.
 
-    Launched with dim=num_shapes_in_world per world.
+    Launched with ``dim=(world_count, max_shapes_per_world)``.
+    Threads beyond each world's actual shape count return immediately.
     """
-    local_id = wp.tid()
+    world_id, local_id = wp.tid()
+
+    slice_start = 0
+    if world_id > 0:
+        slice_start = world_slice_ends[world_id - 1]
+    n = world_slice_ends[world_id] - slice_start
+
+    if local_id >= n:
+        return
+
     shape_id = world_index_map[slice_start + local_id]
 
     lower = shape_lower[shape_id]
@@ -66,13 +81,14 @@ def _bvh_gather_aabbs_kernel(
     if shape_gap.shape[0] > 0:
         gap = shape_gap[shape_id]
 
-    out_lower[local_id] = wp.vec3(lower[0] - gap, lower[1] - gap, lower[2] - gap)
-    out_upper[local_id] = wp.vec3(upper[0] + gap, upper[1] + gap, upper[2] + gap)
+    idx = world_id * max_shapes_per_world + local_id
+    out_lower[idx] = wp.vec3(lower[0] - gap, lower[1] - gap, lower[2] - gap)
+    out_upper[idx] = wp.vec3(upper[0] + gap, upper[1] + gap, upper[2] + gap)
 
 
 @wp.kernel
-def _bvh_query_kernel(
-    bvh_id: wp.uint64,
+def _bvh_query_batched_kernel(
+    bvh_ids: wp.array(dtype=wp.uint64, ndim=1),
     # Original shape data
     shape_lower: wp.array(dtype=wp.vec3, ndim=1),
     shape_upper: wp.array(dtype=wp.vec3, ndim=1),
@@ -81,12 +97,12 @@ def _bvh_query_kernel(
     shape_world: wp.array(dtype=int, ndim=1),
     # World mapping
     world_index_map: wp.array(dtype=int, ndim=1),
-    slice_start: int,
-    num_shapes_in_world: int,
-    is_dedicated_shared_segment: int,  # 1 if this is the dedicated -1 segment, 0 otherwise
-    # Per-world expanded AABBs (for query bounds)
-    world_lower: wp.array(dtype=wp.vec3, ndim=1),
-    world_upper: wp.array(dtype=wp.vec3, ndim=1),
+    world_slice_ends: wp.array(dtype=int, ndim=1),
+    max_shapes_per_world: int,
+    num_regular_worlds: int,
+    # Per-world expanded AABBs stored in flat layout
+    flat_lower: wp.array(dtype=wp.vec3, ndim=1),
+    flat_upper: wp.array(dtype=wp.vec3, ndim=1),
     # Filter pairs
     filter_pairs: wp.array(dtype=wp.vec2i, ndim=1),
     num_filter_pairs: int,
@@ -95,21 +111,31 @@ def _bvh_query_kernel(
     candidate_pair_count: wp.array(dtype=int, ndim=1),
     max_candidate_pair: int,
 ):
-    """Query one world's BVH to find overlapping shape pairs.
+    """Query all worlds' BVH trees to find overlapping shape pairs.
 
-    Launched with dim=num_shapes_in_world per world.
-    Each thread queries one shape against the BVH and emits
+    Launched with ``dim=(world_count, max_shapes_per_world)``.
+    Each thread queries one shape against its world's BVH and emits
     overlapping pairs with canonical ordering (shape1 < shape2).
     """
-    local_id = wp.tid()
+    world_id, local_id = wp.tid()
+
+    slice_start = 0
+    if world_id > 0:
+        slice_start = world_slice_ends[world_id - 1]
+    num_shapes_in_world = world_slice_ends[world_id] - slice_start
+
+    if local_id >= num_shapes_in_world:
+        return
 
     shape1 = world_index_map[slice_start + local_id]
     world1 = shape_world[shape1]
     col_group1 = collision_group[shape1]
 
-    query_lower = world_lower[local_id]
-    query_upper = world_upper[local_id]
+    flat_idx = world_id * max_shapes_per_world + local_id
+    query_lower = flat_lower[flat_idx]
+    query_upper = flat_upper[flat_idx]
 
+    bvh_id = bvh_ids[world_id]
     query = wp.bvh_query_aabb(bvh_id, query_lower, query_upper)
     other_local_id = int(-1)
 
@@ -129,8 +155,9 @@ def _bvh_query_kernel(
         col_group2 = collision_group[shape2]
 
         # Skip -1 vs -1 pairs unless in the dedicated shared segment
-        if world1 == -1 and world2 == -1 and is_dedicated_shared_segment == 0:
-            continue
+        if world1 == -1 and world2 == -1:
+            if world_id < num_regular_worlds:
+                continue
 
         if not test_world_and_group_pair(world1, world2, col_group1, col_group2):
             continue
@@ -160,6 +187,10 @@ class BroadPhaseBVH:
     Each simulation world gets its own independent BVH tree.  Shared shapes
     (world ID -1) are replicated into every world's tree.  The BVH trees are
     built on the first frame and refitted on subsequent frames.
+
+    AABB gathering and BVH querying are each issued as a single batched kernel
+    launch (2D grid over all worlds), reducing per-world launch overhead
+    compared to issuing separate kernels per world.
     """
 
     def __init__(
@@ -200,8 +231,9 @@ class BroadPhaseBVH:
         self.num_regular_worlds = max(0, self.world_count - 1)
         self.device = device
 
-        # Store world index map
+        # Store world index map and slice ends as warp arrays
         self.world_index_map = wp.array(index_map_np, dtype=wp.int32, device=device)
+        self.world_slice_ends = wp.array(slice_ends_np, dtype=wp.int32, device=device)
 
         # Compute per-world slice start/count
         self.world_slice_starts: list[int] = []
@@ -212,15 +244,32 @@ class BroadPhaseBVH:
             self.world_shape_counts.append(int(end - start))
             start = end
 
-        # Allocate per-world arrays (exact size, no padding)
-        self.per_world_lower: list[wp.array] = []
-        self.per_world_upper: list[wp.array] = []
-        for n in self.world_shape_counts:
-            self.per_world_lower.append(wp.zeros(max(n, 1), dtype=wp.vec3, device=device))
-            self.per_world_upper.append(wp.zeros(max(n, 1), dtype=wp.vec3, device=device))
+        # Max shapes per world determines the flat buffer stride
+        self.max_shapes_per_world = max(self.world_shape_counts) if self.world_shape_counts else 0
 
-        # BVH instances (built on first launch)
+        # Flat contiguous buffers for batched gather/query (all worlds packed
+        # with stride = max_shapes_per_world, matching the SAP layout)
+        total_flat = self.world_count * self.max_shapes_per_world
+        self.flat_lower = wp.zeros(max(total_flat, 1), dtype=wp.vec3, device=device)
+        self.flat_upper = wp.zeros(max(total_flat, 1), dtype=wp.vec3, device=device)
+
+        # Per-world *views* into the flat buffers.  Each BVH is built from
+        # its world's view so that refit() automatically sees data written
+        # into the flat buffer by the batched gather kernel.
+        self._per_world_lower_views: list[wp.array | None] = []
+        self._per_world_upper_views: list[wp.array | None] = []
+        for w, n in enumerate(self.world_shape_counts):
+            if n == 0:
+                self._per_world_lower_views.append(None)
+                self._per_world_upper_views.append(None)
+            else:
+                s = w * self.max_shapes_per_world
+                self._per_world_lower_views.append(self.flat_lower[s : s + n])
+                self._per_world_upper_views.append(self.flat_upper[s : s + n])
+
+        # BVH instances (built on first launch) and their IDs for batched query
         self.bvh_list: list[wp.Bvh | None] = [None] * self.world_count
+        self.bvh_ids = wp.zeros(max(self.world_count, 1), dtype=wp.uint64, device=device)
         self._bvhs_built = False
 
     def launch(
@@ -259,6 +308,9 @@ class BroadPhaseBVH:
         if device is None:
             device = shape_lower.device
 
+        if self.max_shapes_per_world == 0:
+            return
+
         if shape_contact_margin is None:
             shape_contact_margin = wp.empty(0, dtype=wp.float32, device=device)
 
@@ -269,63 +321,72 @@ class BroadPhaseBVH:
             filter_pairs_arr = filter_pairs
             n_filter = num_filter_pairs if num_filter_pairs is not None else filter_pairs.shape[0]
 
-        # For each world: gather AABBs, build/refit BVH, query
+        # --- 1. Batched gather: single kernel launch for all worlds ----------
+        wp.launch(
+            kernel=_bvh_gather_aabbs_batched_kernel,
+            dim=(self.world_count, self.max_shapes_per_world),
+            inputs=[
+                shape_lower,
+                shape_upper,
+                shape_contact_margin,
+                self.world_index_map,
+                self.world_slice_ends,
+                self.max_shapes_per_world,
+            ],
+            outputs=[
+                self.flat_lower,
+                self.flat_upper,
+            ],
+            device=device,
+        )
+
+        # --- 2. Build or refit per-world BVH trees (unavoidable loop) --------
         for w in range(self.world_count):
-            n = self.world_shape_counts[w]
-            if n == 0:
+            if self.world_shape_counts[w] == 0:
                 continue
-
-            # Gather AABBs for this world
-            wp.launch(
-                kernel=_bvh_gather_aabbs_kernel,
-                dim=n,
-                inputs=[
-                    shape_lower,
-                    shape_upper,
-                    shape_contact_margin,
-                    self.world_index_map,
-                    self.world_slice_starts[w],
-                ],
-                outputs=[
-                    self.per_world_lower[w],
-                    self.per_world_upper[w],
-                ],
-                device=device,
-            )
-
-            # Build or refit BVH
             if not self._bvhs_built:
-                self.bvh_list[w] = wp.Bvh(self.per_world_lower[w], self.per_world_upper[w])
+                self.bvh_list[w] = wp.Bvh(
+                    self._per_world_lower_views[w],
+                    self._per_world_upper_views[w],
+                )
             else:
                 self.bvh_list[w].refit()
 
-            # Query this world's BVH
-            is_dedicated = 1 if w >= self.num_regular_worlds else 0
-            wp.launch(
-                kernel=_bvh_query_kernel,
-                dim=n,
-                inputs=[
-                    self.bvh_list[w].id,
-                    shape_lower,
-                    shape_upper,
-                    shape_contact_margin,
-                    shape_collision_group,
-                    shape_shape_world,
-                    self.world_index_map,
-                    self.world_slice_starts[w],
-                    n,
-                    is_dedicated,
-                    self.per_world_lower[w],
-                    self.per_world_upper[w],
-                    filter_pairs_arr,
-                    n_filter,
-                ],
-                outputs=[
-                    candidate_pair,
-                    num_candidate_pair,
-                    max_candidate_pair,
-                ],
-                device=device,
-            )
+        # Collect BVH IDs after the first build so the batched query kernel
+        # can look up the correct tree per world.
+        if not self._bvhs_built:
+            bvh_ids_np = np.zeros(self.world_count, dtype=np.uint64)
+            for w in range(self.world_count):
+                if self.bvh_list[w] is not None:
+                    bvh_ids_np[w] = int(self.bvh_list[w].id)
+            self.bvh_ids = wp.array(bvh_ids_np, dtype=wp.uint64, device=device)
+
+        # --- 3. Batched query: single kernel launch for all worlds -----------
+        wp.launch(
+            kernel=_bvh_query_batched_kernel,
+            dim=(self.world_count, self.max_shapes_per_world),
+            inputs=[
+                self.bvh_ids,
+                shape_lower,
+                shape_upper,
+                shape_contact_margin,
+                shape_collision_group,
+                shape_shape_world,
+                self.world_index_map,
+                self.world_slice_ends,
+                self.max_shapes_per_world,
+                self.num_regular_worlds,
+                self.flat_lower,
+                self.flat_upper,
+                filter_pairs_arr,
+                n_filter,
+            ],
+            outputs=[
+                candidate_pair,
+                num_candidate_pair,
+                max_candidate_pair,
+            ],
+            device=device,
+        )
 
         self._bvhs_built = True
