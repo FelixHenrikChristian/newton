@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Benchmark broad phase algorithms (NXN, SAP, BVH) with multi-world support.
+"""Benchmark broad phase algorithms (NXN, SAP, BVH, Hash) with multi-world support.
 
 Measures only the broad phase kernel(s) after AABBs have been filled.
 Supports configurable per-world shape count, world count, and optional visualization.
@@ -139,7 +139,7 @@ def benchmark_broad_phase(
     number: int = 100,
     seed: int = 42,
 ) -> dict:
-    """Run broad phase benchmarks for NXN, SAP, and BVH.
+    """Run broad phase benchmarks for NXN, SAP, BVH, and Hash.
 
     Args:
         num_shapes: Number of shapes per world.
@@ -159,7 +159,7 @@ def benchmark_broad_phase(
     device_info = str(device)
 
     pipelines: dict[str, newton.CollisionPipeline] = {}
-    for mode in ("nxn", "sap", "bvh"):
+    for mode in ("nxn", "sap", "bvh", "hash"):
         p = newton.CollisionPipeline(model, broad_phase=mode)
         _fill_aabbs(p, state)
         pipelines[mode] = p
@@ -210,7 +210,7 @@ def print_results(results: dict, num_shapes: int, num_worlds: int, device: str =
     print(header)
     print("-" * 78)
 
-    for name in ("NXN", "SAP", "BVH"):
+    for name in ("NXN", "SAP", "BVH", "HASH"):
         r = results[name]
         print(
             f"{name:<8} {r['avg_ms']:>10.4f} {r['min_ms']:>10.4f} "
@@ -219,7 +219,7 @@ def print_results(results: dict, num_shapes: int, num_worlds: int, device: str =
 
     nxn_avg = results["NXN"]["avg_ms"]
     print(f"\n  Speedup vs NXN (by avg):")
-    for name in ("SAP", "BVH"):
+    for name in ("SAP", "BVH", "HASH"):
         other_avg = results[name]["avg_ms"]
         speedup = nxn_avg / other_avg if other_avg > 0 else float("inf")
         print(f"    {name}: {speedup:.2f}x")
@@ -227,10 +227,10 @@ def print_results(results: dict, num_shapes: int, num_worlds: int, device: str =
 
 
 def run_visualized(num_shapes: int, num_worlds: int, viewer_type: str = "gl", seed: int = 42) -> None:
-    """Run a visualized scene and benchmark all three broad phase algorithms.
+    """Run a visualized scene and benchmark all four broad phase algorithms.
 
-    A single viewer window stays open.  The three algorithms (NXN, SAP, BVH)
-    are each run for ``frames_per_algo`` frames in sequence; when all three are
+    A single viewer window stays open.  The four algorithms (NXN, SAP, BVH, Hash)
+    are each run for ``frames_per_algo`` frames in sequence; when all four are
     done the timing summary is printed and the window remains open until the
     user closes it.
     """
@@ -252,7 +252,7 @@ def run_visualized(num_shapes: int, num_worlds: int, viewer_type: str = "gl", se
 
     viewer.set_model(model)
 
-    modes = [("NXN", "nxn"), ("SAP", "sap"), ("BVH", "bvh")]
+    modes = [("NXN", "nxn"), ("SAP", "sap"), ("BVH", "bvh"), ("HASH", "hash")]
     frames_per_algo = 200
     warmup_frames = 20
 
@@ -364,7 +364,7 @@ def _print_visual_summary(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Benchmark broad phase algorithms (NXN, SAP, BVH).",
+        description="Benchmark broad phase algorithms (NXN, SAP, BVH, Hash).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--num-shapes", type=int, default=1024, help="Number of shapes per world.")
@@ -377,7 +377,7 @@ def main() -> None:
         "--visualize",
         action="store_true",
         default=False,
-        help="Open a viewer to visualize the scene (cycles through NXN, SAP, BVH).",
+        help="Open a viewer to visualize the scene (cycles through NXN, SAP, BVH, Hash).",
     )
     parser.add_argument(
         "--viewer",
