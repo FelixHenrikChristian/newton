@@ -15,9 +15,10 @@
 
 from ._src.geometry import (
     BroadPhaseAllPairs,
-    BroadPhaseExplicit,
-    BroadPhaseSAP,
     BroadPhaseBVH,
+    BroadPhaseExplicit,
+    BroadPhaseHash,
+    BroadPhaseSAP,
     collide_box_box,
     collide_capsule_box,
     collide_capsule_capsule,
@@ -39,9 +40,10 @@ from ._src.geometry.sdf_utils import create_empty_sdf_data
 
 __all__ = [
     "BroadPhaseAllPairs",
-    "BroadPhaseExplicit",
-    "BroadPhaseSAP",
     "BroadPhaseBVH",
+    "BroadPhaseExplicit",
+    "BroadPhaseHash",
+    "BroadPhaseSAP",
     "HydroelasticSDF",
     "NarrowPhase",
     "collide_box_box",

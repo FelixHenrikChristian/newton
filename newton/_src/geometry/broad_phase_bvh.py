@@ -1,33 +1,3 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 The Newton Developers
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""BVH (Bounding Volume Hierarchy) broad phase collision detection.
-
-Provides O(N log N) construction and O(log N) per-query broad phase by building
-independent BVH trees for each simulation world.  Shared shapes (world -1) are
-replicated into every world's tree so that cross-world queries are unnecessary.
-
-AABB gathering and BVH querying are each batched into a single kernel launch
-across all worlds (2D grid: ``world_count × max_shapes_per_world``) to minimise
-GPU launch overhead when many worlds are present.
-
-See Also:
-    :class:`BroadPhaseAllPairs` in ``broad_phase_nxn.py`` for simpler O(N²) approach.
-    :class:`BroadPhaseSAP` in ``broad_phase_sap.py`` for sweep-and-prune approach.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -57,11 +27,6 @@ def _bvh_gather_aabbs_batched_kernel(
     out_lower: wp.array(dtype=wp.vec3, ndim=1),
     out_upper: wp.array(dtype=wp.vec3, ndim=1),
 ):
-    """Gather shape AABBs for all worlds into a flat buffer.
-
-    Launched with ``dim=(world_count, max_shapes_per_world)``.
-    Threads beyond each world's actual shape count return immediately.
-    """
     world_id, local_id = wp.tid()
 
     slice_start = 0
@@ -111,12 +76,6 @@ def _bvh_query_batched_kernel(
     candidate_pair_count: wp.array(dtype=int, ndim=1),
     max_candidate_pair: int,
 ):
-    """Query all worlds' BVH trees to find overlapping shape pairs.
-
-    Launched with ``dim=(world_count, max_shapes_per_world)``.
-    Each thread queries one shape against its world's BVH and emits
-    overlapping pairs with canonical ordering (shape1 < shape2).
-    """
     world_id, local_id = wp.tid()
 
     slice_start = 0
@@ -182,16 +141,6 @@ def _bvh_query_batched_kernel(
 
 
 class BroadPhaseBVH:
-    """BVH-based broad phase collision detection with per-world BVH trees.
-
-    Each simulation world gets its own independent BVH tree.  Shared shapes
-    (world ID -1) are replicated into every world's tree.  The BVH trees are
-    built on the first frame and refitted on subsequent frames.
-
-    AABB gathering and BVH querying are each issued as a single batched kernel
-    launch (2D grid over all worlds), reducing per-world launch overhead
-    compared to issuing separate kernels per world.
-    """
 
     def __init__(
         self,
@@ -199,14 +148,7 @@ class BroadPhaseBVH:
         shape_flags: wp.array(dtype=wp.int32, ndim=1) | np.ndarray | None = None,
         device: Devicelike | None = None,
     ) -> None:
-        """Initialize the BVH broad phase with per-world BVH trees.
 
-        Args:
-            shape_world: Array of world IDs (numpy or warp array).
-            shape_flags: Optional array of shape flags. If provided,
-                only shapes with the COLLIDE_SHAPES flag will be included.
-            device: Device to store arrays on.
-        """
         # Convert to numpy
         if isinstance(shape_world, wp.array):
             shape_world_np = shape_world.numpy()
@@ -287,21 +229,7 @@ class BroadPhaseBVH:
         filter_pairs: wp.array(dtype=wp.vec2i, ndim=1) | None = None,
         num_filter_pairs: int | None = None,
     ) -> None:
-        """Launch per-world BVH broad phase collision detection.
 
-        Args:
-            shape_lower: Lower bounds of each shape's AABB.
-            shape_upper: Upper bounds of each shape's AABB.
-            shape_contact_margin: Optional per-shape contact margins.
-            shape_collision_group: Collision group ID per shape.
-            shape_shape_world: World index per shape.
-            shape_count: Number of active shapes (unused in per-world approach).
-            candidate_pair: Output array for overlapping shape pairs.
-            num_candidate_pair: Output counter for pairs found.
-            device: Device to launch on.
-            filter_pairs: Optional sorted excluded pairs.
-            num_filter_pairs: Number of valid entries in filter_pairs.
-        """
         max_candidate_pair = candidate_pair.shape[0]
         num_candidate_pair.zero_()
 
@@ -356,7 +284,7 @@ class BroadPhaseBVH:
         # can look up the correct tree per world.
         if not self._bvhs_built:
             bvh_ids_np = np.zeros(self.world_count, dtype=np.uint64)
-            for w in range(self.world_count):
+            for w in range(self.world_count):  
                 if self.bvh_list[w] is not None:
                     bvh_ids_np[w] = int(self.bvh_list[w].id)
             self.bvh_ids = wp.array(bvh_ids_np, dtype=wp.uint64, device=device)
