@@ -22,6 +22,9 @@ DEFAULT_SCENE = (
     / "lunar_scene_spot_arm_mining.xml"
 )
 
+MUJOCO_NJMAX = 20000
+MUJOCO_NCONMAX = 10000
+
 
 class LunarSpotMiningDemo:
     def __init__(self, viewer, args):
@@ -51,9 +54,13 @@ class LunarSpotMiningDemo:
             if self.model.joint_count <= 0:
                 raise ValueError("SolverMuJoCo requires at least one joint in the imported MJCF model.")
             warnings.filterwarnings("ignore", message=r"Geom .* authored margin=.*")
+            self.use_mujoco_cpu = args.mujoco_backend == "cpu"
             self.solver = newton.solvers.SolverMuJoCo(
                 self.model,
                 integrator="implicitfast",
+                use_mujoco_cpu=self.use_mujoco_cpu,
+                njmax=MUJOCO_NJMAX,
+                nconmax=MUJOCO_NCONMAX,
             )
             self.contacts = None
 
@@ -68,7 +75,7 @@ class LunarSpotMiningDemo:
         self.viewer.set_camera(pos=wp.vec3(12.0, 4.5, 3.2), pitch=-24.0, yaw=130.0)
 
         self.graph = None
-        if wp.get_device().is_cuda:
+        if wp.get_device().is_cuda and not getattr(self, "use_mujoco_cpu", False):
             with wp.ScopedCapture() as capture:
                 self.simulate()
             self.graph = capture.graph
@@ -103,19 +110,26 @@ def create_parser() -> argparse.ArgumentParser:
     parser.description = "Run the lunar Spot arm mining MJCF scene in Newton."
     parser.set_defaults(
         viewer="usd",
-        output_path=str(Path("lunar_spot_arm_mining_newton_vbd.usda").resolve()),
+        output_path=str(Path("lunar_spot_arm_mining_newton.usda").resolve()),
         num_frames=30,
     )
     parser.add_argument("--mjcf", type=str, default=str(DEFAULT_SCENE), help="Path to the lunar mining MJCF file.")
     parser.add_argument(
         "--backend",
         type=str,
-        default="vbd",
+        default="mujoco",
         choices=["vbd", "mujoco"],
         help="Physics backend to run.",
     )
     parser.add_argument("--substeps", type=int, default=10, help="Simulation substeps per rendered frame.")
     parser.add_argument("--iterations", type=int, default=10, help="VBD solver iterations per substep.")
+    parser.add_argument(
+        "--mujoco-backend",
+        type=str,
+        default="cpu",
+        choices=["cpu", "warp"],
+        help="MuJoCo implementation used when --backend=mujoco.",
+    )
     return parser
 
 
