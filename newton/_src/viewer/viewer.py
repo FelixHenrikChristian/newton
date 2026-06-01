@@ -879,11 +879,15 @@ class ViewerBase(ABC):
                 extent_x=geo_src.hx * 2.0,
                 extent_y=geo_src.hy * 2.0,
                 ground_z=geo_src.min_z,
+                compute_uvs=geo_src.texture is not None,
                 compute_inertia=False,
             )
             points = wp.array(mesh.vertices, dtype=wp.vec3, device=self.device)
             indices = wp.array(mesh.indices, dtype=wp.int32, device=self.device)
-            self.log_mesh(name, points, indices, hidden=hidden)
+            uvs = None
+            if mesh.uvs is not None:
+                uvs = wp.array(mesh.uvs * np.asarray(geo_src.texture_repeat), dtype=wp.vec2, device=self.device)
+            self.log_mesh(name, points, indices, uvs=uvs, texture=geo_src.texture, hidden=hidden)
             return
 
         # GEO_MESH handled by provided source geometry
@@ -1578,6 +1582,13 @@ class ViewerBase(ABC):
                     has_texture = getattr(geo_src, "texture", None) is not None
                     if has_texture:
                         material = wp.vec4(material.x, material.y, material.z, 1.0)
+            elif geo_type == newton.GeoType.HFIELD:
+                if geo_src.roughness is not None:
+                    material = wp.vec4(float(geo_src.roughness), material.y, material.z, material.w)
+                if geo_src.metallic is not None:
+                    material = wp.vec4(material.x, float(geo_src.metallic), material.z, material.w)
+                if geo_src.texture is not None:
+                    material = wp.vec4(material.x, material.y, material.z, 1.0)
 
             # Planes keep their checkerboard material even when model.shape_color
             # is populated with resolved default colors.

@@ -12,8 +12,24 @@ import newton
 from newton import Heightfield
 from newton.solvers import SolverMuJoCo
 from newton.tests.unittest_utils import assert_np_equal
+from newton.viewer import ViewerNull
 
 _cuda_available = wp.is_cuda_available()
+
+
+class _HeightfieldAppearanceProbe(ViewerNull):
+    """Capture heightfield mesh appearance passed through the viewer."""
+
+    def __init__(self):
+        super().__init__(num_frames=1)
+        self.heightfield_texture = None
+        self.heightfield_uvs = None
+
+    def log_mesh(self, name, points, indices, normals=None, uvs=None, texture=None, hidden=False, backface_culling=True):
+        del points, indices, normals, hidden, backface_culling
+        if "heightfield" in name:
+            self.heightfield_texture = texture
+            self.heightfield_uvs = None if uvs is None else uvs.numpy().copy()
 
 
 class TestHeightfield(unittest.TestCase):
@@ -208,6 +224,47 @@ class TestHeightfield(unittest.TestCase):
         self.assertAlmostEqual(float(hfield.data.max()), 1.0, places=5)
         self.assertAlmostEqual(hfield.min_z, -0.0)  # size_base=0 → min_z=0
         self.assertAlmostEqual(hfield.max_z, 1.0)  # size_z=1 → max_z=1
+
+    def test_mjcf_hfield_material_appearance(self):
+        """Test MJCF heightfields preserve material color, texture, and repetition."""
+        mjcf = """
+        <mujoco>
+          <asset>
+            <texture name="terrain_tex" type="2d" file="terrain.png"/>
+            <material name="terrain_mat" texture="terrain_tex" rgba="0.2 0.3 0.4 1"
+                      roughness="0.8" metallic="0.1" texrepeat="3 4"/>
+            <hfield name="terrain" nrow="3" ncol="3"
+                    size="2 2 1 0"
+                    elevation="0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9"/>
+          </asset>
+          <worldbody>
+            <geom type="hfield" hfield="terrain" material="terrain_mat"/>
+          </worldbody>
+        </mujoco>
+        """
+
+        builder = newton.ModelBuilder()
+        builder.add_mjcf(mjcf, parse_meshes=True)
+
+        hfield_shapes = [i for i in range(builder.shape_count) if builder.shape_type[i] == newton.GeoType.HFIELD]
+        self.assertEqual(len(hfield_shapes), 1)
+
+        shape = hfield_shapes[0]
+        hfield = builder.shape_source[shape]
+        np.testing.assert_allclose(builder.shape_color[shape], [0.2, 0.3, 0.4], atol=1e-6, rtol=1e-6)
+        self.assertEqual(os.path.basename(hfield.texture), "terrain.png")
+        self.assertEqual(hfield.texture_repeat, (3.0, 4.0))
+        self.assertAlmostEqual(hfield.roughness, 0.8)
+        self.assertAlmostEqual(hfield.metallic, 0.1)
+
+        viewer = _HeightfieldAppearanceProbe()
+        viewer.set_model(builder.finalize())
+
+        self.assertEqual(os.path.basename(viewer.heightfield_texture), "terrain.png")
+        self.assertIsNotNone(viewer.heightfield_uvs)
+        np.testing.assert_allclose(viewer.heightfield_uvs.max(axis=0), [3.0, 4.0], atol=1e-6, rtol=1e-6)
+        batch = next(iter(viewer._shape_instances.values()))
+        np.testing.assert_allclose(batch.materials.numpy()[0], [0.8, 0.1, 0.0, 1.0], atol=1e-6, rtol=1e-6)
 
     def test_solver_mujoco_hfield(self):
         """Test converting Newton model with heightfield to MuJoCo."""

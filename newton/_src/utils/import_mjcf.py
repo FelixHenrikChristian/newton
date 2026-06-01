@@ -462,6 +462,9 @@ def parse_mjcf(
             material_assets[mat_name] = {
                 "rgba": material.attrib.get("rgba"),
                 "texture": material.attrib.get("texture"),
+                "roughness": material.attrib.get("roughness"),
+                "metallic": material.attrib.get("metallic"),
+                "texrepeat": material.attrib.get("texrepeat"),
             }
         for hfield in asset.findall("hfield"):
             hfield_name = hfield.attrib.get("name")
@@ -972,6 +975,9 @@ def parse_mjcf(
                 # In MuJoCo, the heightfield's lowest point (data=0) is at the geom origin,
                 # so min_z=0 and max_z=size_z. size_base (depth below origin) is ignored.
                 mj_size_x, mj_size_y, mj_size_z, _mj_size_base = hfield_asset["size"]
+                texrepeat = np.fromstring(material_info.get("texrepeat") or "1 1", sep=" ", dtype=np.float32)
+                if len(texrepeat) < 2:
+                    texrepeat = np.array([1.0, 1.0], dtype=np.float32)
                 heightfield = Heightfield(
                     data=elevation,
                     nrow=nrow,
@@ -980,6 +986,11 @@ def parse_mjcf(
                     hy=mj_size_y * scale,
                     min_z=0.0,
                     max_z=mj_size_z * scale,
+                    color=material_color,
+                    roughness=float(material_info["roughness"]) if material_info.get("roughness") is not None else None,
+                    metallic=float(material_info["metallic"]) if material_info.get("metallic") is not None else None,
+                    texture=texture,
+                    texture_repeat=(float(texrepeat[0]), float(texrepeat[1])),
                 )
 
                 # Heightfields are always static — don't pass body from shape_kwargs

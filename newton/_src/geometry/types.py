@@ -1625,6 +1625,11 @@ class Heightfield:
         hy: float = 1.0,
         min_z: float | None = None,
         max_z: float | None = None,
+        color: Vec3 | None = None,
+        roughness: float | None = None,
+        metallic: float | None = None,
+        texture: str | np.ndarray | None = None,
+        texture_repeat: Vec2 = (1.0, 1.0),
     ):
         """
         Construct a Heightfield object from a 2D elevation grid.
@@ -1643,6 +1648,11 @@ class Heightfield:
                 together with ``max_z``, or both omitted to auto-derive from data.
             max_z: World-space Z value corresponding to data maximum. Must be provided
                 together with ``min_z``, or both omitted to auto-derive from data.
+            color: Optional display RGB color with values in [0, 1].
+            roughness: Optional surface roughness in [0, 1].
+            metallic: Optional surface metallic value in [0, 1].
+            texture: Optional texture path/URL or image data (H, W, C).
+            texture_repeat: Texture repetition counts along X and Y.
         """
         if nrow < 2 or ncol < 2:
             raise ValueError(f"Heightfield requires nrow >= 2 and ncol >= 2, got nrow={nrow}, ncol={ncol}")
@@ -1664,10 +1674,16 @@ class Heightfield:
         self.hy = hy
         self.min_z = d_min if min_z is None else float(min_z)
         self.max_z = d_max if max_z is None else float(max_z)
+        self._color = color
+        self._texture = _normalize_texture_input(texture)
+        self._roughness = roughness
+        self._metallic = metallic
+        self._texture_repeat = (float(texture_repeat[0]), float(texture_repeat[1]))
 
         self.is_solid = True
         self.has_inertia = False
         self._cached_hash = None
+        self._texture_hash = None
 
         # Heightfields are always static
         self.inertia = wp.mat33()
@@ -1692,6 +1708,59 @@ class Heightfield:
         self.max_z = d_max
         self._cached_hash = None
 
+    @property
+    def color(self) -> Vec3 | None:
+        """Optional display RGB color with values in [0, 1]."""
+        return self._color
+
+    @color.setter
+    def color(self, value: Vec3 | None):
+        self._color = value
+
+    @property
+    def texture(self) -> str | np.ndarray | None:
+        """Optional texture as a file path or image array."""
+        return self._texture
+
+    @texture.setter
+    def texture(self, value: str | np.ndarray | None):
+        self._texture = _normalize_texture_input(value)
+        self._texture_hash = None
+        self._cached_hash = None
+
+    @property
+    def roughness(self) -> float | None:
+        return self._roughness
+
+    @roughness.setter
+    def roughness(self, value: float | None):
+        self._roughness = value
+        self._cached_hash = None
+
+    @property
+    def metallic(self) -> float | None:
+        return self._metallic
+
+    @metallic.setter
+    def metallic(self, value: float | None):
+        self._metallic = value
+        self._cached_hash = None
+
+    @property
+    def texture_repeat(self) -> tuple[float, float]:
+        """Texture repetition counts along X and Y."""
+        return self._texture_repeat
+
+    @texture_repeat.setter
+    def texture_repeat(self, value: Vec2):
+        self._texture_repeat = (float(value[0]), float(value[1]))
+        self._cached_hash = None
+
+    def _compute_texture_hash(self) -> int:
+        if self._texture_hash is None:
+            self._texture_hash = compute_texture_hash(self._texture)
+        return self._texture_hash
+
     @override
     def __hash__(self) -> int:
         """
@@ -1710,6 +1779,10 @@ class Heightfield:
                     self.hy,
                     self.min_z,
                     self.max_z,
+                    self._compute_texture_hash(),
+                    self._roughness,
+                    self._metallic,
+                    self._texture_repeat,
                 )
             )
         return self._cached_hash
