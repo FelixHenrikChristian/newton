@@ -37,7 +37,7 @@
   </asset>
   <worldbody>
     <light name="key_light" directional="true" pos="-3 -4 6" dir="0.45 0.55 -1" diffuse="0.92 0.88 0.80" ambient="0.16 0.16 0.18" specular="0.22 0.22 0.22" />
-    <geom name="floor" type="plane" size="5 5 0.05" material="ground" friction="0.9 0.02 0.01" />
+    <geom name="floor" type="plane" size="5 5 0.05" material="ground" friction="0.9 0.02 0.01" contype="1" conaffinity="3" />
     <camera name="front_view" pos="2.2 -3.0 1.35" xyaxes="0.81 0.59 0 -0.22 0.30 0.93" fovy="45" />
     <camera name="side_view" pos="0 -3.3 0.95" xyaxes="1 0 0 0 0.27 0.96" fovy="45" />
     <camera name="top_mount_view" pos="-1.5 -2.2 1.8" xyaxes="0.83 -0.56 0 0.36 0.54 0.76" fovy="40" />
@@ -162,14 +162,25 @@
                       <body name="z1_gripper_mover" pos="0.049 0 0">
                         <inertial pos="0.01320633 0.00476708 0.00380534" mass="0.27621302" fullinertia="0.00017716 0.00026787 0.00035728 0.00001683 -0.00001786 0.00000262" />
                         <geom name="z1_gripper_mover_visual" type="mesh" mesh="z1_GripperMover" material="z1_dark" rgba="0.08 0.085 0.09 1" contype="0" conaffinity="0" group="2" />
+                        <geom name="z1_gripper_mover_collision" type="box" size="0.0605 0.041 0.023625" pos="0.0395 0 0.002625" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
                       </body>
+                      <geom name="z1_gripper_stator_collision" type="box" size="0.078 0.041 0.0344" pos="0.071 0 -0.001925" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
                     </body>
+                    <geom name="z1_link06_collision" type="cylinder" size="0.0325 0.0255" pos="0.0255 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0 0.707106781 0" />
                   </body>
                 </body>
+                <geom name="z1_link04_collision" type="cylinder" size="0.0325 0.0335" pos="0.072 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
               </body>
+              <geom name="z1_link03_arm_collision" type="cylinder" size="0.02 0.058" pos="0.128 0 0.055" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0 0.707106781 0" />
+              <geom name="z1_link03_motor_collision" type="cylinder" size="0.0325 0.0295" pos="0.2205 0 0.055" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.5 -0.5 0.5 0.5" />
             </body>
+            <geom name="z1_link02_motor_a_collision" type="cylinder" size="0.0325 0.051" pos="0 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0.707106781 0 0" />
+            <geom name="z1_link02_arm_collision" type="cylinder" size="0.0225 0.1175" pos="-0.1625 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0 0.707106781 0" />
+            <geom name="z1_link02_motor_b_collision" type="cylinder" size="0.0325 0.0255" pos="-0.35 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0.707106781 0 0" />
           </body>
+          <geom name="z1_link01_collision" type="cylinder" size="0.0325 0.051" pos="0 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
         </body>
+        <geom name="z1_link00_collision" type="cylinder" size="0.0325 0.0255" pos="0 0 0.0255" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
       </body>
     </body>
   </worldbody>
