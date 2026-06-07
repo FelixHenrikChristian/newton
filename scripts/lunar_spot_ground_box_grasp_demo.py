@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 # SPDX-License-Identifier: Apache-2.0
 
+# 用途：月球 Spot 机械臂按写死的关节阶段轨迹抓取前方小盒子，用于验证夹爪接触抓取和抬升。
+# 用法：uv run python scripts/lunar_spot_ground_box_grasp_demo.py
+
 from __future__ import annotations
 
 import argparse

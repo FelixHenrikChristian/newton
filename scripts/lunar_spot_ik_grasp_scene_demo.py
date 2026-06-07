@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 # SPDX-License-Identifier: Apache-2.0
 
+# 用途：月球 Spot 机械臂椭球体抓取 IK 场景，放置椭球岩石并显示 WR1 的预抓取、抓取和抬升目标位姿。
+# 用法：uv run python scripts/lunar_spot_ik_grasp_scene_demo.py
+
 from __future__ import annotations
 
 import argparse

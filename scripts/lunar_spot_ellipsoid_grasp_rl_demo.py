@@ -1,6 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 # SPDX-License-Identifier: Apache-2.0
 
+# 用途：月球 Spot 机械臂固定位置椭球体抓取强化学习任务，可直接运行、训练 PPO、继续从 checkpoint 训练或加载 policy 预览。
+# 用法：
+#   直接运行：uv run python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py
+#   训练：uv run --with gymnasium --with stable-baselines3 python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py --train --viewer null --train-timesteps 20000 --policy-out outputs/lunar_spot_ellipsoid_grasp_ppo.zip
+#   长时间训练并保存 checkpoints：uv run --with gymnasium --with stable-baselines3 python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py --train --viewer null --train-timesteps 200000 --checkpoint-freq 5000
+#   继续训练：uv run --with gymnasium --with stable-baselines3 python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py --train --viewer null --resume-policy outputs/lunar_spot_ellipsoid_grasp_checkpoints/lunar_spot_ellipsoid_grasp_ppo_50000_steps.zip --train-timesteps 200000
+#   说明：继续训练时，--train-timesteps 是本次追加训练步数，不是从 0 重新计数。
+#   预览训练好的 policy：uv run --with gymnasium --with stable-baselines3 python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py --policy outputs/lunar_spot_ellipsoid_grasp_ppo.zip
+#   训练时另开终端预览 checkpoint：uv run --with gymnasium --with stable-baselines3 python scripts/lunar_spot_ellipsoid_grasp_rl_demo.py --policy outputs/lunar_spot_ellipsoid_grasp_checkpoints/lunar_spot_ellipsoid_grasp_ppo_50000_steps.zip
+
 from __future__ import annotations
 
 import argparse

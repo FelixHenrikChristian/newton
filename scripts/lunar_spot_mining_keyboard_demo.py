@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 # SPDX-License-Identifier: Apache-2.0
 
+# 用途：月球 Spot 机械臂采矿场景的键盘控制版本，用按键驱动 Spot 腿部步态、转向、停止和复位。
+# 用法：uv run python scripts/lunar_spot_mining_keyboard_demo.py
+
 from __future__ import annotations
 
 import argparse

@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 # SPDX-License-Identifier: Apache-2.0
 
+# 用途：加载月球 Spot 机械臂采矿 MJCF 场景，用 MuJoCo CPU 后端直接仿真，主要用于检查场景导入、地形和接触。
+# 用法：
+#   Spot 机械臂场景：uv run python scripts/lunar_spot_mining_scene_demo.py
+#   Go2 本体验证：uv run python scripts/lunar_spot_mining_scene_demo.py --mjcf newton/examples/assets/lunar_mujoco_spot_arm_mining_scene/lunar_scene_go2_mining.xml
+
 from __future__ import annotations
 
 import argparse
