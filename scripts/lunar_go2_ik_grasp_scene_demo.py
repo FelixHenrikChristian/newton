@@ -10,19 +10,26 @@ from pathlib import Path
 
 import numpy as np
 import warp as wp
+import yaml
 
 import newton
 import newton.examples
+import newton.utils
+from newton import JointTargetMode, ShapeFlags
 
-DEFAULT_SCENE = (
+DEFAULT_LUNAR_SCENE_DIR = (
     Path(__file__).resolve().parents[2]
     / "mujoco"
     / "model"
     / "lunar"
     / "lunar_mujoco_spot_arm_mining_scene"
-    / "lunar_scene_spot_arm_mining.xml"
 )
-DEFAULT_HEIGHTFIELD = DEFAULT_SCENE.parent / "lunar_heightfield_normalized.npy"
+DEFAULT_HEIGHTFIELD = DEFAULT_LUNAR_SCENE_DIR / "lunar_heightfield_normalized.npy"
+DEFAULT_ALBEDO = DEFAULT_LUNAR_SCENE_DIR / "lunar_albedo_center_crater.png"
+GO2_ASSET_DIR = "unitree_go2"
+GO2_USD = "usd/go2.usda"
+GO2_CONFIG = "rl_policies/go2.yaml"
+GO2_SHELL_COLOR = (0.68, 0.70, 0.76)
 
 MUJOCO_NJMAX = 20000
 MUJOCO_NCONMAX = 10000
@@ -32,40 +39,11 @@ HFIELD_HALF_Y = 20.0
 HFIELD_ELEVATION_Z = 1.65
 HFIELD_Z_OFFSET = -0.88
 
-LEG_JOINT_NAMES = (
-    "fl_hx",
-    "fl_hy",
-    "fl_kn",
-    "fr_hx",
-    "fr_hy",
-    "fr_kn",
-    "hl_hx",
-    "hl_hy",
-    "hl_kn",
-    "hr_hx",
-    "hr_hy",
-    "hr_kn",
-)
-ARM_JOINT_NAMES = ("arm_sh0", "arm_sh1", "arm_el0", "arm_el1", "arm_wr0", "arm_wr1", "arm_f1x")
+GO2_DEFAULT_XY = (6.7, 7.1)
+GO2_DEFAULT_ROOT_HEIGHT = 0.34
 
-# Values from the spot_mining_home XML keyframe. MuJoCo authors free-joint
-# quaternions as WXYZ; Newton stores imported free-joint quaternions as XYZW.
-SPOT_ROOT_HOME = (6.7, 7.1, 0.74776551, 0.0, 0.0, 0.35272872, 0.93572563)
-SPOT_LEG_HOME = (0.0, 1.04, -1.8) * 4
-
-GRIPPER_OPEN = -1.4
-SPOT_ARM_HOME = (0.0, -3.14, 3.06, 0.0, 0.0, 0.0, GRIPPER_OPEN)
-ARM_APPROACH_OPEN = (0.0, -0.5957, 2.271782, 0.000028, 0.094714, 0.0, GRIPPER_OPEN)
-ARM_GROUND_OPEN = (0.0, 0.113058, 1.563034, 0.0, -0.045296, 0.0, GRIPPER_OPEN)
-
-ARM_POSES = {
-    "approach": ARM_APPROACH_OPEN,
-    "ground": ARM_GROUND_OPEN,
-    "home": SPOT_ARM_HOME,
-}
-
-ROCK_LABEL = "spot_ik_rock"
-ROCK_GRASP_HINT_IN_WR1 = wp.vec3(0.22, 0.0, -0.008)
+ROCK_LABEL = "go2_ik_rock"
+ROCK_DEFAULT_XY = (7.1803, 7.5220)
 ROCK_DEFAULT_RADII = (0.06, 0.042, 0.032)
 ROCK_DEFAULT_COLOR = (0.28, 0.28, 0.26)
 ROCK_DEFAULT_YAW_DEGREES = 41.3
@@ -78,8 +56,8 @@ DEFAULT_PREGRASP_HEIGHT = 0.18
 DEFAULT_LIFT_HEIGHT = 0.30
 
 
-class LunarSpotIkGraspSceneDemo:
-    """Prepare a lunar Spot arm scene with a larger gray ellipsoid rock."""
+class LunarGo2IkGraspSceneDemo:
+    """Prepare a lunar Go2 scene with a gray ellipsoid rock."""
 
     def __init__(self, viewer, args):
         self.viewer = viewer
@@ -98,42 +76,64 @@ class LunarSpotIkGraspSceneDemo:
         self.heightfield = self._load_heightfield(args.heightfield)
         self.rock_radii = self._validate_positive_triplet(args.rock_radii, "--rock-radii")
         self.rock_color = self._validate_color(args.rock_color)
+        self.go2_xy = self._validate_pair(args.go2_xy, "--go2-xy")
         self.rock_should_rest_on_terrain = args.rock_pos is None
-        self.show_ik_targets = args.show_ik_targets and not args.hide_ik_targets
-        self.arm_q = tuple(
-            float(value) for value in (args.arm_q if args.arm_q is not None else ARM_POSES[args.arm_pose])
-        )
+        self.lock_go2_root = not args.free_go2_root
+        self.show_grasp_targets = args.show_grasp_targets and not args.hide_grasp_targets
 
-        builder = newton.ModelBuilder()
-        builder.add_mjcf(str(Path(args.mjcf).resolve()), up_axis="Z", enable_self_collisions=True)
-
-        self.rock_xform, self.grasp_wr1_tf, self.pregrasp_wr1_tf, self.lift_wr1_tf = self._compute_scene_xforms(
-            args, builder
+        self.rock_xform, self.grasp_target_tf, self.pregrasp_target_tf, self.lift_target_tf = (
+            self._compute_scene_xforms(args)
         )
         self.rock_initial_pos = np.asarray(wp.transform_get_translation(self.rock_xform), dtype=np.float32)
         self.rock_terrain_z = self.terrain_z(float(self.rock_initial_pos[0]), float(self.rock_initial_pos[1]))
         self.rock_initial_q = self._xform_to_joint_q(self.rock_xform)
+        self.go2_root_home = self._compute_go2_root_home(args)
 
-        rock_cfg = newton.ModelBuilder.ShapeConfig(
-            density=args.rock_density,
-            mu=args.rock_mu,
-            mu_torsional=args.rock_mu_torsional,
-            mu_rolling=args.rock_mu_rolling,
+        go2_asset_path = newton.utils.download_asset(GO2_ASSET_DIR)
+        go2_config = yaml.safe_load((go2_asset_path / GO2_CONFIG).read_text(encoding="utf-8"))
+        self.go2_joint_names = tuple(str(name) for name in go2_config["mjw_joint_names"])
+        self.go2_joint_home = tuple(float(value) for value in go2_config["mjw_joint_pos"])
+
+        builder = newton.ModelBuilder(up_axis=newton.Axis.Z)
+        newton.solvers.SolverMuJoCo.register_custom_attributes(builder)
+        builder.default_joint_cfg = newton.ModelBuilder.JointDofConfig(
+            armature=0.1,
+            limit_ke=1.0e2,
+            limit_kd=1.0e0,
         )
-        rock_body = builder.add_body(xform=self.rock_xform, label=ROCK_LABEL)
-        builder.add_shape_ellipsoid(
-            rock_body,
-            rx=float(self.rock_radii[0]),
-            ry=float(self.rock_radii[1]),
-            rz=float(self.rock_radii[2]),
-            cfg=rock_cfg,
-            color=wp.vec3(*self.rock_color),
-            label=ROCK_LABEL,
+        builder.default_shape_cfg.ke = 5.0e4
+        builder.default_shape_cfg.kd = 5.0e2
+        builder.default_shape_cfg.kf = 1.0e3
+        builder.default_shape_cfg.mu = 0.75
+
+        go2_root_pos = wp.vec3(*self.go2_root_home[:3])
+        go2_root_rot = wp.quat(*self.go2_root_home[3:])
+        builder.add_usd(
+            str(go2_asset_path / GO2_USD),
+            xform=wp.transform(go2_root_pos, go2_root_rot),
+            collapse_fixed_joints=False,
+            enable_self_collisions=False,
+            joint_ordering="dfs",
+            hide_collision_shapes=True,
         )
+        builder.approximate_meshes("convex_hull")
+        self._normalize_go2_display_colors(builder)
+        builder.joint_q[:7] = self.go2_root_home
+        builder.joint_q[7 : 7 + len(self.go2_joint_home)] = self.go2_joint_home
+        for index, stiffness in enumerate(go2_config["mjw_joint_stiffness"]):
+            dof_index = 6 + index
+            builder.joint_target_ke[dof_index] = float(stiffness)
+            builder.joint_target_kd[dof_index] = float(go2_config["mjw_joint_damping"][index])
+            builder.joint_armature[dof_index] = float(go2_config["mjw_joint_armature"][index])
+            builder.joint_target_mode[dof_index] = int(JointTargetMode.POSITION)
+
+        self._add_lunar_heightfield(builder, args)
+        self._add_rock(builder, args)
 
         self.model = builder.finalize()
+        self.model.set_gravity((0.0, 0.0, -1.62))
         if self.model.joint_count <= 0:
-            raise ValueError("SolverMuJoCo requires at least one joint in the imported MJCF model.")
+            raise ValueError("SolverMuJoCo requires at least one joint in the imported robot model.")
 
         warnings.filterwarnings("ignore", message=r"Geom .* authored margin=.*")
         self.solver = newton.solvers.SolverMuJoCo(
@@ -147,27 +147,25 @@ class LunarSpotIkGraspSceneDemo:
         self.state_1 = self.model.state()
         self.control = self.model.control()
 
-        self.root_q_slice, self.root_qd_slice = self._find_joint_slices(("freejoint",), q_width=7, qd_width=6)
-        self.leg_q_slice, self.leg_dof_slice = self._find_joint_slices(LEG_JOINT_NAMES)
-        self.arm_q_slice, self.arm_dof_slice = self._find_joint_slices(ARM_JOINT_NAMES)
+        self.root_q_slice, self.root_qd_slice = self._find_root_slices()
+        self.go2_q_slice, self.go2_dof_slice = self._find_joint_slices(self.go2_joint_names)
         self.rock_q_slice, self.rock_qd_slice = self._find_joint_slices(
             (f"{ROCK_LABEL}_free_joint",),
             q_width=7,
             qd_width=6,
         )
         self.rock_body_index = self._find_body_index(ROCK_LABEL)
-        self.wr1_body_index = self._find_body_index_in_labels(self.model.body_label, "/arm_link_wr1")
+        self.go2_base_body_index = self._find_body_index_in_labels(self.model.body_label, "/go2_description/base")
 
         self._set_initial_state(self.state_0)
         self._set_initial_state(self.state_1)
-        self.control.joint_target_pos[self.leg_dof_slice].assign(SPOT_LEG_HOME)
-        self.control.joint_target_pos[self.arm_dof_slice].assign(self.arm_q)
+        self.control.joint_target_pos[self.go2_dof_slice].assign(self.go2_joint_home)
 
         self.max_rock_height = float(self.rock_initial_pos[2])
         self.max_rock_drift = 0.0
 
         self.viewer.set_model(self.model)
-        self.viewer.set_camera(pos=wp.vec3(8.2, 6.6, 1.55), pitch=-22.0, yaw=132.0)
+        self.viewer.set_camera(pos=wp.vec3(8.1, 6.4, 1.45), pitch=-22.0, yaw=132.0)
         self._print_scene_info()
 
     @staticmethod
@@ -186,6 +184,13 @@ class LunarSpotIkGraspSceneDemo:
         if len(triplet) != 3 or any(value <= 0.0 for value in triplet):
             raise ValueError(f"{name} must contain three positive values.")
         return triplet
+
+    @staticmethod
+    def _validate_pair(values, name: str) -> tuple[float, float]:
+        pair = tuple(float(value) for value in values)
+        if len(pair) != 2:
+            raise ValueError(f"{name} must contain two values.")
+        return pair
 
     @staticmethod
     def _validate_color(values) -> tuple[float, float, float]:
@@ -231,6 +236,96 @@ class LunarSpotIkGraspSceneDemo:
         )
         return HFIELD_Z_OFFSET + HFIELD_ELEVATION_Z * float(normalized_height)
 
+    def _compute_scene_xforms(
+        self, args: argparse.Namespace
+    ) -> tuple[wp.transform, wp.transform, wp.transform, wp.transform]:
+        if args.rock_pos is not None:
+            rock_pos = wp.vec3(float(args.rock_pos[0]), float(args.rock_pos[1]), float(args.rock_pos[2]))
+        else:
+            x, y = self._validate_pair(args.rock_xy or ROCK_DEFAULT_XY, "--rock-xy")
+            rock_pos = wp.vec3(x, y, self.terrain_z(x, y) + float(self.rock_radii[2]))
+
+        rock_rot = wp.quat_from_axis_angle(wp.vec3(0.0, 0.0, 1.0), math.radians(float(args.rock_yaw)))
+        rock_xform = wp.transform(rock_pos, rock_rot)
+
+        grasp_target_tf = wp.transform(
+            wp.vec3(rock_pos[0], rock_pos[1], rock_pos[2] + float(self.rock_radii[2])),
+            rock_rot,
+        )
+        pregrasp_target_tf = self._with_world_z_offset(grasp_target_tf, float(args.pregrasp_height))
+        lift_target_tf = self._with_world_z_offset(grasp_target_tf, float(args.lift_height))
+        return rock_xform, grasp_target_tf, pregrasp_target_tf, lift_target_tf
+
+    def _compute_go2_root_home(self, args: argparse.Namespace) -> np.ndarray:
+        rock_pos = wp.transform_get_translation(self.rock_xform)
+        if args.go2_yaw is None:
+            yaw = math.atan2(float(rock_pos[1]) - self.go2_xy[1], float(rock_pos[0]) - self.go2_xy[0])
+        else:
+            yaw = math.radians(float(args.go2_yaw))
+        go2_rot = wp.quat_from_axis_angle(wp.vec3(0.0, 0.0, 1.0), yaw)
+        go2_z = self.terrain_z(self.go2_xy[0], self.go2_xy[1]) + float(args.go2_root_height)
+        return np.asarray(
+            (self.go2_xy[0], self.go2_xy[1], go2_z, go2_rot[0], go2_rot[1], go2_rot[2], go2_rot[3]),
+            dtype=np.float32,
+        )
+
+    def _add_lunar_heightfield(self, builder, args: argparse.Namespace) -> None:
+        texture_path = Path(args.albedo).resolve()
+        texture = str(texture_path) if texture_path.exists() else None
+        hfield = newton.Heightfield(
+            data=self.heightfield,
+            nrow=self.heightfield.shape[0],
+            ncol=self.heightfield.shape[1],
+            hx=HFIELD_HALF_X,
+            hy=HFIELD_HALF_Y,
+            min_z=HFIELD_Z_OFFSET,
+            max_z=HFIELD_Z_OFFSET + HFIELD_ELEVATION_Z,
+            color=wp.vec3(0.58, 0.56, 0.52),
+            roughness=1.0,
+            texture=texture,
+            texture_repeat=(8.0, 8.0),
+        )
+        terrain_cfg = newton.ModelBuilder.ShapeConfig(
+            mu=1.35,
+            mu_torsional=0.12,
+            mu_rolling=0.02,
+            ke=5.0e4,
+            kd=5.0e2,
+            kf=1.0e3,
+        )
+        builder.add_shape_heightfield(
+            heightfield=hfield,
+            cfg=terrain_cfg,
+            color=wp.vec3(0.58, 0.56, 0.52),
+            label="lunar_terrain",
+        )
+
+    def _add_rock(self, builder, args: argparse.Namespace) -> None:
+        rock_cfg = newton.ModelBuilder.ShapeConfig(
+            density=args.rock_density,
+            mu=args.rock_mu,
+            mu_torsional=args.rock_mu_torsional,
+            mu_rolling=args.rock_mu_rolling,
+        )
+        rock_body = builder.add_body(xform=self.rock_xform, label=ROCK_LABEL)
+        builder.add_shape_ellipsoid(
+            rock_body,
+            rx=float(self.rock_radii[0]),
+            ry=float(self.rock_radii[1]),
+            rz=float(self.rock_radii[2]),
+            cfg=rock_cfg,
+            color=wp.vec3(*self.rock_color),
+            label=ROCK_LABEL,
+        )
+
+    @staticmethod
+    def _normalize_go2_display_colors(builder) -> None:
+        for index, label in enumerate(builder.shape_label):
+            if "/go2_description/" not in label:
+                continue
+            if "/collisions/" in label and builder.shape_flags[index] & ShapeFlags.VISIBLE:
+                builder.shape_color[index] = GO2_SHELL_COLOR
+
     @staticmethod
     def _find_joint_slices_in_model(
         model,
@@ -261,50 +356,17 @@ class LunarSpotIkGraspSceneDemo:
             slice(qd_indices[0], qd_indices[0] + (qd_width or len(names))),
         )
 
-    def _compute_scene_xforms(
-        self, args: argparse.Namespace, builder
-    ) -> tuple[wp.transform, wp.transform, wp.transform, wp.transform]:
-        placement_model = builder.finalize()
-        placement_state = placement_model.state()
-
-        root_q_slice, _ = self._find_joint_slices_in_model(placement_model, ("freejoint",), q_width=7, qd_width=6)
-        leg_q_slice, _ = self._find_joint_slices_in_model(placement_model, LEG_JOINT_NAMES)
-        arm_q_slice, _ = self._find_joint_slices_in_model(placement_model, ARM_JOINT_NAMES)
-
-        placement_state.joint_q[root_q_slice].assign(SPOT_ROOT_HOME)
-        placement_state.joint_q[leg_q_slice].assign(SPOT_LEG_HOME)
-        placement_state.joint_q[arm_q_slice].assign(ARM_GROUND_OPEN)
-        newton.eval_fk(placement_model, placement_state.joint_q, placement_model.joint_qd, placement_state)
-
-        wr1_body_index = self._find_body_index_in_labels(placement_model.body_label, "/arm_link_wr1")
-        reference_wr1_tf = wp.transform(*placement_state.body_q.numpy()[wr1_body_index])
-        hinted_pos = np.asarray(wp.transform_point(reference_wr1_tf, ROCK_GRASP_HINT_IN_WR1), dtype=np.float32)
-
-        if args.rock_pos is not None:
-            rock_pos = wp.vec3(float(args.rock_pos[0]), float(args.rock_pos[1]), float(args.rock_pos[2]))
-        else:
-            if args.rock_xy is None:
-                x = float(hinted_pos[0])
-                y = float(hinted_pos[1])
-            else:
-                x = float(args.rock_xy[0])
-                y = float(args.rock_xy[1])
-            rock_pos = wp.vec3(x, y, self.terrain_z(x, y) + float(self.rock_radii[2]))
-
-        rock_rot = wp.quat_from_axis_angle(wp.vec3(0.0, 0.0, 1.0), math.radians(float(args.rock_yaw)))
-        rock_xform = wp.transform(rock_pos, rock_rot)
-
-        reference_wr1_pos = wp.transform_get_translation(reference_wr1_tf)
-        reference_wr1_rot = wp.transform_get_rotation(reference_wr1_tf)
-        grasp_wr1_pos = wp.vec3(
-            reference_wr1_pos[0] + rock_pos[0] - float(hinted_pos[0]),
-            reference_wr1_pos[1] + rock_pos[1] - float(hinted_pos[1]),
-            reference_wr1_pos[2] + rock_pos[2] - float(hinted_pos[2]),
-        )
-        grasp_wr1_tf = wp.transform(grasp_wr1_pos, reference_wr1_rot)
-        pregrasp_wr1_tf = self._with_world_z_offset(grasp_wr1_tf, float(args.pregrasp_height))
-        lift_wr1_tf = self._with_world_z_offset(grasp_wr1_tf, float(args.lift_height))
-        return rock_xform, grasp_wr1_tf, pregrasp_wr1_tf, lift_wr1_tf
+    def _find_root_slices(self) -> tuple[slice, slice]:
+        q_starts = self.model.joint_q_start.numpy()
+        qd_starts = self.model.joint_qd_start.numpy()
+        matches = [
+            i
+            for i, (q_start, qd_start) in enumerate(zip(q_starts, qd_starts, strict=False))
+            if q_start == 0 and qd_start == 0
+        ]
+        if not matches:
+            raise ValueError("Could not find the Go2 root free joint.")
+        return slice(0, 7), slice(0, 6)
 
     def _find_joint_slices(
         self,
@@ -329,16 +391,15 @@ class LunarSpotIkGraspSceneDemo:
         return matches[0]
 
     def _set_initial_state(self, state) -> None:
-        state.joint_q[self.root_q_slice].assign(SPOT_ROOT_HOME)
-        state.joint_q[self.leg_q_slice].assign(SPOT_LEG_HOME)
-        state.joint_q[self.arm_q_slice].assign(self.arm_q)
+        state.joint_q[self.root_q_slice].assign(self.go2_root_home)
+        state.joint_q[self.go2_q_slice].assign(self.go2_joint_home)
         state.joint_q[self.rock_q_slice].assign(self.rock_initial_q)
         state.joint_qd.zero_()
         state.body_qd.zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
-    def _lock_spot_root(self, state) -> None:
-        state.joint_q[self.root_q_slice].assign(SPOT_ROOT_HOME)
+    def _lock_root(self, state) -> None:
+        state.joint_q[self.root_q_slice].assign(self.go2_root_home)
         state.joint_qd[self.root_qd_slice].zero_()
 
     @staticmethod
@@ -347,22 +408,25 @@ class LunarSpotIkGraspSceneDemo:
 
     def _print_scene_info(self) -> None:
         print(
-            "[INFO] Lunar Spot IK grasp scene: "
+            "[INFO] Lunar Go2 IK grasp scene: "
+            f"go2 root={np.round(self.go2_root_home[:3], 4)}, "
             f"rock center={np.round(self.rock_initial_pos, 4)}, "
             f"radii={np.round(np.asarray(self.rock_radii), 4)}, "
             f"terrain z={self.rock_terrain_z:.4f}, color={np.round(np.asarray(self.rock_color), 3)}"
         )
         print(
-            "[INFO] WR1 IK targets: "
-            f"pregrasp={self._rounded_translation(self.pregrasp_wr1_tf)}, "
-            f"grasp={self._rounded_translation(self.grasp_wr1_tf)}, "
-            f"lift={self._rounded_translation(self.lift_wr1_tf)}, "
-            f"ik_targets_visible={self.show_ik_targets}"
+            "[INFO] Rock targets: "
+            f"pregrasp={self._rounded_translation(self.pregrasp_target_tf)}, "
+            f"grasp={self._rounded_translation(self.grasp_target_tf)}, "
+            f"lift={self._rounded_translation(self.lift_target_tf)}, "
+            f"grasp_targets_visible={self.show_grasp_targets}, "
+            f"go2_root_locked={self.lock_go2_root}"
         )
 
     def simulate(self) -> None:
         for _ in range(self.sim_substeps):
-            self._lock_spot_root(self.state_0)
+            if self.lock_go2_root:
+                self._lock_root(self.state_0)
             self.state_0.clear_forces()
             self.viewer.apply_forces(self.state_0)
             self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
@@ -379,54 +443,67 @@ class LunarSpotIkGraspSceneDemo:
     def render(self) -> None:
         self.viewer.begin_frame(self.sim_time)
         self.viewer.log_state(self.state_0)
-        if self.show_ik_targets and hasattr(self.viewer, "log_gizmo"):
-            self.viewer.log_gizmo("target_wr1_pregrasp", self.pregrasp_wr1_tf)
-            self.viewer.log_gizmo("target_wr1_grasp", self.grasp_wr1_tf)
-            self.viewer.log_gizmo("target_wr1_lift", self.lift_wr1_tf)
+        if self.show_grasp_targets and hasattr(self.viewer, "log_gizmo"):
+            self.viewer.log_gizmo("target_rock_pregrasp", self.pregrasp_target_tf)
+            self.viewer.log_gizmo("target_rock_grasp", self.grasp_target_tf)
+            self.viewer.log_gizmo("target_rock_lift", self.lift_target_tf)
         self.viewer.end_frame()
 
     def test_final(self) -> None:
         body_q = self.state_0.body_q.numpy()
         rock_pos = body_q[self.rock_body_index][:3]
+        go2_root_pos = body_q[self.go2_base_body_index][:3]
         if not np.isfinite(rock_pos).all():
             raise ValueError(f"Rock position became non-finite: {rock_pos}")
+        if not np.isfinite(go2_root_pos).all():
+            raise ValueError(f"Go2 root position became non-finite: {go2_root_pos}")
         if self.rock_should_rest_on_terrain:
             expected_z = self.rock_terrain_z + float(self.rock_radii[2])
             if abs(float(self.rock_initial_pos[2]) - expected_z) > 1.0e-4:
                 raise ValueError("The rock did not start on the lunar heightfield.")
 
         print(
-            "[INFO] Final IK scene rock state: "
-            f"pos={np.round(rock_pos, 4)}, "
+            "[INFO] Final Go2 scene state: "
+            f"go2_root={np.round(go2_root_pos, 4)}, "
+            f"rock_pos={np.round(rock_pos, 4)}, "
             f"max_height={self.max_rock_height:.4f}, max_xy_drift={self.max_rock_drift:.4f}"
         )
 
 
 def create_parser() -> argparse.ArgumentParser:
     parser = newton.examples.create_parser()
-    parser.description = "Prepare a lunar Spot arm IK grasp scene with a larger dark-gray ellipsoid rock."
+    parser.description = "Prepare a lunar Unitree Go2 scene with a dark-gray ellipsoid rock."
     parser.set_defaults(num_frames=360, viewer="gl")
-    parser.add_argument("--mjcf", type=str, default=str(DEFAULT_SCENE), help="Path to the lunar mining MJCF file.")
     parser.add_argument(
         "--heightfield",
         type=str,
         default=str(DEFAULT_HEIGHTFIELD),
-        help="Path to the normalized lunar heightfield .npy file used to place the rock on the terrain.",
+        help="Path to the normalized lunar heightfield .npy file used for terrain and rock placement.",
+    )
+    parser.add_argument(
+        "--albedo",
+        type=str,
+        default=str(DEFAULT_ALBEDO),
+        help="Path to the lunar albedo texture used for heightfield rendering.",
     )
     parser.add_argument("--substeps", type=int, default=20, help="Simulation substeps per rendered frame.")
+    parser.add_argument("--go2-xy", type=float, nargs=2, default=GO2_DEFAULT_XY, metavar=("X", "Y"), help="Go2 root x/y [m].")
     parser.add_argument(
-        "--arm-pose",
-        choices=tuple(ARM_POSES),
-        default="approach",
-        help="Preset arm pose used before IK is added.",
+        "--go2-yaw",
+        type=float,
+        default=None,
+        help="Optional Go2 yaw angle [deg]. Defaults to facing the rock.",
     )
     parser.add_argument(
-        "--arm-q",
+        "--go2-root-height",
         type=float,
-        nargs=len(ARM_JOINT_NAMES),
-        default=None,
-        metavar=("SH0", "SH1", "EL0", "EL1", "WR0", "WR1", "F1X"),
-        help="Optional explicit arm joint target [rad]. Overrides --arm-pose.",
+        default=GO2_DEFAULT_ROOT_HEIGHT,
+        help="Go2 root height above the local terrain [m].",
+    )
+    parser.add_argument(
+        "--free-go2-root",
+        action="store_true",
+        help="Do not lock the Go2 root during the scene preview.",
     )
     parser.add_argument(
         "--rock-radii",
@@ -487,15 +564,15 @@ def create_parser() -> argparse.ArgumentParser:
         default=DEFAULT_LIFT_HEIGHT,
         help="World-z offset from grasp target to lift target [m].",
     )
-    parser.add_argument("--show-ik-targets", action="store_true", help="Draw WR1 target gizmos.")
-    parser.add_argument("--hide-ik-targets", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--show-grasp-targets", action="store_true", help="Draw rock target gizmos.")
+    parser.add_argument("--hide-grasp-targets", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
 def main() -> None:
     parser = create_parser()
     viewer, args = newton.examples.init(parser)
-    demo = LunarSpotIkGraspSceneDemo(viewer, args)
+    demo = LunarGo2IkGraspSceneDemo(viewer, args)
     newton.examples.run(demo, args)
 
 
