@@ -15,14 +15,10 @@ import warp as wp
 import newton
 import newton.examples
 
-DEFAULT_SCENE = (
-    Path(__file__).resolve().parents[2]
-    / "mujoco"
-    / "model"
-    / "lunar"
-    / "lunar_mujoco_spot_arm_mining_scene"
-    / "lunar_scene_spot_arm_mining.xml"
+DEFAULT_LUNAR_SCENE_DIR = (
+    Path(__file__).resolve().parents[1] / "newton" / "examples" / "assets" / "lunar_mujoco_spot_arm_mining_scene"
 )
+DEFAULT_SCENE = DEFAULT_LUNAR_SCENE_DIR / "lunar_scene_spot_arm_mining.xml"
 
 MUJOCO_NJMAX = 20000
 MUJOCO_NCONMAX = 10000

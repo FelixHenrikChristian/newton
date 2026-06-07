@@ -1,0 +1,132 @@
+[
+  {
+    "source": "rock1.obj",
+    "centered_unit": "rock1_centered_unit.obj",
+    "vertex_count": 98,
+    "original_bounds_min": [
+      -1.759897,
+      -1.796044,
+      -0.312706
+    ],
+    "original_bounds_max": [
+      1.423543,
+      1.83223,
+      1.370886
+    ],
+    "original_dimensions": [
+      3.18344,
+      3.628274,
+      1.683592
+    ],
+    "unit_dimensions": [
+      0.877397903245455,
+      1.0,
+      0.46402008227603536
+    ],
+    "normalization": "centered at bounding-box center and scaled so max dimension is 1.0"
+  },
+  {
+    "source": "rock2.obj",
+    "centered_unit": "rock2_centered_unit.obj",
+    "vertex_count": 360,
+    "original_bounds_min": [
+      -1.259343,
+      -2.449481,
+      -0.15017
+    ],
+    "original_bounds_max": [
+      1.159229,
+      2.022393,
+      1.436836
+    ],
+    "original_dimensions": [
+      2.418572,
+      4.471874,
+      1.587006
+    ],
+    "unit_dimensions": [
+      0.5408408197547606,
+      1.0,
+      0.354886117095428
+    ],
+    "normalization": "centered at bounding-box center and scaled so max dimension is 1.0"
+  },
+  {
+    "source": "rock3.obj",
+    "centered_unit": "rock3_centered_unit.obj",
+    "vertex_count": 360,
+    "original_bounds_min": [
+      -1.306609,
+      -1.193163,
+      -0.408959
+    ],
+    "original_bounds_max": [
+      1.224366,
+      1.293961,
+      1.707012
+    ],
+    "original_dimensions": [
+      2.5309749999999998,
+      2.4871239999999997,
+      2.115971
+    ],
+    "unit_dimensions": [
+      1.0,
+      0.982674265846166,
+      0.836029988443189
+    ],
+    "normalization": "centered at bounding-box center and scaled so max dimension is 1.0"
+  },
+  {
+    "source": "rock4.obj",
+    "centered_unit": "rock4_centered_unit.obj",
+    "vertex_count": 757,
+    "original_bounds_min": [
+      -1.885932,
+      -1.443175,
+      -0.115309
+    ],
+    "original_bounds_max": [
+      2.127332,
+      1.207095,
+      1.987574
+    ],
+    "original_dimensions": [
+      4.0132639999999995,
+      2.65027,
+      2.102883
+    ],
+    "unit_dimensions": [
+      1.0,
+      0.6603776875879583,
+      0.5239832216370516
+    ],
+    "normalization": "centered at bounding-box center and scaled so max dimension is 1.0"
+  },
+  {
+    "source": "rock5.obj",
+    "centered_unit": "rock5_centered_unit.obj",
+    "vertex_count": 309,
+    "original_bounds_min": [
+      -1.803825,
+      -1.173557,
+      -0.437906
+    ],
+    "original_bounds_max": [
+      1.997595,
+      1.393962,
+      1.519346
+    ],
+    "original_dimensions": [
+      3.8014200000000002,
+      2.567519,
+      1.957252
+    ],
+    "unit_dimensions": [
+      1.0,
+      0.6754105044956884,
+      0.5148739155368257
+    ],
+    "normalization": "centered at bounding-box center and scaled so max dimension is 1.0"
+  }
+]

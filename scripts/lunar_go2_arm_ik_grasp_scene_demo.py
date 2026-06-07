@@ -17,7 +17,7 @@ import newton.examples
 DEFAULT_LUNAR_SCENE_DIR = (
     Path(__file__).resolve().parents[1] / "newton" / "examples" / "assets" / "lunar_mujoco_spot_arm_mining_scene"
 )
-DEFAULT_SCENE = DEFAULT_LUNAR_SCENE_DIR / "lunar_scene_spot_arm_mining.xml"
+DEFAULT_SCENE = DEFAULT_LUNAR_SCENE_DIR / "lunar_scene_go2_arm_mining.xml"
 DEFAULT_HEIGHTFIELD = DEFAULT_SCENE.parent / "lunar_heightfield_normalized.npy"
 
 MUJOCO_NJMAX = 20000
@@ -29,38 +29,38 @@ HFIELD_ELEVATION_Z = 1.65
 HFIELD_Z_OFFSET = -0.88
 
 LEG_JOINT_NAMES = (
-    "fl_hx",
-    "fl_hy",
-    "fl_kn",
-    "fr_hx",
-    "fr_hy",
-    "fr_kn",
-    "hl_hx",
-    "hl_hy",
-    "hl_kn",
-    "hr_hx",
-    "hr_hy",
-    "hr_kn",
+    "FL_hip_joint",
+    "FL_thigh_joint",
+    "FL_calf_joint",
+    "FR_hip_joint",
+    "FR_thigh_joint",
+    "FR_calf_joint",
+    "RL_hip_joint",
+    "RL_thigh_joint",
+    "RL_calf_joint",
+    "RR_hip_joint",
+    "RR_thigh_joint",
+    "RR_calf_joint",
 )
 ARM_JOINT_NAMES = ("arm_sh0", "arm_sh1", "arm_el0", "arm_el1", "arm_wr0", "arm_wr1", "arm_f1x")
 
-# Values from the spot_mining_home XML keyframe. MuJoCo authors free-joint
+# Values from the go2_arm_mining_home XML keyframe. MuJoCo authors free-joint
 # quaternions as WXYZ; Newton stores imported free-joint quaternions as XYZW.
-SPOT_ROOT_HOME = (6.7, 7.1, 0.74776551, 0.0, 0.0, 0.35272872, 0.93572563)
-SPOT_LEG_HOME = (0.0, 1.04, -1.8) * 4
+GO2_ROOT_HOME = (6.7, 7.1, 0.6277655, 0.0, 0.0, 0.35272872, 0.93572563)
+GO2_LEG_HOME = (0.1, 0.8, -1.5, -0.1, 0.8, -1.5, 0.1, 1.0, -1.5, -0.1, 1.0, -1.5)
 
 GRIPPER_OPEN = -1.4
-SPOT_ARM_HOME = (0.0, -3.14, 3.06, 0.0, 0.0, 0.0, GRIPPER_OPEN)
+ARM_HOME = (0.0, -3.14, 3.06, 0.0, 0.0, 0.0, GRIPPER_OPEN)
 ARM_APPROACH_OPEN = (0.0, -0.5957, 2.271782, 0.000028, 0.094714, 0.0, GRIPPER_OPEN)
 ARM_GROUND_OPEN = (0.0, 0.113058, 1.563034, 0.0, -0.045296, 0.0, GRIPPER_OPEN)
 
 ARM_POSES = {
     "approach": ARM_APPROACH_OPEN,
     "ground": ARM_GROUND_OPEN,
-    "home": SPOT_ARM_HOME,
+    "home": ARM_HOME,
 }
 
-ROCK_LABEL = "spot_ik_rock"
+ROCK_LABEL = "go2_arm_ik_rock"
 ROCK_GRASP_HINT_IN_WR1 = wp.vec3(0.22, 0.0, -0.008)
 ROCK_DEFAULT_RADII = (0.06, 0.042, 0.032)
 ROCK_DEFAULT_COLOR = (0.28, 0.28, 0.26)
@@ -74,8 +74,8 @@ DEFAULT_PREGRASP_HEIGHT = 0.18
 DEFAULT_LIFT_HEIGHT = 0.30
 
 
-class LunarSpotIkGraspSceneDemo:
-    """Prepare a lunar Spot arm scene with a larger gray ellipsoid rock."""
+class LunarGo2ArmIkGraspSceneDemo:
+    """Prepare a lunar Go2 arm scene with a larger gray ellipsoid rock."""
 
     def __init__(self, viewer, args):
         self.viewer = viewer
@@ -156,7 +156,7 @@ class LunarSpotIkGraspSceneDemo:
 
         self._set_initial_state(self.state_0)
         self._set_initial_state(self.state_1)
-        self.control.joint_target_pos[self.leg_dof_slice].assign(SPOT_LEG_HOME)
+        self.control.joint_target_pos[self.leg_dof_slice].assign(GO2_LEG_HOME)
         self.control.joint_target_pos[self.arm_dof_slice].assign(self.arm_q)
 
         self.max_rock_height = float(self.rock_initial_pos[2])
@@ -267,8 +267,8 @@ class LunarSpotIkGraspSceneDemo:
         leg_q_slice, _ = self._find_joint_slices_in_model(placement_model, LEG_JOINT_NAMES)
         arm_q_slice, _ = self._find_joint_slices_in_model(placement_model, ARM_JOINT_NAMES)
 
-        placement_state.joint_q[root_q_slice].assign(SPOT_ROOT_HOME)
-        placement_state.joint_q[leg_q_slice].assign(SPOT_LEG_HOME)
+        placement_state.joint_q[root_q_slice].assign(GO2_ROOT_HOME)
+        placement_state.joint_q[leg_q_slice].assign(GO2_LEG_HOME)
         placement_state.joint_q[arm_q_slice].assign(ARM_GROUND_OPEN)
         newton.eval_fk(placement_model, placement_state.joint_q, placement_model.joint_qd, placement_state)
 
@@ -325,16 +325,16 @@ class LunarSpotIkGraspSceneDemo:
         return matches[0]
 
     def _set_initial_state(self, state) -> None:
-        state.joint_q[self.root_q_slice].assign(SPOT_ROOT_HOME)
-        state.joint_q[self.leg_q_slice].assign(SPOT_LEG_HOME)
+        state.joint_q[self.root_q_slice].assign(GO2_ROOT_HOME)
+        state.joint_q[self.leg_q_slice].assign(GO2_LEG_HOME)
         state.joint_q[self.arm_q_slice].assign(self.arm_q)
         state.joint_q[self.rock_q_slice].assign(self.rock_initial_q)
         state.joint_qd.zero_()
         state.body_qd.zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
-    def _lock_spot_root(self, state) -> None:
-        state.joint_q[self.root_q_slice].assign(SPOT_ROOT_HOME)
+    def _lock_go2_root(self, state) -> None:
+        state.joint_q[self.root_q_slice].assign(GO2_ROOT_HOME)
         state.joint_qd[self.root_qd_slice].zero_()
 
     @staticmethod
@@ -343,7 +343,7 @@ class LunarSpotIkGraspSceneDemo:
 
     def _print_scene_info(self) -> None:
         print(
-            "[INFO] Lunar Spot IK grasp scene: "
+            "[INFO] Lunar Go2 arm IK grasp scene: "
             f"rock center={np.round(self.rock_initial_pos, 4)}, "
             f"radii={np.round(np.asarray(self.rock_radii), 4)}, "
             f"terrain z={self.rock_terrain_z:.4f}, color={np.round(np.asarray(self.rock_color), 3)}"
@@ -358,7 +358,7 @@ class LunarSpotIkGraspSceneDemo:
 
     def simulate(self) -> None:
         for _ in range(self.sim_substeps):
-            self._lock_spot_root(self.state_0)
+            self._lock_go2_root(self.state_0)
             self.state_0.clear_forces()
             self.viewer.apply_forces(self.state_0)
             self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
@@ -400,7 +400,7 @@ class LunarSpotIkGraspSceneDemo:
 
 def create_parser() -> argparse.ArgumentParser:
     parser = newton.examples.create_parser()
-    parser.description = "Prepare a lunar Spot arm IK grasp scene with a larger dark-gray ellipsoid rock."
+    parser.description = "Prepare a lunar Go2 arm IK grasp scene with a larger dark-gray ellipsoid rock."
     parser.set_defaults(num_frames=360, viewer="gl")
     parser.add_argument("--mjcf", type=str, default=str(DEFAULT_SCENE), help="Path to the lunar mining MJCF file.")
     parser.add_argument(
@@ -491,7 +491,7 @@ def create_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = create_parser()
     viewer, args = newton.examples.init(parser)
-    demo = LunarSpotIkGraspSceneDemo(viewer, args)
+    demo = LunarGo2ArmIkGraspSceneDemo(viewer, args)
     newton.examples.run(demo, args)
 
 

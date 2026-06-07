@@ -18,11 +18,7 @@ import newton.utils
 from newton import JointTargetMode, ShapeFlags
 
 DEFAULT_LUNAR_SCENE_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "mujoco"
-    / "model"
-    / "lunar"
-    / "lunar_mujoco_spot_arm_mining_scene"
+    Path(__file__).resolve().parents[1] / "newton" / "examples" / "assets" / "lunar_mujoco_spot_arm_mining_scene"
 )
 DEFAULT_HEIGHTFIELD = DEFAULT_LUNAR_SCENE_DIR / "lunar_heightfield_normalized.npy"
 DEFAULT_ALBEDO = DEFAULT_LUNAR_SCENE_DIR / "lunar_albedo_center_crater.png"

@@ -1,0 +1,129 @@
+{
+  "fix": "Removed invalid geom scale attributes.",
+  "method": "Baked each ore geom's scale into a generated per-ore OBJ file, then referenced that mesh asset.",
+  "main_mjcf": "lunar_scene_sphere_gravel_obj_ores_fixed.xml",
+  "fixed_count": 15,
+  "fixed": [
+    {
+      "body": "ore_00",
+      "geom": "ore_00_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_1",
+      "old_scale": "0.407594 0.407594 0.407594",
+      "new_mesh": "ore_obj_mesh_scaled_ore_00",
+      "new_obj": "ore_obj_mesh_scaled_ore_00.obj"
+    },
+    {
+      "body": "ore_01",
+      "geom": "ore_01_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_2",
+      "old_scale": "0.390408 0.390408 0.390408",
+      "new_mesh": "ore_obj_mesh_scaled_ore_01",
+      "new_obj": "ore_obj_mesh_scaled_ore_01.obj"
+    },
+    {
+      "body": "ore_02",
+      "geom": "ore_02_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_3",
+      "old_scale": "0.361106 0.361106 0.361106",
+      "new_mesh": "ore_obj_mesh_scaled_ore_02",
+      "new_obj": "ore_obj_mesh_scaled_ore_02.obj"
+    },
+    {
+      "body": "ore_03",
+      "geom": "ore_03_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_4",
+      "old_scale": "0.291871 0.291871 0.291871",
+      "new_mesh": "ore_obj_mesh_scaled_ore_03",
+      "new_obj": "ore_obj_mesh_scaled_ore_03.obj"
+    },
+    {
+      "body": "ore_04",
+      "geom": "ore_04_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_5",
+      "old_scale": "0.290752 0.290752 0.290752",
+      "new_mesh": "ore_obj_mesh_scaled_ore_04",
+      "new_obj": "ore_obj_mesh_scaled_ore_04.obj"
+    },
+    {
+      "body": "ore_05",
+      "geom": "ore_05_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_1",
+      "old_scale": "0.325893 0.325893 0.325893",
+      "new_mesh": "ore_obj_mesh_scaled_ore_05",
+      "new_obj": "ore_obj_mesh_scaled_ore_05.obj"
+    },
+    {
+      "body": "ore_06",
+      "geom": "ore_06_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_2",
+      "old_scale": "0.388552 0.388552 0.388552",
+      "new_mesh": "ore_obj_mesh_scaled_ore_06",
+      "new_obj": "ore_obj_mesh_scaled_ore_06.obj"
+    },
+    {
+      "body": "ore_07",
+      "geom": "ore_07_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_3",
+      "old_scale": "0.33522 0.33522 0.33522",
+      "new_mesh": "ore_obj_mesh_scaled_ore_07",
+      "new_obj": "ore_obj_mesh_scaled_ore_07.obj"
+    },
+    {
+      "body": "ore_08",
+      "geom": "ore_08_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_4",
+      "old_scale": "0.485139 0.485139 0.485139",
+      "new_mesh": "ore_obj_mesh_scaled_ore_08",
+      "new_obj": "ore_obj_mesh_scaled_ore_08.obj"
+    },
+    {
+      "body": "ore_09",
+      "geom": "ore_09_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_5",
+      "old_scale": "0.692046 0.692046 0.692046",
+      "new_mesh": "ore_obj_mesh_scaled_ore_09",
+      "new_obj": "ore_obj_mesh_scaled_ore_09.obj"
+    },
+    {
+      "body": "ore_10",
+      "geom": "ore_10_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_1",
+      "old_scale": "0.518428 0.518428 0.518428",
+      "new_mesh": "ore_obj_mesh_scaled_ore_10",
+      "new_obj": "ore_obj_mesh_scaled_ore_10.obj"
+    },
+    {
+      "body": "ore_11",
+      "geom": "ore_11_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_2",
+      "old_scale": "0.297156 0.297156 0.297156",
+      "new_mesh": "ore_obj_mesh_scaled_ore_11",
+      "new_obj": "ore_obj_mesh_scaled_ore_11.obj"
+    },
+    {
+      "body": "ore_12",
+      "geom": "ore_12_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_3",
+      "old_scale": "0.566093 0.566093 0.566093",
+      "new_mesh": "ore_obj_mesh_scaled_ore_12",
+      "new_obj": "ore_obj_mesh_scaled_ore_12.obj"
+    },
+    {
+      "body": "ore_13",
+      "geom": "ore_13_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_4",
+      "old_scale": "0.353966 0.353966 0.353966",
+      "new_mesh": "ore_obj_mesh_scaled_ore_13",
+      "new_obj": "ore_obj_mesh_scaled_ore_13.obj"
+    },
+    {
+      "body": "ore_14",
+      "geom": "ore_14_obj_geom",
+      "old_mesh": "ore_obj_mesh_model_5",
+      "old_scale": "0.428227 0.428227 0.428227",
+      "new_mesh": "ore_obj_mesh_scaled_ore_14",
+      "new_obj": "ore_obj_mesh_scaled_ore_14.obj"
+    }
+  ],
+  "defensive_removed_remaining": []
+}

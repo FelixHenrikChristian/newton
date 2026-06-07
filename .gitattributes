@@ -1,2 +1,5 @@
 *.jpg !text !filter !merge !diff
+*.npy !text !filter !merge !diff
+*.obj !text !filter !merge !diff
+*.png !text !filter !merge !diff
 CHANGELOG.md merge=union

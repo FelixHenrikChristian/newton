@@ -1,0 +1,513 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mujoco model="lunar_center_crater_sphere_gravel_obj_ores_fixed">
+  <compiler angle="degree" meshdir="." texturedir="." autolimits="true" />
+  <option timestep="0.002" gravity="0 0 -1.62" integrator="implicitfast" cone="elliptic" iterations="120" tolerance="1e-10" />
+  <size nuser_body="1" nuser_geom="1" />
+  <statistic center="0 0 0" extent="42" />
+  <visual>
+    <headlight diffuse="0.46 0.46 0.46" ambient="0.08 0.08 0.08" specular="0.15 0.15 0.15" />
+    <rgba haze="0.02 0.02 0.025 1" />
+    <map znear="0.02" zfar="100" />
+  </visual>
+  <default>
+    <geom condim="4" friction="1.35 0.12 0.02" solref="0.025 1" solimp="0.92 0.98 0.002" margin="0.002" />
+    <joint damping="0.01" />
+  </default>
+  <asset>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.01 0.01 0.015" rgb2="0 0 0" width="512" height="512" />
+    <texture name="lunar_tex" type="2d" file="lunar_albedo_center_crater.png" />
+    <material name="lunar_surface" texture="lunar_tex" texrepeat="8 8" texuniform="true" rgba="0.58 0.56 0.52 1" roughness="1" specular="0.04" />
+    <material name="rock_mat" rgba="0.34 0.33 0.31 1" roughness="1" specular="0.03" />
+    <material name="dark_rock_mat" rgba="0.22 0.22 0.21 1" roughness="1" specular="0.02" />
+    <material name="ore_gold" rgba="0.95 0.72 0.22 1" emission="0.03" specular="0.55" shininess="0.6" />
+    <material name="ore_blue" rgba="0.25 0.55 0.95 1" emission="0.04" specular="0.65" shininess="0.7" />
+    <material name="ore_copper" rgba="0.76 0.38 0.20 1" emission="0.025" specular="0.45" shininess="0.55" />
+    <material name="ore_green" rgba="0.35 0.85 0.45 1" emission="0.04" specular="0.5" shininess="0.65" />
+    <hfield name="lunar_hfield" file="lunar_heightfield_center_crater.png" size="20.0 20.0 1.65 0.12" />
+    <material name="gravel_sphere_mat" rgba="0.30 0.30 0.28 1" roughness="1" specular="0.02" />
+    <material name="gravel_dark_sphere_mat" rgba="0.20 0.20 0.19 1" roughness="1" specular="0.015" />
+    <mesh name="ore_obj_mesh_model_1" file="rock1_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_2" file="rock2_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_3" file="rock3_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_4" file="rock4_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_5" file="rock5_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_00" file="ore_obj_mesh_scaled_ore_00.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_01" file="ore_obj_mesh_scaled_ore_01.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_02" file="ore_obj_mesh_scaled_ore_02.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_03" file="ore_obj_mesh_scaled_ore_03.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_04" file="ore_obj_mesh_scaled_ore_04.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_05" file="ore_obj_mesh_scaled_ore_05.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_06" file="ore_obj_mesh_scaled_ore_06.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_07" file="ore_obj_mesh_scaled_ore_07.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_08" file="ore_obj_mesh_scaled_ore_08.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_09" file="ore_obj_mesh_scaled_ore_09.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_10" file="ore_obj_mesh_scaled_ore_10.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_11" file="ore_obj_mesh_scaled_ore_11.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_12" file="ore_obj_mesh_scaled_ore_12.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_13" file="ore_obj_mesh_scaled_ore_13.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_14" file="ore_obj_mesh_scaled_ore_14.obj" smoothnormal="true" />
+  </asset>
+  <worldbody>
+    <light name="sun_low_angle" directional="true" pos="-8 -5 11" dir="0.55 0.35 -1" diffuse="0.95 0.90 0.82" ambient="0.10 0.10 0.12" specular="0.20 0.20 0.20" />
+    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.88" material="lunar_surface" priority="1" user="0" />
+    <site name="central_crater_center" type="sphere" pos="0 0 -0.05" size="0.18" rgba="1 0.15 0.05 0.55" group="3" />
+    <site name="central_crater_rim_marker" type="ellipsoid" pos="0 0 0.16" size="4.8 4.8 0.025" rgba="1 0.2 0.05 0.12" group="3" />
+    <site name="robot_spawn" type="cylinder" pos="-16 -16 0.08" size="0.35 0.02" rgba="0.1 0.55 1.0 0.45" group="3" />
+    <site name="collection_zone" type="box" pos="16 16 0.05" size="1.4 1.4 0.03" rgba="0.1 1.0 0.25 0.35" group="3" />
+    <camera name="overview" pos="0 -33 18" xyaxes="1 0 0 0 0.50 0.87" fovy="43" />
+    <camera name="central_crater_view" pos="0 -15 6.0" xyaxes="1 0 0 0 0.42 0.91" fovy="52" />
+    <camera name="robot_start_view" pos="-16 -19 2.6" xyaxes="1 0 0 0 0.57 0.82" fovy="55" />
+    <geom name="surface_gravel_000" type="sphere" pos="-10.1323 16.4123 0.2440" size="0.0331" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_001" type="sphere" pos="-17.1660 11.7210 0.4371" size="0.0608" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_002" type="sphere" pos="-1.4797 -16.3146 0.3955" size="0.1125" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_003" type="sphere" pos="-16.0372 1.1379 0.2893" size="0.0513" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_004" type="sphere" pos="-2.5847 3.4650 0.3961" size="0.0688" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_005" type="sphere" pos="-2.8475 8.1743 0.3470" size="0.0581" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_006" type="sphere" pos="-7.6482 -7.6021 0.3739" size="0.0490" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_007" type="sphere" pos="-16.3539 -12.1516 0.4075" size="0.0701" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_008" type="sphere" pos="7.3487 -2.6732 0.3645" size="0.0884" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_009" type="sphere" pos="2.7795 8.7425 0.4569" size="0.0959" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_010" type="sphere" pos="5.0517 7.5318 0.2070" size="0.0269" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_011" type="sphere" pos="8.0901 -1.3607 0.5024" size="0.0572" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_012" type="sphere" pos="-5.8799 -5.5544 0.4959" size="0.0481" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_013" type="sphere" pos="9.9101 -0.6360 0.4368" size="0.0987" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_014" type="sphere" pos="-14.2134 15.0758 0.2948" size="0.0587" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_015" type="sphere" pos="9.8947 -6.3663 0.3295" size="0.0619" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_016" type="sphere" pos="-7.8886 0.2371 0.3023" size="0.0314" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_017" type="sphere" pos="0.0254 -9.9201 0.3165" size="0.0692" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_018" type="sphere" pos="7.5133 3.8476 0.5375" size="0.1078" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_019" type="sphere" pos="-1.6676 16.4135 0.4553" size="0.0414" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_020" type="sphere" pos="-10.1589 15.8642 0.3159" size="0.0414" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_021" type="sphere" pos="1.6912 16.8575 0.3681" size="0.0939" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_022" type="sphere" pos="-4.4199 3.1178 0.4133" size="0.0519" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_023" type="sphere" pos="-5.4958 -8.5484 0.1839" size="0.0340" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_024" type="sphere" pos="-6.4112 -13.6639 0.2348" size="0.0326" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_025" type="sphere" pos="-8.3959 -0.3412 0.2650" size="0.0293" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_026" type="sphere" pos="7.2868 4.5122 0.5972" size="0.1012" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_027" type="sphere" pos="-12.4548 -15.8356 0.4138" size="0.0661" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_028" type="sphere" pos="-3.0314 -4.5375 0.5172" size="0.0276" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_029" type="sphere" pos="4.7343 6.3405 0.3427" size="0.0461" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_030" type="sphere" pos="10.1956 4.4565 0.2627" size="0.0614" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_031" type="sphere" pos="18.2034 -15.8765 0.3198" size="0.0730" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_032" type="sphere" pos="6.8641 5.5914 0.3679" size="0.0289" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_033" type="sphere" pos="-12.7508 -12.5152 0.4712" size="0.1261" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_034" type="sphere" pos="5.1183 3.6258 0.5879" size="0.0352" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_035" type="sphere" pos="5.4989 -4.6236 0.5390" size="0.0991" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_036" type="sphere" pos="8.2222 -4.5116 0.5225" size="0.0659" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_037" type="sphere" pos="-9.2241 1.3445 0.3826" size="0.0642" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_038" type="sphere" pos="9.7848 -8.4962 0.4030" size="0.0565" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_039" type="sphere" pos="-6.0744 -2.4344 0.3960" size="0.0666" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_040" type="sphere" pos="-5.5546 4.5777 0.5183" size="0.0805" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_041" type="sphere" pos="-12.3332 5.3482 0.3458" size="0.0490" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_042" type="sphere" pos="5.9232 -6.9179 0.3132" size="0.0485" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_043" type="sphere" pos="-0.8656 -8.8178 0.4173" size="0.0349" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_044" type="sphere" pos="17.6443 -2.4408 0.3898" size="0.0296" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_045" type="sphere" pos="-16.4867 -1.8856 0.3239" size="0.0418" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_046" type="sphere" pos="-0.7054 5.5276 0.5847" size="0.0522" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_047" type="sphere" pos="-13.3340 -9.2907 0.3471" size="0.0319" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_048" type="sphere" pos="4.1537 -2.6432 0.6145" size="0.0527" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_049" type="sphere" pos="-3.6793 4.0062 0.5614" size="0.0516" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_050" type="sphere" pos="10.8131 -4.4141 0.4259" size="0.0646" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_051" type="sphere" pos="4.6091 4.2725 0.5505" size="0.1127" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_052" type="sphere" pos="-12.5283 3.7469 0.3799" size="0.0508" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_053" type="sphere" pos="1.1200 -7.4625 0.3730" size="0.0688" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_054" type="sphere" pos="-16.4976 8.8944 0.2553" size="0.0451" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_055" type="sphere" pos="9.4619 -11.1058 0.3080" size="0.1133" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_056" type="sphere" pos="-11.8830 -6.0198 0.4241" size="0.1163" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_057" type="sphere" pos="-0.5554 8.1111 0.4862" size="0.0711" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_058" type="sphere" pos="3.5604 8.3160 0.4269" size="0.0649" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_059" type="sphere" pos="-1.5347 -6.1612 0.4427" size="0.0298" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_060" type="sphere" pos="-2.1158 16.7728 0.4160" size="0.0308" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_061" type="sphere" pos="-2.5055 -14.5121 0.4274" size="0.1182" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_062" type="sphere" pos="1.6184 -9.1469 0.4879" size="0.0705" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_063" type="sphere" pos="-2.1729 9.3673 0.4148" size="0.0331" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_064" type="sphere" pos="-9.4117 -6.2085 0.2177" size="0.0620" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_065" type="sphere" pos="-9.9807 -12.8108 0.5264" size="0.0534" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_066" type="sphere" pos="15.3050 -0.8211 0.2993" size="0.0857" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_067" type="sphere" pos="5.9593 -1.1928 0.3522" size="0.0346" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_068" type="sphere" pos="1.7282 -7.0413 0.3463" size="0.0284" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_069" type="sphere" pos="-1.4156 6.1587 0.4163" size="0.0520" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_070" type="sphere" pos="5.6997 1.6615 0.2279" size="0.0488" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_071" type="sphere" pos="2.9649 17.5546 0.4343" size="0.0484" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_072" type="sphere" pos="-12.4953 16.1633 0.3567" size="0.0715" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_073" type="sphere" pos="-4.7766 0.0302 0.5040" size="0.0516" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_074" type="sphere" pos="4.6329 8.5520 0.2566" size="0.0279" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_075" type="sphere" pos="12.2258 -11.3367 0.1691" size="0.0378" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_076" type="sphere" pos="-8.8042 2.1800 0.4211" size="0.0661" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_077" type="sphere" pos="11.1812 0.6420 0.3139" size="0.0435" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_078" type="sphere" pos="-8.8131 17.1607 0.2706" size="0.0716" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_079" type="sphere" pos="0.0792 3.7857 0.1079" size="0.0334" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_080" type="sphere" pos="9.2318 -12.2527 0.1136" size="0.0368" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_081" type="sphere" pos="-7.3731 7.9285 0.3383" size="0.0493" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_082" type="sphere" pos="-4.6761 3.9787 0.3216" size="0.0430" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_083" type="sphere" pos="-2.0458 9.1086 0.4595" size="0.0623" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_084" type="sphere" pos="-10.3844 -4.3187 0.2617" size="0.0850" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_085" type="sphere" pos="-1.1718 -15.1030 0.4050" size="0.0427" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_086" type="sphere" pos="5.9300 -2.1927 0.4024" size="0.1229" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_087" type="sphere" pos="3.2622 -2.8570 0.2555" size="0.0635" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_088" type="sphere" pos="-10.0571 4.1699 0.3628" size="0.0447" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_089" type="sphere" pos="10.0830 -14.1114 0.2632" size="0.0368" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_090" type="sphere" pos="13.0790 7.4315 0.3343" size="0.0617" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_091" type="sphere" pos="-12.4092 -7.3617 0.3114" size="0.0647" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_092" type="sphere" pos="-12.0098 2.0797 0.1799" size="0.0357" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_093" type="sphere" pos="-7.9076 2.7250 0.3318" size="0.0381" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_094" type="sphere" pos="-1.3367 -3.1992 -0.2848" size="0.0285" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_095" type="sphere" pos="-12.3684 -2.4220 0.6028" size="0.0720" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_096" type="sphere" pos="-1.7748 -11.5594 0.2223" size="0.0863" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_097" type="sphere" pos="17.2051 -0.4221 0.3804" size="0.0294" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_098" type="sphere" pos="-3.8236 3.6542 0.5966" size="0.0281" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_099" type="sphere" pos="-7.3693 -6.5672 0.3094" size="0.0409" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_100" type="sphere" pos="14.2123 -5.3842 0.2539" size="0.0474" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_101" type="sphere" pos="-7.8511 -0.5913 0.3216" size="0.0712" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_102" type="sphere" pos="-9.5632 0.8188 0.3344" size="0.0324" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_103" type="sphere" pos="10.1579 -15.5218 0.3592" size="0.0838" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_104" type="sphere" pos="-2.9587 -1.9623 0.1262" size="0.0341" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_105" type="sphere" pos="10.0780 4.0339 0.2121" size="0.0669" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_106" type="sphere" pos="-15.1936 -11.2957 0.3225" size="0.0366" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_107" type="sphere" pos="-4.9519 -5.2652 0.5338" size="0.0567" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_108" type="sphere" pos="-2.3792 -9.2530 0.4890" size="0.0516" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_109" type="sphere" pos="-16.4068 9.7400 0.3636" size="0.0949" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_110" type="sphere" pos="15.2182 11.7599 0.4135" size="0.0334" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_111" type="sphere" pos="-5.0423 1.8271 0.6110" size="0.0486" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_112" type="sphere" pos="-6.8336 4.5014 0.2867" size="0.0690" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_113" type="sphere" pos="14.2820 -4.0676 0.3775" size="0.0272" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_114" type="sphere" pos="-10.0879 -14.7624 0.2272" size="0.0618" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_115" type="sphere" pos="3.1193 -11.0225 0.4633" size="0.1157" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_116" type="sphere" pos="5.7199 -4.8937 0.4593" size="0.0574" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_117" type="sphere" pos="7.7863 -7.1552 0.1595" size="0.0485" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_118" type="sphere" pos="12.6807 -0.1165 0.4680" size="0.0549" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_119" type="sphere" pos="-0.9201 8.0904 0.5097" size="0.0743" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_120" type="sphere" pos="-9.1794 5.0001 0.4565" size="0.0447" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_121" type="sphere" pos="-1.9892 8.0270 0.4184" size="0.0500" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_122" type="sphere" pos="-0.6652 -1.2784 -0.7510" size="0.0264" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_123" type="sphere" pos="8.1606 13.5885 0.5205" size="0.0685" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_124" type="sphere" pos="4.6927 12.6998 0.4580" size="0.0742" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_125" type="sphere" pos="5.5528 -15.6408 0.2910" size="0.0599" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_126" type="sphere" pos="-8.2880 -4.5391 0.4258" size="0.0546" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_127" type="sphere" pos="-11.8929 -17.6570 0.5141" size="0.1028" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_128" type="sphere" pos="-10.7098 0.3313 0.3291" size="0.1282" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_129" type="sphere" pos="-1.9969 6.6288 0.4170" size="0.0474" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_130" type="sphere" pos="-8.5502 3.2680 0.2797" size="0.0403" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_131" type="sphere" pos="-9.9317 7.8044 0.2600" size="0.1291" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_132" type="sphere" pos="-15.3704 14.7744 0.3410" size="0.0499" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_133" type="sphere" pos="-1.0993 -8.8149 0.4722" size="0.0655" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_134" type="sphere" pos="5.8128 2.8513 0.4439" size="0.0252" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_135" type="sphere" pos="-4.3077 0.6273 0.3217" size="0.0486" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_136" type="sphere" pos="15.3090 -1.8027 0.3229" size="0.0536" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_137" type="sphere" pos="3.1823 -1.3223 -0.0094" size="0.0770" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_138" type="sphere" pos="7.7280 -1.5042 0.5195" size="0.0693" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_139" type="sphere" pos="-18.3943 -16.5298 0.2308" size="0.0746" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_140" type="sphere" pos="-10.5128 14.4218 0.3140" size="0.0500" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_141" type="sphere" pos="4.7771 5.7473 0.3413" size="0.0360" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_142" type="sphere" pos="8.4411 13.9913 0.5114" size="0.0285" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_143" type="sphere" pos="-8.9473 -3.7844 0.4218" size="0.0581" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_144" type="sphere" pos="-11.5875 13.0942 0.2785" size="0.1077" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_145" type="sphere" pos="16.0385 7.2331 0.4318" size="0.0304" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_146" type="sphere" pos="-7.7490 -15.0671 0.3836" size="0.0868" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_147" type="sphere" pos="-8.4064 15.6959 0.3832" size="0.0597" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_148" type="sphere" pos="2.6005 6.8696 0.4289" size="0.0692" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_149" type="sphere" pos="-4.6720 -13.3278 0.3873" size="0.0823" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_150" type="sphere" pos="-6.1490 -4.4024 0.3930" size="0.0615" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_151" type="sphere" pos="7.5845 3.6726 0.4482" size="0.0518" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_152" type="sphere" pos="16.5428 4.1840 0.2923" size="0.0317" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_153" type="sphere" pos="16.0914 -14.2972 0.4543" size="0.0682" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_154" type="sphere" pos="-7.9516 -8.9270 0.1988" size="0.0324" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_155" type="sphere" pos="1.1374 16.8251 0.3294" size="0.0492" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_156" type="sphere" pos="-2.2422 11.7802 0.4051" size="0.0327" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_157" type="sphere" pos="-14.0822 -6.7718 0.3065" size="0.0912" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_158" type="sphere" pos="6.1177 -3.6721 0.5162" size="0.1232" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_159" type="sphere" pos="12.1681 1.7671 0.3404" size="0.0591" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_160" type="sphere" pos="10.2563 -2.6022 0.0945" size="0.0308" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_161" type="sphere" pos="3.6246 11.1513 0.2886" size="0.0284" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_162" type="sphere" pos="0.2827 -10.6067 0.3587" size="0.0295" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_163" type="sphere" pos="2.2473 6.0511 0.4412" size="0.0780" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_164" type="sphere" pos="9.6354 2.4111 0.3905" size="0.1211" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_165" type="sphere" pos="2.9185 -8.3794 0.4456" size="0.0686" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_166" type="sphere" pos="7.6647 -8.3484 0.2815" size="0.0950" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_167" type="sphere" pos="-1.9634 -15.3772 0.2449" size="0.0556" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_168" type="sphere" pos="-2.7320 5.0131 0.5153" size="0.0439" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_169" type="sphere" pos="4.9439 2.6355 0.6834" size="0.0591" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_170" type="sphere" pos="3.0913 4.9503 0.4710" size="0.0411" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_171" type="sphere" pos="-2.9400 -3.9016 0.6320" size="0.0373" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_172" type="sphere" pos="0.5226 -7.2074 0.4013" size="0.0267" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_173" type="sphere" pos="-10.8026 15.1550 0.4668" size="0.0548" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_174" type="sphere" pos="-9.6457 1.7016 0.4003" size="0.0265" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_175" type="sphere" pos="-8.1355 5.3001 0.4381" size="0.0624" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_176" type="sphere" pos="4.2679 -9.6568 0.3821" size="0.0536" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_177" type="sphere" pos="-4.5893 -1.1187 0.6804" size="0.0713" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_178" type="sphere" pos="4.9861 -6.4344 0.4639" size="0.0731" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_179" type="sphere" pos="-4.5375 3.7259 0.3762" size="0.1109" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_180" type="sphere" pos="0.7322 8.6006 0.3424" size="0.0396" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_181" type="sphere" pos="4.2224 2.0052 0.5587" size="0.0394" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_182" type="sphere" pos="4.6351 -9.5289 0.3769" size="0.0735" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_183" type="sphere" pos="-9.6342 -18.4023 0.4041" size="0.0645" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_184" type="sphere" pos="-5.1233 -11.3666 0.2890" size="0.0418" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_185" type="sphere" pos="-13.0370 -8.4589 0.3742" size="0.0265" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_186" type="sphere" pos="-0.0987 -4.5430 0.5337" size="0.0592" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_187" type="sphere" pos="-10.6503 17.7260 0.3908" size="0.0997" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_188" type="sphere" pos="0.6157 -4.2061 0.2371" size="0.0454" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_189" type="sphere" pos="6.5932 -5.9615 0.3277" size="0.0657" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_190" type="sphere" pos="7.6097 -6.7677 0.1816" size="0.0509" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_191" type="sphere" pos="11.3633 -15.8326 0.2475" size="0.0602" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_192" type="sphere" pos="4.5562 -1.8991 0.7056" size="0.0524" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_193" type="sphere" pos="-2.5619 15.2877 0.3639" size="0.0329" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_194" type="sphere" pos="0.7564 -8.0738 0.3764" size="0.0719" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_195" type="sphere" pos="-7.0909 8.2757 0.3891" size="0.0455" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_196" type="sphere" pos="-6.7994 -5.8675 0.3050" size="0.0607" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_197" type="sphere" pos="10.9505 1.8518 0.1671" size="0.0292" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_198" type="sphere" pos="-2.9239 -4.7258 0.5210" size="0.0666" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_199" type="sphere" pos="13.3927 14.4930 0.2653" size="0.0313" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_200" type="sphere" pos="-13.8163 -3.3844 0.3704" size="0.0486" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_201" type="sphere" pos="0.2960 -9.6798 0.3123" size="0.0454" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_202" type="sphere" pos="6.3416 4.9239 0.5349" size="0.1115" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_203" type="sphere" pos="-1.1909 9.0988 0.5522" size="0.0594" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_204" type="sphere" pos="-0.4560 5.4023 0.6394" size="0.0724" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_205" type="sphere" pos="-5.0508 -1.5681 0.6760" size="0.1239" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_206" type="sphere" pos="5.8909 -5.5117 0.3583" size="0.0527" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_207" type="sphere" pos="6.7746 -8.7444 0.5358" size="0.0952" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_208" type="sphere" pos="10.1008 1.6069 0.3955" size="0.0475" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_209" type="sphere" pos="9.5635 13.3312 0.3334" size="0.0441" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_210" type="sphere" pos="-14.4406 -16.4186 0.4028" size="0.1241" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_211" type="sphere" pos="-9.6148 -17.5648 0.3998" size="0.0729" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_212" type="sphere" pos="1.2936 -4.6480 0.6796" size="0.0673" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_213" type="sphere" pos="-17.5600 -0.5022 0.3457" size="0.0729" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_214" type="sphere" pos="14.5273 10.6944 0.4190" size="0.1163" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_215" type="sphere" pos="5.7967 12.0537 0.3827" size="0.0314" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_216" type="sphere" pos="12.1743 15.2038 0.3893" size="0.0387" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_217" type="sphere" pos="2.4720 6.4460 0.3673" size="0.0286" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_218" type="sphere" pos="-2.0501 7.6254 0.4113" size="0.0257" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_219" type="sphere" pos="7.3273 -3.7788 0.4672" size="0.0488" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_220" type="sphere" pos="1.6769 -9.4815 0.4910" size="0.0373" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_221" type="sphere" pos="-6.5990 -6.4212 0.3665" size="0.0478" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_222" type="sphere" pos="7.3106 6.7429 0.3304" size="0.0443" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_223" type="sphere" pos="-18.4928 12.1243 0.4351" size="0.0448" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_224" type="sphere" pos="16.4693 7.4923 0.4233" size="0.0648" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_225" type="sphere" pos="4.6425 -6.7726 0.4491" size="0.1181" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_226" type="sphere" pos="1.9602 -4.5592 0.7551" size="0.0709" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_227" type="sphere" pos="-0.0355 -9.6464 0.2995" size="0.0306" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_228" type="sphere" pos="-0.8788 7.3477 0.4607" size="0.0490" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_229" type="sphere" pos="9.2408 -7.9766 0.2327" size="0.0503" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_230" type="sphere" pos="-12.7368 -13.2314 0.2046" size="0.0414" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_231" type="sphere" pos="-0.0099 16.1537 0.5243" size="0.0983" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_232" type="sphere" pos="-13.2080 -17.2869 0.3155" size="0.0813" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_233" type="sphere" pos="13.5517 4.0596 0.2600" size="0.0821" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_234" type="sphere" pos="12.9406 -14.4424 0.4347" size="0.1232" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_235" type="sphere" pos="-2.3812 9.6586 0.4105" size="0.0420" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_236" type="sphere" pos="-4.6201 2.4557 0.5366" size="0.0404" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_237" type="sphere" pos="-8.2799 7.3904 0.3891" size="0.1061" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_238" type="sphere" pos="-0.9073 2.7871 -0.3338" size="0.0271" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_239" type="sphere" pos="-13.3344 -9.7482 0.3250" size="0.0704" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_240" type="sphere" pos="-3.2110 3.0513 0.5502" size="0.0979" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_241" type="sphere" pos="-6.2337 7.6693 0.3621" size="0.0259" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_242" type="sphere" pos="-5.0836 -16.9603 0.3221" size="0.0361" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_243" type="sphere" pos="-5.2506 -2.8152 0.2815" size="0.0703" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_244" type="sphere" pos="0.8760 0.8011 -0.7218" size="0.0424" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_245" type="sphere" pos="3.6314 7.2806 0.4824" size="0.0570" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_246" type="sphere" pos="8.0523 -7.4547 0.1717" size="0.0634" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_247" type="sphere" pos="14.8412 13.4638 0.3617" size="0.0295" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_248" type="sphere" pos="-14.3180 -11.2115 0.4797" size="0.0339" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_249" type="sphere" pos="8.5644 -4.8012 0.4450" size="0.0576" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_250" type="sphere" pos="-7.2022 -16.1999 0.4412" size="0.0785" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_251" type="sphere" pos="-8.3612 -13.7452 0.5413" size="0.1247" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_252" type="sphere" pos="-1.4310 -10.6600 0.3177" size="0.0691" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_253" type="sphere" pos="7.1067 4.9785 0.5336" size="0.0673" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_254" type="sphere" pos="5.0344 8.0231 0.1827" size="0.0560" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_255" type="sphere" pos="3.6638 4.3451 0.4476" size="0.0382" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_256" type="sphere" pos="6.6304 7.9378 0.3899" size="0.0675" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_257" type="sphere" pos="-1.5077 6.5553 0.3690" size="0.0282" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_258" type="sphere" pos="-3.9169 5.8680 0.3026" size="0.0438" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_259" type="sphere" pos="2.4657 -7.0752 0.4545" size="0.0459" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_260" type="sphere" pos="-4.6168 -3.5361 0.3472" size="0.0729" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_261" type="sphere" pos="14.2577 8.9013 0.3510" size="0.0498" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_262" type="sphere" pos="-4.3223 2.7712 0.5309" size="0.0430" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_263" type="sphere" pos="-16.9132 14.6698 0.2964" size="0.0946" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_264" type="sphere" pos="11.9374 -13.5355 0.3854" size="0.0382" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_265" type="sphere" pos="-11.5263 -15.0351 0.4453" size="0.0378" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_266" type="sphere" pos="-14.5637 -8.4514 0.5011" size="0.0818" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_267" type="sphere" pos="4.6944 -15.6077 0.3042" size="0.0532" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_268" type="sphere" pos="6.7035 11.8689 0.3655" size="0.0604" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_269" type="sphere" pos="-9.1046 9.8276 0.3423" size="0.0606" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_270" type="sphere" pos="-0.3103 -5.9900 0.4872" size="0.1086" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_271" type="sphere" pos="-0.6541 7.8549 0.4755" size="0.0588" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_272" type="sphere" pos="6.4433 5.9233 0.3342" size="0.0602" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_273" type="sphere" pos="-4.1255 -3.0137 0.5394" size="0.0454" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_274" type="sphere" pos="2.3242 -4.7002 0.6717" size="0.0657" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_275" type="sphere" pos="-14.9446 -12.7366 0.2677" size="0.0368" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_276" type="sphere" pos="12.2080 -9.5536 0.4639" size="0.0328" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_277" type="sphere" pos="-8.3811 2.8735 0.3468" size="0.1060" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_278" type="sphere" pos="-4.7064 -10.5978 0.3753" size="0.0603" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_279" type="sphere" pos="-7.5817 5.5061 0.4071" size="0.0324" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_280" type="sphere" pos="0.1521 -12.5433 0.2792" size="0.0458" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_281" type="sphere" pos="15.5682 -13.9377 0.4534" size="0.0739" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_282" type="sphere" pos="-5.3766 13.6751 0.2823" size="0.0734" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_283" type="sphere" pos="17.1503 16.9321 0.5534" size="0.1291" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_284" type="sphere" pos="-14.5478 3.5434 0.3232" size="0.0686" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_285" type="sphere" pos="6.3338 1.9179 0.2921" size="0.0386" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_286" type="sphere" pos="-10.4184 3.3115 0.4166" size="0.0896" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_287" type="sphere" pos="-2.8253 -7.7823 0.5072" size="0.0295" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_288" type="sphere" pos="-3.4375 -9.9251 0.3939" size="0.0380" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_289" type="sphere" pos="7.8714 -2.6185 0.3670" size="0.0364" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_290" type="sphere" pos="12.5337 -12.9599 0.4005" size="0.0714" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_291" type="sphere" pos="-4.0637 -5.7647 0.3963" size="0.0396" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_292" type="sphere" pos="-5.2983 3.5667 0.3541" size="0.0735" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_293" type="sphere" pos="1.4198 18.0653 0.3433" size="0.1184" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_294" type="sphere" pos="17.2845 -10.5587 0.4114" size="0.0711" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_295" type="sphere" pos="0.9857 -5.2198 0.5589" size="0.0829" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_296" type="sphere" pos="8.3005 17.1690 0.4597" size="0.0585" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_297" type="sphere" pos="-3.6611 2.8747 0.6203" size="0.0663" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_298" type="sphere" pos="7.2007 -6.9776 0.2737" size="0.0510" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_299" type="sphere" pos="6.1000 -6.4282 0.4445" size="0.1141" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_300" type="sphere" pos="7.3141 5.9045 0.3961" size="0.0282" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_301" type="sphere" pos="-6.8487 4.9035 0.3464" size="0.0415" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_302" type="sphere" pos="12.5081 -9.7866 0.4417" size="0.0674" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_303" type="sphere" pos="5.1153 -8.2761 0.3935" size="0.0285" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_304" type="sphere" pos="-1.1166 13.8054 0.3654" size="0.0557" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_305" type="sphere" pos="-9.4981 -5.6010 0.2497" size="0.0445" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_306" type="sphere" pos="13.7067 -15.2013 0.2515" size="0.0693" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_307" type="sphere" pos="2.6358 -6.9848 0.5344" size="0.0913" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_308" type="sphere" pos="8.6400 -10.0549 0.4148" size="0.0552" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_309" type="sphere" pos="-14.4178 -10.8001 0.4096" size="0.0485" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_310" type="sphere" pos="8.4377 -2.6740 0.3950" size="0.0702" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_311" type="sphere" pos="-15.7137 0.8526 0.3238" size="0.0481" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_312" type="sphere" pos="0.0926 5.6856 0.5313" size="0.0616" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_313" type="sphere" pos="16.0499 -5.3780 0.4450" size="0.0557" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_314" type="sphere" pos="17.1523 -12.4330 0.2858" size="0.0411" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_315" type="sphere" pos="1.8805 12.3491 0.3045" size="0.0575" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_316" type="sphere" pos="-2.9053 -6.7182 0.4978" size="0.0545" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_317" type="sphere" pos="5.0986 3.1275 0.6617" size="0.0793" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_318" type="sphere" pos="17.1532 7.8915 0.3302" size="0.0516" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_319" type="sphere" pos="17.9376 -15.7030 0.2817" size="0.0453" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_320" type="sphere" pos="12.9782 -11.7110 0.2291" size="0.0442" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_321" type="sphere" pos="-8.6517 3.6224 0.3605" size="0.1195" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_322" type="sphere" pos="-9.4077 17.6673 0.2620" size="0.0279" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_323" type="sphere" pos="-3.5738 -4.0645 0.5804" size="0.0445" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_324" type="sphere" pos="13.1821 -15.8143 0.3380" size="0.0532" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_325" type="sphere" pos="9.3852 0.3150 0.5099" size="0.1124" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_326" type="sphere" pos="8.5002 15.2612 0.3798" size="0.0408" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_327" type="sphere" pos="-8.2134 4.3301 0.4075" size="0.0658" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_328" type="sphere" pos="-2.3195 -4.4410 0.4808" size="0.0437" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_329" type="sphere" pos="-5.7336 -5.6687 0.5077" size="0.0405" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_330" type="sphere" pos="4.5381 4.0283 0.6472" size="0.1235" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_331" type="sphere" pos="6.3301 -6.1114 0.3374" size="0.0360" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_332" type="sphere" pos="-7.0238 -3.0906 0.2936" size="0.0359" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_333" type="sphere" pos="12.5971 -9.8306 0.4319" size="0.0650" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_334" type="sphere" pos="6.6305 -15.9179 0.5208" size="0.0617" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_335" type="sphere" pos="-7.7027 11.7032 0.3303" size="0.0289" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_336" type="sphere" pos="-4.6080 -3.1254 0.3387" size="0.0474" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_337" type="sphere" pos="6.3670 11.4552 0.2980" size="0.0278" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_338" type="sphere" pos="17.0780 -1.2083 0.4279" size="0.0732" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_339" type="sphere" pos="12.1349 1.8084 0.3222" size="0.0436" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_340" type="sphere" pos="-5.7884 12.6868 0.2153" size="0.0278" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_341" type="sphere" pos="-9.1579 8.1764 0.2084" size="0.0481" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_342" type="sphere" pos="-10.6647 17.2107 0.3009" size="0.0515" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_343" type="sphere" pos="-2.6976 5.0787 0.5211" size="0.0582" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_344" type="sphere" pos="1.0174 -7.0579 0.3332" size="0.0583" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_345" type="sphere" pos="2.4447 11.5247 0.2533" size="0.0512" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_346" type="sphere" pos="-5.0225 5.2080 0.4065" size="0.0412" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_347" type="sphere" pos="1.9471 -6.6200 0.4406" size="0.0590" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_348" type="sphere" pos="15.9069 -5.9848 0.4558" size="0.0356" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_349" type="sphere" pos="13.2183 -17.1858 0.2998" size="0.0510" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_350" type="sphere" pos="-13.1165 9.3690 0.2543" size="0.0421" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_351" type="sphere" pos="-2.2057 1.6539 -0.3030" size="0.0267" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_352" type="sphere" pos="-1.6742 -15.4242 0.2591" size="0.0521" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_353" type="sphere" pos="-16.3361 4.2834 0.3555" size="0.0419" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_354" type="sphere" pos="-1.3731 17.0003 0.3880" size="0.0272" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_355" type="sphere" pos="3.1281 -11.8440 0.4065" size="0.0815" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_356" type="sphere" pos="5.6947 -7.4451 0.3035" size="0.0798" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_357" type="sphere" pos="6.7307 0.0781 0.4573" size="0.0286" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_358" type="sphere" pos="10.1370 -1.3844 0.4010" size="0.1083" material="gravel_dark_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <geom name="surface_gravel_359" type="sphere" pos="-6.0509 10.0763 0.2052" size="0.0684" material="gravel_sphere_mat" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    <site name="surface_gravel_field_marker" type="ellipsoid" pos="0 0 0.22" size="18.8 18.8 0.015" rgba="0.45 0.45 0.45 0.035" group="3" />
+    <site name="ore_cluster_zone" type="ellipsoid" pos="10 10 0.20" size="1.8 1.55 0.035" rgba="1 0.8 0.1 0.16" group="3" />
+    <body name="ore_00" pos="8.7915 9.1061 0.4698" quat="0.158546 0.0 0.0 0.987352" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0471109 0.0381884 0.0686062" />
+      <freejoint name="ore_00_free" />
+      <geom name="ore_00_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_00" material="ore_gold" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_00_pickup_site" type="sphere" size="0.253" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_01" pos="9.3206 8.6477 0.4591" quat="0.992438 0.0 0.0 0.122743" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0400435 0.014882 0.0459672" />
+      <freejoint name="ore_01_free" />
+      <geom name="ore_01_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_01" material="ore_blue" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_01_pickup_site" type="sphere" size="0.242" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_02" pos="9.8457 9.0793 0.5675" quat="0.769795 0.0 0.0 -0.638291" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0506472 0.0516924 0.0598071" />
+      <freejoint name="ore_02_free" />
+      <geom name="ore_02_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_02" material="ore_copper" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_02_pickup_site" type="sphere" size="0.224" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_03" pos="10.4366 8.8812 0.4459" quat="0.772778 0.0 0.0 -0.634676" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.014126 0.0253349 0.0285459" />
+      <freejoint name="ore_03_free" />
+      <geom name="ore_03_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_03" material="ore_green" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_03_pickup_site" type="sphere" size="0.181" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_04" pos="11.1456 9.0527 0.4111" quat="0.006862 0.0 0.0 0.999976" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0142273 0.0249542 0.0287234" />
+      <freejoint name="ore_04_free" />
+      <geom name="ore_04_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_04" material="ore_gold" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_04_pickup_site" type="sphere" size="0.180" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_05" pos="8.6055 9.8447 0.4781" quat="0.959482 0.0 0.0 0.281768" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0301172 0.0244132 0.0438588" />
+      <freejoint name="ore_05_free" />
+      <geom name="ore_05_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_05" material="ore_blue" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_05_pickup_site" type="sphere" size="0.202" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_06" pos="9.3507 10.1571 0.4317" quat="0.879993 0.0 0.0 -0.474986" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0396635 0.0147408 0.0455311" />
+      <freejoint name="ore_06_free" />
+      <geom name="ore_06_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_06" material="ore_copper" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_06_pickup_site" type="sphere" size="0.241" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_07" pos="10.0361 9.9296 0.5046" quat="0.588514 0.0 0.0 -0.808487" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0436461 0.0445468 0.0515398" />
+      <freejoint name="ore_07_free" />
+      <geom name="ore_07_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_07" material="ore_green" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_07_pickup_site" type="sphere" size="0.208" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_08" pos="10.6197 10.1524 0.3968" quat="0.415203 0.0 0.0 -0.909729" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0390274 0.0699954 0.0788668" />
+      <freejoint name="ore_08_free" />
+      <geom name="ore_08_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_08" material="ore_gold" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_08_pickup_site" type="sphere" size="0.301" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_09" pos="11.3079 10.1136 0.3447" quat="0.929499 0.0 0.0 0.368825" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0806023 0.141374 0.162728" />
+      <freejoint name="ore_09_free" />
+      <geom name="ore_09_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_09" material="ore_blue" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_09_pickup_site" type="sphere" size="0.429" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_10" pos="9.2285 10.7494 0.4455" quat="0.364632 0.0 0.0 -0.931152" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0762153 0.0617806 0.11099" />
+      <freejoint name="ore_10_free" />
+      <geom name="ore_10_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_10" material="ore_copper" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_10_pickup_site" type="sphere" size="0.321" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_11" pos="9.8137 11.1279 0.3984" quat="0.943201 0.0 0.0 -0.332223" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0231986 0.00862169 0.0266305" />
+      <freejoint name="ore_11_free" />
+      <geom name="ore_11_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_11" material="ore_green" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_11_pickup_site" type="sphere" size="0.184" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_12" pos="10.7476 10.9372 0.3922" quat="0.816369 0.0 0.0 0.577531" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.124469 0.127038 0.14698" />
+      <freejoint name="ore_12_free" />
+      <geom name="ore_12_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_12" material="ore_gold" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_12_pickup_site" type="sphere" size="0.351" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_13" pos="11.2666 11.0879 0.2129" quat="0.593213 0.0 0.0 0.805046" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0207759 0.0372615 0.0419841" />
+      <freejoint name="ore_13_free" />
+      <geom name="ore_13_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_13" material="ore_blue" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_13_pickup_site" type="sphere" size="0.219" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_14" pos="10.2140 10.4602 0.3798" quat="0.969624 0.0 0.0 0.244601" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0308621 0.0541313 0.0623074" />
+      <freejoint name="ore_14_free" />
+      <geom name="ore_14_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_14" material="ore_copper" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_14_pickup_site" type="sphere" size="0.266" rgba="1 1 1 0.18" group="3" />
+    </body>
+  </worldbody>
+</mujoco>

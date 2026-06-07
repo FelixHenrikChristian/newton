@@ -1,0 +1,62 @@
+{
+  "scene": "lunar_center_crater_sphere_gravel_obj_ores",
+  "mujoco_main_file": "lunar_scene_sphere_gravel_obj_ores.xml",
+  "terrain": {
+    "type": "heightfield",
+    "heightfield_resolution": [
+      513,
+      513
+    ],
+    "map_size_m": [
+      40.0,
+      40.0
+    ],
+    "central_crater": {
+      "name": "central_main_crater",
+      "cx": 0.0,
+      "cy": 0.0,
+      "r": 4.8,
+      "depth": 0.62,
+      "rim": 0.2,
+      "central": true
+    }
+  },
+  "surface_gravel": {
+    "representation": "static MuJoCo sphere geoms",
+    "count": 360,
+    "geom_user_tag": 3,
+    "radius_range_m": [
+      0.0252,
+      0.1291
+    ],
+    "notes": [
+      "These are distributed over the ground surface.",
+      "They are static geoms for simulation stability and speed.",
+      "They represent ordinary lunar gravel and are not collectible by default."
+    ]
+  },
+  "collectible_ores": {
+    "representation": "dynamic OBJ mesh bodies from uploaded rock models",
+    "cluster_center_xy": [
+      10.0,
+      10.0
+    ],
+    "approx_cluster_radius_m": 1.8,
+    "count": 15,
+    "body_user_tag": 1,
+    "geom_user_tag": 1,
+    "source_obj_files": [
+      "rock1.obj",
+      "rock2.obj",
+      "rock3.obj",
+      "rock4.obj",
+      "rock5.obj"
+    ],
+    "notes": [
+      "These are the collectible objects.",
+      "Each ore body has a freejoint and an ore_XX_pickup_site.",
+      "OBJ mesh sources are rock1.obj through rock5.obj.",
+      "Scales and masses vary across objects."
+    ]
+  }
+}

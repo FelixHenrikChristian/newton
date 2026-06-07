@@ -1,0 +1,297 @@
+{
+  "scene": "lunar_highres_hfield_center_crater",
+  "mujoco_main_file": "lunar_scene_center_crater.xml",
+  "terrain_type": "heightfield",
+  "gravity": "0 0 -1.62",
+  "map_size_m": [
+    40.0,
+    40.0
+  ],
+  "heightfield": {
+    "file": "lunar_heightfield_center_crater.png",
+    "raw_height_data_file": "lunar_heightfield_raw_meters.npy",
+    "normalized_height_data_file": "lunar_heightfield_normalized.npy",
+    "resolution": [
+      513,
+      513
+    ],
+    "size": [
+      20.0,
+      20.0,
+      1.65,
+      0.12
+    ],
+    "geom_z_offset": -0.88,
+    "world_xy_extent": [
+      -20.0,
+      20.0,
+      -20.0,
+      20.0
+    ],
+    "raw_height_stats_meters": {
+      "min": -0.551542,
+      "max": 0.219134,
+      "std": 0.072256
+    }
+  },
+  "central_crater": {
+    "name": "central_main_crater",
+    "cx": 0.0,
+    "cy": 0.0,
+    "r": 4.8,
+    "depth": 0.62,
+    "rim": 0.2,
+    "central": true
+  },
+  "all_craters": [
+    {
+      "name": "central_main_crater",
+      "cx": 0.0,
+      "cy": 0.0,
+      "r": 4.8,
+      "depth": 0.62,
+      "rim": 0.2,
+      "central": true
+    },
+    {
+      "name": "small_nw",
+      "cx": -12.8,
+      "cy": 9.4,
+      "r": 1.35,
+      "depth": 0.075,
+      "rim": 0.022,
+      "central": false
+    },
+    {
+      "name": "medium_ne",
+      "cx": 12.0,
+      "cy": 10.5,
+      "r": 2.15,
+      "depth": 0.125,
+      "rim": 0.032,
+      "central": false
+    },
+    {
+      "name": "small_se",
+      "cx": 9.5,
+      "cy": -11.8,
+      "r": 1.55,
+      "depth": 0.09,
+      "rim": 0.025,
+      "central": false
+    },
+    {
+      "name": "medium_sw",
+      "cx": -11.5,
+      "cy": -9.0,
+      "r": 2.2,
+      "depth": 0.135,
+      "rim": 0.036,
+      "central": false
+    }
+  ],
+  "falling_stones": {
+    "count": 72,
+    "body_user_tag": 2,
+    "geom_user_tag": 2
+  },
+  "collectables": {
+    "count": 12,
+    "body_user_tag": 1,
+    "geom_user_tag": 1,
+    "objects": [
+      {
+        "name": "ore_00",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          -6.0,
+          -1.2,
+          0.69
+        ],
+        "size": [
+          0.224,
+          0.217,
+          0.15
+        ],
+        "mass": 0.703
+      },
+      {
+        "name": "ore_01",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          -4.5,
+          4.8,
+          0.619
+        ],
+        "size": [
+          0.196,
+          0.164,
+          0.18
+        ],
+        "mass": 0.715
+      },
+      {
+        "name": "ore_02",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          0.0,
+          6.6,
+          0.663
+        ],
+        "size": [
+          0.183,
+          0.161,
+          0.174
+        ],
+        "mass": 0.755
+      },
+      {
+        "name": "ore_03",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          5.5,
+          3.7,
+          0.679
+        ],
+        "size": [
+          0.194,
+          0.174,
+          0.113
+        ],
+        "mass": 0.603
+      },
+      {
+        "name": "ore_04",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          6.2,
+          -3.4,
+          0.627
+        ],
+        "size": [
+          0.195,
+          0.215,
+          0.208
+        ],
+        "mass": 0.352
+      },
+      {
+        "name": "ore_05",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          -2.5,
+          -6.1,
+          0.62
+        ],
+        "size": [
+          0.19,
+          0.189,
+          0.169
+        ],
+        "mass": 0.492
+      },
+      {
+        "name": "ore_06",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          -13.0,
+          -1.6,
+          0.588
+        ],
+        "size": [
+          0.189,
+          0.183,
+          0.14
+        ],
+        "mass": 0.685
+      },
+      {
+        "name": "ore_07",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          -10.0,
+          10.2,
+          0.593
+        ],
+        "size": [
+          0.188,
+          0.14,
+          0.1
+        ],
+        "mass": 0.355
+      },
+      {
+        "name": "ore_08",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          11.2,
+          -8.0,
+          0.522
+        ],
+        "size": [
+          0.182,
+          0.182,
+          0.11
+        ],
+        "mass": 0.638
+      },
+      {
+        "name": "ore_09",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          13.0,
+          2.5,
+          0.551
+        ],
+        "size": [
+          0.179,
+          0.153,
+          0.151
+        ],
+        "mass": 0.606
+      },
+      {
+        "name": "ore_10",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          -15.0,
+          4.8,
+          0.582
+        ],
+        "size": [
+          0.188,
+          0.145,
+          0.119
+        ],
+        "mass": 0.745
+      },
+      {
+        "name": "ore_11",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          9.2,
+          -13.0,
+          0.503
+        ],
+        "size": [
+          0.25,
+          0.235,
+          0.194
+        ],
+        "mass": 0.842
+      }
+    ]
+  }
+}

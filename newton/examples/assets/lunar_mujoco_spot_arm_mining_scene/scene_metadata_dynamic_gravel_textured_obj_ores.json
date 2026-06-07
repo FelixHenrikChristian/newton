@@ -1,0 +1,150 @@
+{
+  "scene": "lunar_dynamic_sphere_gravel_textured_obj_ores",
+  "main_mjcf": "lunar_scene_dynamic_gravel_textured_obj_ores.xml",
+  "terrain": {
+    "type": "heightfield",
+    "heightfield_resolution": [
+      513,
+      513
+    ],
+    "half_extents_m": [
+      20.0,
+      20.0
+    ],
+    "elevation_scale_m": 1.65,
+    "terrain_z_offset": -0.88
+  },
+  "surface_gravel": {
+    "representation": "dynamic free sphere bodies",
+    "count": 360,
+    "body_user_tag": 3,
+    "geom_user_tag": 3,
+    "freejoint": true,
+    "initialization": "placed above terrain; falls at simulation start and remains pushable",
+    "ordinary_gravel_not_collectible_by_default": true,
+    "metadata_file": "dynamic_gravel_free_spheres.json"
+  },
+  "collectible_obj_ores": {
+    "cluster_center_xy": [
+      10.0,
+      10.0
+    ],
+    "representation": "dynamic OBJ mesh bodies",
+    "count": 15,
+    "body_user_tag": 1,
+    "geom_user_tag": 1,
+    "unified_material": "obj_ore_unified_mat",
+    "texture_file": "obj_ore_unified_texture.png",
+    "updated_mesh_geoms": [
+      {
+        "body": "ore_00",
+        "geom": "ore_00_obj_geom",
+        "old_material": "ore_gold",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_00"
+      },
+      {
+        "body": "ore_01",
+        "geom": "ore_01_obj_geom",
+        "old_material": "ore_blue",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_01"
+      },
+      {
+        "body": "ore_02",
+        "geom": "ore_02_obj_geom",
+        "old_material": "ore_copper",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_02"
+      },
+      {
+        "body": "ore_03",
+        "geom": "ore_03_obj_geom",
+        "old_material": "ore_green",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_03"
+      },
+      {
+        "body": "ore_04",
+        "geom": "ore_04_obj_geom",
+        "old_material": "ore_gold",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_04"
+      },
+      {
+        "body": "ore_05",
+        "geom": "ore_05_obj_geom",
+        "old_material": "ore_blue",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_05"
+      },
+      {
+        "body": "ore_06",
+        "geom": "ore_06_obj_geom",
+        "old_material": "ore_copper",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_06"
+      },
+      {
+        "body": "ore_07",
+        "geom": "ore_07_obj_geom",
+        "old_material": "ore_green",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_07"
+      },
+      {
+        "body": "ore_08",
+        "geom": "ore_08_obj_geom",
+        "old_material": "ore_gold",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_08"
+      },
+      {
+        "body": "ore_09",
+        "geom": "ore_09_obj_geom",
+        "old_material": "ore_blue",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_09"
+      },
+      {
+        "body": "ore_10",
+        "geom": "ore_10_obj_geom",
+        "old_material": "ore_copper",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_10"
+      },
+      {
+        "body": "ore_11",
+        "geom": "ore_11_obj_geom",
+        "old_material": "ore_green",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_11"
+      },
+      {
+        "body": "ore_12",
+        "geom": "ore_12_obj_geom",
+        "old_material": "ore_gold",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_12"
+      },
+      {
+        "body": "ore_13",
+        "geom": "ore_13_obj_geom",
+        "old_material": "ore_blue",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_13"
+      },
+      {
+        "body": "ore_14",
+        "geom": "ore_14_obj_geom",
+        "old_material": "ore_copper",
+        "new_material": "obj_ore_unified_mat",
+        "mesh": "ore_obj_mesh_scaled_ore_14"
+      }
+    ]
+  },
+  "schema_checks": {
+    "removed_geom_scale_attributes": [],
+    "remaining_geom_scale_attributes": 0
+  }
+}

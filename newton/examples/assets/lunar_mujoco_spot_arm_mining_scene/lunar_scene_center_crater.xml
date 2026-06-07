@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mujoco model="lunar_highres_hfield_center_crater">
+  <compiler angle="degree" meshdir="." texturedir="." autolimits="true"/>
+  <option timestep="0.002" gravity="0 0 -1.62" integrator="implicitfast" cone="elliptic" iterations="120" tolerance="1e-10"/>
+  <size nuser_body="1" nuser_geom="1"/>
+  <statistic center="0 0 0" extent="42"/>
+  <visual><headlight diffuse="0.46 0.46 0.46" ambient="0.08 0.08 0.08" specular="0.15 0.15 0.15"/><rgba haze="0.02 0.02 0.025 1"/><map znear="0.02" zfar="100"/></visual>
+  <default><geom condim="4" friction="1.35 0.12 0.02" solref="0.025 1" solimp="0.92 0.98 0.002" margin="0.002"/><joint damping="0.01"/></default>
+  <asset>
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.01 0.01 0.015" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="lunar_tex" type="2d" file="lunar_albedo_center_crater.png"/>
+    <material name="lunar_surface" texture="lunar_tex" texrepeat="8 8" texuniform="true" rgba="0.58 0.56 0.52 1" roughness="1" specular="0.04"/>
+    <material name="rock_mat" rgba="0.34 0.33 0.31 1" roughness="1" specular="0.03"/>
+    <material name="dark_rock_mat" rgba="0.22 0.22 0.21 1" roughness="1" specular="0.02"/>
+    <material name="ore_gold" rgba="0.95 0.72 0.22 1" emission="0.03" specular="0.55" shininess="0.6"/>
+    <material name="ore_blue" rgba="0.25 0.55 0.95 1" emission="0.04" specular="0.65" shininess="0.7"/>
+    <material name="ore_copper" rgba="0.76 0.38 0.20 1" emission="0.025" specular="0.45" shininess="0.55"/>
+    <material name="ore_green" rgba="0.35 0.85 0.45 1" emission="0.04" specular="0.5" shininess="0.65"/>
+    <hfield name="lunar_hfield" file="lunar_heightfield_center_crater.png" size="20.0 20.0 1.65 0.12"/>
+  </asset>
+  <worldbody>
+    <light name="sun_low_angle" directional="true" pos="-8 -5 11" dir="0.55 0.35 -1" diffuse="0.95 0.90 0.82" ambient="0.10 0.10 0.12" specular="0.20 0.20 0.20"/>
+    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.88" material="lunar_surface" priority="1" user="0"/>
+    <site name="central_crater_center" type="sphere" pos="0 0 -0.05" size="0.18" rgba="1 0.15 0.05 0.55" group="3"/>
+    <site name="central_crater_rim_marker" type="ellipsoid" pos="0 0 0.16" size="4.8 4.8 0.025" rgba="1 0.2 0.05 0.12" group="3"/>
+    <site name="robot_spawn" type="cylinder" pos="-16 -16 0.08" size="0.35 0.02" rgba="0.1 0.55 1.0 0.45" group="3"/>
+    <site name="collection_zone" type="box" pos="16 16 0.05" size="1.4 1.4 0.03" rgba="0.1 1.0 0.25 0.35" group="3"/>
+    <camera name="overview" pos="0 -33 18" xyaxes="1 0 0 0 0.50 0.87" fovy="43"/>
+    <camera name="central_crater_view" pos="0 -15 6.0" xyaxes="1 0 0 0 0.42 0.91" fovy="52"/>
+    <camera name="robot_start_view" pos="-16 -19 2.6" xyaxes="1 0 0 0 0.57 0.82" fovy="55"/>
+    <body name="falling_stone_rubble_northwest_00" pos="-9.607 13.874 1.374" quat="-0.509803 -0.307323 -0.167907 0.785786" user="2">
+      <freejoint name="falling_stone_rubble_northwest_00_free"/>
+      <geom name="falling_stone_rubble_northwest_00_geom" type="ellipsoid" size="0.109 0.083 0.102" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_01" pos="-7.317 12.74 1.165" quat="-0.387339 0.157772 -0.463031 -0.781459" user="2">
+      <freejoint name="falling_stone_rubble_northwest_01_free"/>
+      <geom name="falling_stone_rubble_northwest_01_geom" type="ellipsoid" size="0.148 0.138 0.087" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_02" pos="-7.142 13.671 1.856" quat="-0.436485 -0.550786 -0.52693 -0.477975" user="2">
+      <freejoint name="falling_stone_rubble_northwest_02_free"/>
+      <geom name="falling_stone_rubble_northwest_02_geom" type="ellipsoid" size="0.208 0.155 0.103" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_03" pos="-8.022 13.197 1.346" quat="-0.357352 0.407828 -0.207913 0.814093" user="2">
+      <freejoint name="falling_stone_rubble_northwest_03_free"/>
+      <geom name="falling_stone_rubble_northwest_03_geom" type="ellipsoid" size="0.125 0.17 0.109" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_04" pos="-7.454 12.654 1.936" quat="-0.022239 -0.571193 -0.699072 0.429583" user="2">
+      <freejoint name="falling_stone_rubble_northwest_04_free"/>
+      <geom name="falling_stone_rubble_northwest_04_geom" type="ellipsoid" size="0.171 0.141 0.109" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_05" pos="-9.8 13.237 1.677" quat="0.974662 0.096604 0.095895 0.177499" user="2">
+      <freejoint name="falling_stone_rubble_northwest_05_free"/>
+      <geom name="falling_stone_rubble_northwest_05_geom" type="ellipsoid" size="0.115 0.083 0.129" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_06" pos="-7.889 12.124 1.468" quat="-0.003609 0.904975 0.033117 -0.424158" user="2">
+      <freejoint name="falling_stone_rubble_northwest_06_free"/>
+      <geom name="falling_stone_rubble_northwest_06_geom" type="ellipsoid" size="0.136 0.154 0.07" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_07" pos="-8.776 13.441 1.766" quat="0.446627 0.082913 -0.889449 -0.050294" user="2">
+      <freejoint name="falling_stone_rubble_northwest_07_free"/>
+      <geom name="falling_stone_rubble_northwest_07_geom" type="ellipsoid" size="0.132 0.147 0.102" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_08" pos="-7.614 12.839 1.217" quat="0.099269 -0.901643 0.393606 -0.149195" user="2">
+      <freejoint name="falling_stone_rubble_northwest_08_free"/>
+      <geom name="falling_stone_rubble_northwest_08_geom" type="ellipsoid" size="0.236 0.081 0.085" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_09" pos="-7.785 12.386 1.6" quat="-0.130848 -0.315867 0.939587 -0.016812" user="2">
+      <freejoint name="falling_stone_rubble_northwest_09_free"/>
+      <geom name="falling_stone_rubble_northwest_09_geom" type="ellipsoid" size="0.125 0.143 0.086" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_10" pos="-9.239 14.038 1.167" quat="-0.172433 -0.624249 0.093175 0.75624" user="2">
+      <freejoint name="falling_stone_rubble_northwest_10_free"/>
+      <geom name="falling_stone_rubble_northwest_10_geom" type="ellipsoid" size="0.103 0.161 0.072" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_11" pos="-8.948 11.813 1.614" quat="-0.196919 0.12948 -0.933132 0.271519" user="2">
+      <freejoint name="falling_stone_rubble_northwest_11_free"/>
+      <geom name="falling_stone_rubble_northwest_11_geom" type="ellipsoid" size="0.128 0.167 0.058" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_12" pos="-9.378 14.02 1.075" quat="-0.608445 0.6346 -0.247172 0.407411" user="2">
+      <freejoint name="falling_stone_rubble_northwest_12_free"/>
+      <geom name="falling_stone_rubble_northwest_12_geom" type="ellipsoid" size="0.193 0.172 0.082" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_13" pos="-7.284 13.466 1.666" quat="0.132652 -0.926438 -0.136728 -0.324686" user="2">
+      <freejoint name="falling_stone_rubble_northwest_13_free"/>
+      <geom name="falling_stone_rubble_northwest_13_geom" type="ellipsoid" size="0.122 0.077 0.057" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_14" pos="-8.278 13.105 1.881" quat="0.028644 -0.040505 0.382377 -0.922674" user="2">
+      <freejoint name="falling_stone_rubble_northwest_14_free"/>
+      <geom name="falling_stone_rubble_northwest_14_geom" type="ellipsoid" size="0.139 0.115 0.088" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_15" pos="-10.413 13.36 1.452" quat="-0.622294 0.688435 -0.366507 0.066934" user="2">
+      <freejoint name="falling_stone_rubble_northwest_15_free"/>
+      <geom name="falling_stone_rubble_northwest_15_geom" type="ellipsoid" size="0.176 0.106 0.134" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_16" pos="-7.311 13.418 0.998" quat="0.357916 -0.461701 -0.77125 -0.252787" user="2">
+      <freejoint name="falling_stone_rubble_northwest_16_free"/>
+      <geom name="falling_stone_rubble_northwest_16_geom" type="ellipsoid" size="0.103 0.169 0.079" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northwest_17" pos="-9.592 13.037 1.373" quat="-0.679244 0.64561 0.321802 0.135124" user="2">
+      <freejoint name="falling_stone_rubble_northwest_17_free"/>
+      <geom name="falling_stone_rubble_northwest_17_geom" type="ellipsoid" size="0.182 0.165 0.04" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_00" pos="9.777 12.206 1.459" quat="-0.567739 -0.795547 0.188593 -0.095965" user="2">
+      <freejoint name="falling_stone_rubble_northeast_00_free"/>
+      <geom name="falling_stone_rubble_northeast_00_geom" type="ellipsoid" size="0.117 0.177 0.123" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_01" pos="9.849 13.145 1.572" quat="0.56966 -0.426139 0.691639 0.124611" user="2">
+      <freejoint name="falling_stone_rubble_northeast_01_free"/>
+      <geom name="falling_stone_rubble_northeast_01_geom" type="ellipsoid" size="0.192 0.098 0.085" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_02" pos="7.846 13.625 1.287" quat="-0.140087 0.897723 0.41117 -0.073548" user="2">
+      <freejoint name="falling_stone_rubble_northeast_02_free"/>
+      <geom name="falling_stone_rubble_northeast_02_geom" type="ellipsoid" size="0.135 0.109 0.048" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_03" pos="8.454 12.537 1.251" quat="0.38423 -0.205797 -0.669066 -0.601968" user="2">
+      <freejoint name="falling_stone_rubble_northeast_03_free"/>
+      <geom name="falling_stone_rubble_northeast_03_geom" type="ellipsoid" size="0.14 0.074 0.065" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_04" pos="8.372 13.099 1.838" quat="0.028537 0.462499 -0.354403 0.812206" user="2">
+      <freejoint name="falling_stone_rubble_northeast_04_free"/>
+      <geom name="falling_stone_rubble_northeast_04_geom" type="ellipsoid" size="0.118 0.094 0.083" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_05" pos="7.854 13.464 1.327" quat="0.478006 0.412618 0.64874 0.424727" user="2">
+      <freejoint name="falling_stone_rubble_northeast_05_free"/>
+      <geom name="falling_stone_rubble_northeast_05_geom" type="ellipsoid" size="0.166 0.093 0.08" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_06" pos="8.615 12.334 1.543" quat="0.486781 -0.782146 -0.032748 0.387581" user="2">
+      <freejoint name="falling_stone_rubble_northeast_06_free"/>
+      <geom name="falling_stone_rubble_northeast_06_geom" type="ellipsoid" size="0.197 0.091 0.088" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_07" pos="9.295 12.098 1.28" quat="-0.445048 -0.312283 0.792526 -0.276249" user="2">
+      <freejoint name="falling_stone_rubble_northeast_07_free"/>
+      <geom name="falling_stone_rubble_northeast_07_geom" type="ellipsoid" size="0.101 0.144 0.099" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_08" pos="10.094 12.578 1.702" quat="0.18163 0.6757 0.346354 0.624883" user="2">
+      <freejoint name="falling_stone_rubble_northeast_08_free"/>
+      <geom name="falling_stone_rubble_northeast_08_geom" type="ellipsoid" size="0.172 0.089 0.122" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_09" pos="9.91 13.376 1.773" quat="-0.384601 -0.685828 0.446333 0.427211" user="2">
+      <freejoint name="falling_stone_rubble_northeast_09_free"/>
+      <geom name="falling_stone_rubble_northeast_09_geom" type="ellipsoid" size="0.152 0.11 0.114" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_10" pos="7.998 11.955 1.126" quat="-0.001352 -0.885451 -0.211808 -0.413657" user="2">
+      <freejoint name="falling_stone_rubble_northeast_10_free"/>
+      <geom name="falling_stone_rubble_northeast_10_geom" type="ellipsoid" size="0.148 0.142 0.041" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_11" pos="10.313 12.341 1.63" quat="-0.386475 -0.027297 -0.066307 -0.919508" user="2">
+      <freejoint name="falling_stone_rubble_northeast_11_free"/>
+      <geom name="falling_stone_rubble_northeast_11_geom" type="ellipsoid" size="0.099 0.134 0.082" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_12" pos="10.463 12.899 1.534" quat="0.752138 0.4295 -0.347712 0.359048" user="2">
+      <freejoint name="falling_stone_rubble_northeast_12_free"/>
+      <geom name="falling_stone_rubble_northeast_12_geom" type="ellipsoid" size="0.208 0.076 0.111" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_13" pos="10.091 12.464 1.209" quat="0.815061 0.076048 -0.303059 -0.487901" user="2">
+      <freejoint name="falling_stone_rubble_northeast_13_free"/>
+      <geom name="falling_stone_rubble_northeast_13_geom" type="ellipsoid" size="0.161 0.158 0.082" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_14" pos="7.888 11.729 1.921" quat="-0.748788 0.48685 -0.431966 -0.125299" user="2">
+      <freejoint name="falling_stone_rubble_northeast_14_free"/>
+      <geom name="falling_stone_rubble_northeast_14_geom" type="ellipsoid" size="0.217 0.095 0.11" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_15" pos="9.161 11.51 1.199" quat="0.2714 -0.211527 -0.76031 0.550933" user="2">
+      <freejoint name="falling_stone_rubble_northeast_15_free"/>
+      <geom name="falling_stone_rubble_northeast_15_geom" type="ellipsoid" size="0.197 0.085 0.121" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_16" pos="9.978 11.67 1.414" quat="-0.82475 -0.311433 0.023959 0.471405" user="2">
+      <freejoint name="falling_stone_rubble_northeast_16_free"/>
+      <geom name="falling_stone_rubble_northeast_16_geom" type="ellipsoid" size="0.171 0.064 0.068" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_northeast_17" pos="7.759 12.586 1.489" quat="0.100189 -0.739886 -0.167695 -0.643746" user="2">
+      <freejoint name="falling_stone_rubble_northeast_17_free"/>
+      <geom name="falling_stone_rubble_northeast_17_geom" type="ellipsoid" size="0.182 0.094 0.12" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_00" pos="-8.512 -13.054 1.567" quat="0.15153 -0.674637 -0.678652 0.247661" user="2">
+      <freejoint name="falling_stone_rubble_southwest_00_free"/>
+      <geom name="falling_stone_rubble_southwest_00_geom" type="ellipsoid" size="0.083 0.09 0.101" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_01" pos="-10.672 -12.357 1.358" quat="-0.441723 -0.487171 -0.402265 0.636967" user="2">
+      <freejoint name="falling_stone_rubble_southwest_01_free"/>
+      <geom name="falling_stone_rubble_southwest_01_geom" type="ellipsoid" size="0.186 0.099 0.078" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_02" pos="-10.259 -10.972 1.337" quat="-0.260212 0.266531 0.920353 -0.119171" user="2">
+      <freejoint name="falling_stone_rubble_southwest_02_free"/>
+      <geom name="falling_stone_rubble_southwest_02_geom" type="ellipsoid" size="0.129 0.074 0.104" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_03" pos="-10.791 -12.181 1.282" quat="0.421038 -0.273601 0.473725 0.723501" user="2">
+      <freejoint name="falling_stone_rubble_southwest_03_free"/>
+      <geom name="falling_stone_rubble_southwest_03_geom" type="ellipsoid" size="0.115 0.083 0.114" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_04" pos="-9.148 -13.399 1.516" quat="0.724741 -0.501028 -0.261199 0.394331" user="2">
+      <freejoint name="falling_stone_rubble_southwest_04_free"/>
+      <geom name="falling_stone_rubble_southwest_04_geom" type="ellipsoid" size="0.083 0.104 0.058" material="rock_mat" mass="3.4453" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_05" pos="-9.788 -12.735 1.497" quat="0.376587 -0.90409 0.032629 -0.199343" user="2">
+      <freejoint name="falling_stone_rubble_southwest_05_free"/>
+      <geom name="falling_stone_rubble_southwest_05_geom" type="ellipsoid" size="0.213 0.105 0.051" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_06" pos="-9.174 -13.322 1.85" quat="0.466362 -0.37593 -0.313847 -0.73667" user="2">
+      <freejoint name="falling_stone_rubble_southwest_06_free"/>
+      <geom name="falling_stone_rubble_southwest_06_geom" type="ellipsoid" size="0.18 0.117 0.044" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_07" pos="-10.973 -13.21 1.39" quat="-0.647603 0.677969 -0.277936 0.209093" user="2">
+      <freejoint name="falling_stone_rubble_southwest_07_free"/>
+      <geom name="falling_stone_rubble_southwest_07_geom" type="ellipsoid" size="0.177 0.079 0.058" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_08" pos="-8.936 -12.192 1.375" quat="0.87282 -0.026998 -0.050978 0.484622" user="2">
+      <freejoint name="falling_stone_rubble_southwest_08_free"/>
+      <geom name="falling_stone_rubble_southwest_08_geom" type="ellipsoid" size="0.228 0.17 0.12" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_09" pos="-9.219 -11.284 1.445" quat="-0.177692 -0.516813 -0.478119 0.687555" user="2">
+      <freejoint name="falling_stone_rubble_southwest_09_free"/>
+      <geom name="falling_stone_rubble_southwest_09_geom" type="ellipsoid" size="0.164 0.132 0.083" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_10" pos="-9.977 -11.896 1.409" quat="-0.424049 -0.416581 0.668516 -0.44691" user="2">
+      <freejoint name="falling_stone_rubble_southwest_10_free"/>
+      <geom name="falling_stone_rubble_southwest_10_geom" type="ellipsoid" size="0.235 0.126 0.079" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_11" pos="-9.609 -12.693 1.954" quat="0.079486 -0.127476 -0.782642 0.604072" user="2">
+      <freejoint name="falling_stone_rubble_southwest_11_free"/>
+      <geom name="falling_stone_rubble_southwest_11_geom" type="ellipsoid" size="0.184 0.148 0.092" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_12" pos="-10.662 -11.715 1.213" quat="0.34406 0.229991 0.888795 -0.196903" user="2">
+      <freejoint name="falling_stone_rubble_southwest_12_free"/>
+      <geom name="falling_stone_rubble_southwest_12_geom" type="ellipsoid" size="0.125 0.104 0.051" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_13" pos="-11.13 -12.975 1.155" quat="0.255241 0.064971 0.919442 -0.291987" user="2">
+      <freejoint name="falling_stone_rubble_southwest_13_free"/>
+      <geom name="falling_stone_rubble_southwest_13_geom" type="ellipsoid" size="0.1 0.136 0.101" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_14" pos="-9.333 -12.335 1.592" quat="0.70611 0.424026 0.516172 0.234899" user="2">
+      <freejoint name="falling_stone_rubble_southwest_14_free"/>
+      <geom name="falling_stone_rubble_southwest_14_geom" type="ellipsoid" size="0.114 0.109 0.056" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_15" pos="-9.227 -11.44 1.806" quat="-0.05219 -0.089921 0.988242 0.11211" user="2">
+      <freejoint name="falling_stone_rubble_southwest_15_free"/>
+      <geom name="falling_stone_rubble_southwest_15_geom" type="ellipsoid" size="0.219 0.176 0.092" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_16" pos="-9.554 -12.61 1.291" quat="0.568187 -0.70407 -0.27063 0.328951" user="2">
+      <freejoint name="falling_stone_rubble_southwest_16_free"/>
+      <geom name="falling_stone_rubble_southwest_16_geom" type="ellipsoid" size="0.199 0.176 0.103" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southwest_17" pos="-8.535 -12.415 1.563" quat="0.341949 0.853302 -0.227003 0.321585" user="2">
+      <freejoint name="falling_stone_rubble_southwest_17_free"/>
+      <geom name="falling_stone_rubble_southwest_17_geom" type="ellipsoid" size="0.196 0.085 0.091" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_00" pos="9.876 -9.648 1.697" quat="-0.666381 -0.248987 0.049023 0.701099" user="2">
+      <freejoint name="falling_stone_rubble_southeast_00_free"/>
+      <geom name="falling_stone_rubble_southeast_00_geom" type="ellipsoid" size="0.113 0.09 0.051" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_01" pos="9.878 -10.087 1.047" quat="-0.392481 -0.043647 0.483393 0.781271" user="2">
+      <freejoint name="falling_stone_rubble_southeast_01_free"/>
+      <geom name="falling_stone_rubble_southeast_01_geom" type="ellipsoid" size="0.204 0.178 0.087" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_02" pos="10.697 -9.784 1.814" quat="0.97833 0.166026 0.059384 0.108533" user="2">
+      <freejoint name="falling_stone_rubble_southeast_02_free"/>
+      <geom name="falling_stone_rubble_southeast_02_geom" type="ellipsoid" size="0.097 0.067 0.085" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_03" pos="11.458 -9.968 1.28" quat="-0.384653 0.90319 -0.007227 -0.190363" user="2">
+      <freejoint name="falling_stone_rubble_southeast_03_free"/>
+      <geom name="falling_stone_rubble_southeast_03_geom" type="ellipsoid" size="0.191 0.071 0.116" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_04" pos="9.177 -9.596 1.637" quat="0.311894 -0.476628 0.742656 -0.352149" user="2">
+      <freejoint name="falling_stone_rubble_southeast_04_free"/>
+      <geom name="falling_stone_rubble_southeast_04_geom" type="ellipsoid" size="0.177 0.076 0.137" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_05" pos="11.003 -9.021 1.65" quat="0.475206 -0.166476 0.591112 0.63012" user="2">
+      <freejoint name="falling_stone_rubble_southeast_05_free"/>
+      <geom name="falling_stone_rubble_southeast_05_geom" type="ellipsoid" size="0.123 0.061 0.135" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_06" pos="9.361 -9.818 1.681" quat="-0.645766 0.520095 0.200146 -0.521947" user="2">
+      <freejoint name="falling_stone_rubble_southeast_06_free"/>
+      <geom name="falling_stone_rubble_southeast_06_geom" type="ellipsoid" size="0.205 0.138 0.129" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_07" pos="10.17 -8.989 1.593" quat="0.165539 -0.720968 -0.367934 -0.563406" user="2">
+      <freejoint name="falling_stone_rubble_southeast_07_free"/>
+      <geom name="falling_stone_rubble_southeast_07_geom" type="ellipsoid" size="0.199 0.141 0.088" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_08" pos="9.525 -9.37 1.509" quat="0.042914 0.809044 -0.509557 0.289756" user="2">
+      <freejoint name="falling_stone_rubble_southeast_08_free"/>
+      <geom name="falling_stone_rubble_southeast_08_geom" type="ellipsoid" size="0.083 0.11 0.093" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_09" pos="12.026 -9.696 1.589" quat="0.681694 -0.62996 0.359327 0.09658" user="2">
+      <freejoint name="falling_stone_rubble_southeast_09_free"/>
+      <geom name="falling_stone_rubble_southeast_09_geom" type="ellipsoid" size="0.215 0.09 0.05" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_10" pos="10.322 -8.833 1.527" quat="0.170971 0.894467 -0.341502 0.232539" user="2">
+      <freejoint name="falling_stone_rubble_southeast_10_free"/>
+      <geom name="falling_stone_rubble_southeast_10_geom" type="ellipsoid" size="0.203 0.129 0.127" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_11" pos="9.774 -10.409 0.997" quat="0.530807 0.082882 0.38016 -0.752896" user="2">
+      <freejoint name="falling_stone_rubble_southeast_11_free"/>
+      <geom name="falling_stone_rubble_southeast_11_geom" type="ellipsoid" size="0.214 0.145 0.088" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_12" pos="10.55 -10.642 1.109" quat="0.412248 -0.742837 0.019458 -0.52713" user="2">
+      <freejoint name="falling_stone_rubble_southeast_12_free"/>
+      <geom name="falling_stone_rubble_southeast_12_geom" type="ellipsoid" size="0.174 0.175 0.084" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_13" pos="10.79 -8.718 1.796" quat="-0.048293 -0.429927 -0.790444 -0.433623" user="2">
+      <freejoint name="falling_stone_rubble_southeast_13_free"/>
+      <geom name="falling_stone_rubble_southeast_13_geom" type="ellipsoid" size="0.148 0.091 0.105" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_14" pos="9.094 -9.212 1.436" quat="-0.820732 -0.137776 0.408208 -0.375211" user="2">
+      <freejoint name="falling_stone_rubble_southeast_14_free"/>
+      <geom name="falling_stone_rubble_southeast_14_geom" type="ellipsoid" size="0.153 0.16 0.131" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_15" pos="10.935 -8.675 1.251" quat="0.422829 0.038221 -0.519372 0.741625" user="2">
+      <freejoint name="falling_stone_rubble_southeast_15_free"/>
+      <geom name="falling_stone_rubble_southeast_15_geom" type="ellipsoid" size="0.076 0.149 0.041" material="rock_mat" mass="3.21" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_16" pos="9.763 -9.726 1.364" quat="-0.411047 -0.802442 -0.085617 0.424025" user="2">
+      <freejoint name="falling_stone_rubble_southeast_16_free"/>
+      <geom name="falling_stone_rubble_southeast_16_geom" type="ellipsoid" size="0.184 0.177 0.115" material="rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="falling_stone_rubble_southeast_17" pos="11.828 -9.186 1.217" quat="-0.804416 0.530907 -0.265316 -0.025681" user="2">
+      <freejoint name="falling_stone_rubble_southeast_17_free"/>
+      <geom name="falling_stone_rubble_southeast_17_geom" type="ellipsoid" size="0.122 0.085 0.128" material="dark_rock_mat" mass="3.5" contype="1" conaffinity="1" user="2"/>
+    </body>
+    <body name="ore_00" pos="-6.0 -1.2 0.69" user="1">
+      <freejoint name="ore_00_free"/>
+      <geom name="ore_00_geom" type="ellipsoid" size="0.224 0.217 0.15" material="ore_gold" mass="0.703" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_00_pickup_site" type="sphere" size="0.258" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_01" pos="-4.5 4.8 0.619" user="1">
+      <freejoint name="ore_01_free"/>
+      <geom name="ore_01_geom" type="ellipsoid" size="0.196 0.164 0.18" material="ore_blue" mass="0.715" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_01_pickup_site" type="sphere" size="0.225" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_02" pos="0.0 6.6 0.663" user="1">
+      <freejoint name="ore_02_free"/>
+      <geom name="ore_02_geom" type="ellipsoid" size="0.183 0.161 0.174" material="ore_copper" mass="0.755" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_02_pickup_site" type="sphere" size="0.21" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_03" pos="5.5 3.7 0.679" user="1">
+      <freejoint name="ore_03_free"/>
+      <geom name="ore_03_geom" type="ellipsoid" size="0.194 0.174 0.113" material="ore_green" mass="0.603" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_03_pickup_site" type="sphere" size="0.223" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_04" pos="6.2 -3.4 0.627" user="1">
+      <freejoint name="ore_04_free"/>
+      <geom name="ore_04_geom" type="ellipsoid" size="0.195 0.215 0.208" material="ore_gold" mass="0.352" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_04_pickup_site" type="sphere" size="0.247" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_05" pos="-2.5 -6.1 0.62" user="1">
+      <freejoint name="ore_05_free"/>
+      <geom name="ore_05_geom" type="ellipsoid" size="0.19 0.189 0.169" material="ore_blue" mass="0.492" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_05_pickup_site" type="sphere" size="0.218" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_06" pos="-13.0 -1.6 0.588" user="1">
+      <freejoint name="ore_06_free"/>
+      <geom name="ore_06_geom" type="ellipsoid" size="0.189 0.183 0.14" material="ore_copper" mass="0.685" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_06_pickup_site" type="sphere" size="0.217" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_07" pos="-10.0 10.2 0.593" user="1">
+      <freejoint name="ore_07_free"/>
+      <geom name="ore_07_geom" type="ellipsoid" size="0.188 0.14 0.1" material="ore_green" mass="0.355" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_07_pickup_site" type="sphere" size="0.216" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_08" pos="11.2 -8.0 0.522" user="1">
+      <freejoint name="ore_08_free"/>
+      <geom name="ore_08_geom" type="ellipsoid" size="0.182 0.182 0.11" material="ore_gold" mass="0.638" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_08_pickup_site" type="sphere" size="0.209" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_09" pos="13.0 2.5 0.551" user="1">
+      <freejoint name="ore_09_free"/>
+      <geom name="ore_09_geom" type="ellipsoid" size="0.179 0.153 0.151" material="ore_blue" mass="0.606" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_09_pickup_site" type="sphere" size="0.206" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_10" pos="-15.0 4.8 0.582" user="1">
+      <freejoint name="ore_10_free"/>
+      <geom name="ore_10_geom" type="ellipsoid" size="0.188 0.145 0.119" material="ore_copper" mass="0.745" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_10_pickup_site" type="sphere" size="0.216" rgba="1 1 1 0.18" group="3"/>
+    </body>
+    <body name="ore_11" pos="9.2 -13.0 0.503" user="1">
+      <freejoint name="ore_11_free"/>
+      <geom name="ore_11_geom" type="ellipsoid" size="0.25 0.235 0.194" material="ore_green" mass="0.842" contype="1" conaffinity="1" user="1"/>
+      <site name="ore_11_pickup_site" type="sphere" size="0.287" rgba="1 1 1 0.18" group="3"/>
+    </body>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,1514 @@
+[
+  {
+    "name": "falling_stone_rubble_northwest_00",
+    "pile": "rubble_northwest",
+    "pos": [
+      -9.607,
+      13.874,
+      1.374
+    ],
+    "size": [
+      0.109,
+      0.083,
+      0.102
+    ],
+    "quat": [
+      -0.509803,
+      -0.307323,
+      -0.167907,
+      0.785786
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_01",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.317,
+      12.74,
+      1.165
+    ],
+    "size": [
+      0.148,
+      0.138,
+      0.087
+    ],
+    "quat": [
+      -0.387339,
+      0.157772,
+      -0.463031,
+      -0.781459
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_02",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.142,
+      13.671,
+      1.856
+    ],
+    "size": [
+      0.208,
+      0.155,
+      0.103
+    ],
+    "quat": [
+      -0.436485,
+      -0.550786,
+      -0.52693,
+      -0.477975
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_03",
+    "pile": "rubble_northwest",
+    "pos": [
+      -8.022,
+      13.197,
+      1.346
+    ],
+    "size": [
+      0.125,
+      0.17,
+      0.109
+    ],
+    "quat": [
+      -0.357352,
+      0.407828,
+      -0.207913,
+      0.814093
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_04",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.454,
+      12.654,
+      1.936
+    ],
+    "size": [
+      0.171,
+      0.141,
+      0.109
+    ],
+    "quat": [
+      -0.022239,
+      -0.571193,
+      -0.699072,
+      0.429583
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_05",
+    "pile": "rubble_northwest",
+    "pos": [
+      -9.8,
+      13.237,
+      1.677
+    ],
+    "size": [
+      0.115,
+      0.083,
+      0.129
+    ],
+    "quat": [
+      0.974662,
+      0.096604,
+      0.095895,
+      0.177499
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_06",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.889,
+      12.124,
+      1.468
+    ],
+    "size": [
+      0.136,
+      0.154,
+      0.07
+    ],
+    "quat": [
+      -0.003609,
+      0.904975,
+      0.033117,
+      -0.424158
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_07",
+    "pile": "rubble_northwest",
+    "pos": [
+      -8.776,
+      13.441,
+      1.766
+    ],
+    "size": [
+      0.132,
+      0.147,
+      0.102
+    ],
+    "quat": [
+      0.446627,
+      0.082913,
+      -0.889449,
+      -0.050294
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_08",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.614,
+      12.839,
+      1.217
+    ],
+    "size": [
+      0.236,
+      0.081,
+      0.085
+    ],
+    "quat": [
+      0.099269,
+      -0.901643,
+      0.393606,
+      -0.149195
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_09",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.785,
+      12.386,
+      1.6
+    ],
+    "size": [
+      0.125,
+      0.143,
+      0.086
+    ],
+    "quat": [
+      -0.130848,
+      -0.315867,
+      0.939587,
+      -0.016812
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_10",
+    "pile": "rubble_northwest",
+    "pos": [
+      -9.239,
+      14.038,
+      1.167
+    ],
+    "size": [
+      0.103,
+      0.161,
+      0.072
+    ],
+    "quat": [
+      -0.172433,
+      -0.624249,
+      0.093175,
+      0.75624
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_11",
+    "pile": "rubble_northwest",
+    "pos": [
+      -8.948,
+      11.813,
+      1.614
+    ],
+    "size": [
+      0.128,
+      0.167,
+      0.058
+    ],
+    "quat": [
+      -0.196919,
+      0.12948,
+      -0.933132,
+      0.271519
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_12",
+    "pile": "rubble_northwest",
+    "pos": [
+      -9.378,
+      14.02,
+      1.075
+    ],
+    "size": [
+      0.193,
+      0.172,
+      0.082
+    ],
+    "quat": [
+      -0.608445,
+      0.6346,
+      -0.247172,
+      0.407411
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_13",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.284,
+      13.466,
+      1.666
+    ],
+    "size": [
+      0.122,
+      0.077,
+      0.057
+    ],
+    "quat": [
+      0.132652,
+      -0.926438,
+      -0.136728,
+      -0.324686
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_14",
+    "pile": "rubble_northwest",
+    "pos": [
+      -8.278,
+      13.105,
+      1.881
+    ],
+    "size": [
+      0.139,
+      0.115,
+      0.088
+    ],
+    "quat": [
+      0.028644,
+      -0.040505,
+      0.382377,
+      -0.922674
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_15",
+    "pile": "rubble_northwest",
+    "pos": [
+      -10.413,
+      13.36,
+      1.452
+    ],
+    "size": [
+      0.176,
+      0.106,
+      0.134
+    ],
+    "quat": [
+      -0.622294,
+      0.688435,
+      -0.366507,
+      0.066934
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_16",
+    "pile": "rubble_northwest",
+    "pos": [
+      -7.311,
+      13.418,
+      0.998
+    ],
+    "size": [
+      0.103,
+      0.169,
+      0.079
+    ],
+    "quat": [
+      0.357916,
+      -0.461701,
+      -0.77125,
+      -0.252787
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northwest_17",
+    "pile": "rubble_northwest",
+    "pos": [
+      -9.592,
+      13.037,
+      1.373
+    ],
+    "size": [
+      0.182,
+      0.165,
+      0.04
+    ],
+    "quat": [
+      -0.679244,
+      0.64561,
+      0.321802,
+      0.135124
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_00",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.777,
+      12.206,
+      1.459
+    ],
+    "size": [
+      0.117,
+      0.177,
+      0.123
+    ],
+    "quat": [
+      -0.567739,
+      -0.795547,
+      0.188593,
+      -0.095965
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_01",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.849,
+      13.145,
+      1.572
+    ],
+    "size": [
+      0.192,
+      0.098,
+      0.085
+    ],
+    "quat": [
+      0.56966,
+      -0.426139,
+      0.691639,
+      0.124611
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_02",
+    "pile": "rubble_northeast",
+    "pos": [
+      7.846,
+      13.625,
+      1.287
+    ],
+    "size": [
+      0.135,
+      0.109,
+      0.048
+    ],
+    "quat": [
+      -0.140087,
+      0.897723,
+      0.41117,
+      -0.073548
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_03",
+    "pile": "rubble_northeast",
+    "pos": [
+      8.454,
+      12.537,
+      1.251
+    ],
+    "size": [
+      0.14,
+      0.074,
+      0.065
+    ],
+    "quat": [
+      0.38423,
+      -0.205797,
+      -0.669066,
+      -0.601968
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_04",
+    "pile": "rubble_northeast",
+    "pos": [
+      8.372,
+      13.099,
+      1.838
+    ],
+    "size": [
+      0.118,
+      0.094,
+      0.083
+    ],
+    "quat": [
+      0.028537,
+      0.462499,
+      -0.354403,
+      0.812206
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_05",
+    "pile": "rubble_northeast",
+    "pos": [
+      7.854,
+      13.464,
+      1.327
+    ],
+    "size": [
+      0.166,
+      0.093,
+      0.08
+    ],
+    "quat": [
+      0.478006,
+      0.412618,
+      0.64874,
+      0.424727
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_06",
+    "pile": "rubble_northeast",
+    "pos": [
+      8.615,
+      12.334,
+      1.543
+    ],
+    "size": [
+      0.197,
+      0.091,
+      0.088
+    ],
+    "quat": [
+      0.486781,
+      -0.782146,
+      -0.032748,
+      0.387581
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_07",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.295,
+      12.098,
+      1.28
+    ],
+    "size": [
+      0.101,
+      0.144,
+      0.099
+    ],
+    "quat": [
+      -0.445048,
+      -0.312283,
+      0.792526,
+      -0.276249
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_08",
+    "pile": "rubble_northeast",
+    "pos": [
+      10.094,
+      12.578,
+      1.702
+    ],
+    "size": [
+      0.172,
+      0.089,
+      0.122
+    ],
+    "quat": [
+      0.18163,
+      0.6757,
+      0.346354,
+      0.624883
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_09",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.91,
+      13.376,
+      1.773
+    ],
+    "size": [
+      0.152,
+      0.11,
+      0.114
+    ],
+    "quat": [
+      -0.384601,
+      -0.685828,
+      0.446333,
+      0.427211
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_10",
+    "pile": "rubble_northeast",
+    "pos": [
+      7.998,
+      11.955,
+      1.126
+    ],
+    "size": [
+      0.148,
+      0.142,
+      0.041
+    ],
+    "quat": [
+      -0.001352,
+      -0.885451,
+      -0.211808,
+      -0.413657
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_11",
+    "pile": "rubble_northeast",
+    "pos": [
+      10.313,
+      12.341,
+      1.63
+    ],
+    "size": [
+      0.099,
+      0.134,
+      0.082
+    ],
+    "quat": [
+      -0.386475,
+      -0.027297,
+      -0.066307,
+      -0.919508
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_12",
+    "pile": "rubble_northeast",
+    "pos": [
+      10.463,
+      12.899,
+      1.534
+    ],
+    "size": [
+      0.208,
+      0.076,
+      0.111
+    ],
+    "quat": [
+      0.752138,
+      0.4295,
+      -0.347712,
+      0.359048
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_13",
+    "pile": "rubble_northeast",
+    "pos": [
+      10.091,
+      12.464,
+      1.209
+    ],
+    "size": [
+      0.161,
+      0.158,
+      0.082
+    ],
+    "quat": [
+      0.815061,
+      0.076048,
+      -0.303059,
+      -0.487901
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_14",
+    "pile": "rubble_northeast",
+    "pos": [
+      7.888,
+      11.729,
+      1.921
+    ],
+    "size": [
+      0.217,
+      0.095,
+      0.11
+    ],
+    "quat": [
+      -0.748788,
+      0.48685,
+      -0.431966,
+      -0.125299
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_15",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.161,
+      11.51,
+      1.199
+    ],
+    "size": [
+      0.197,
+      0.085,
+      0.121
+    ],
+    "quat": [
+      0.2714,
+      -0.211527,
+      -0.76031,
+      0.550933
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_16",
+    "pile": "rubble_northeast",
+    "pos": [
+      9.978,
+      11.67,
+      1.414
+    ],
+    "size": [
+      0.171,
+      0.064,
+      0.068
+    ],
+    "quat": [
+      -0.82475,
+      -0.311433,
+      0.023959,
+      0.471405
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_northeast_17",
+    "pile": "rubble_northeast",
+    "pos": [
+      7.759,
+      12.586,
+      1.489
+    ],
+    "size": [
+      0.182,
+      0.094,
+      0.12
+    ],
+    "quat": [
+      0.100189,
+      -0.739886,
+      -0.167695,
+      -0.643746
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_00",
+    "pile": "rubble_southwest",
+    "pos": [
+      -8.512,
+      -13.054,
+      1.567
+    ],
+    "size": [
+      0.083,
+      0.09,
+      0.101
+    ],
+    "quat": [
+      0.15153,
+      -0.674637,
+      -0.678652,
+      0.247661
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_01",
+    "pile": "rubble_southwest",
+    "pos": [
+      -10.672,
+      -12.357,
+      1.358
+    ],
+    "size": [
+      0.186,
+      0.099,
+      0.078
+    ],
+    "quat": [
+      -0.441723,
+      -0.487171,
+      -0.402265,
+      0.636967
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_02",
+    "pile": "rubble_southwest",
+    "pos": [
+      -10.259,
+      -10.972,
+      1.337
+    ],
+    "size": [
+      0.129,
+      0.074,
+      0.104
+    ],
+    "quat": [
+      -0.260212,
+      0.266531,
+      0.920353,
+      -0.119171
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_03",
+    "pile": "rubble_southwest",
+    "pos": [
+      -10.791,
+      -12.181,
+      1.282
+    ],
+    "size": [
+      0.115,
+      0.083,
+      0.114
+    ],
+    "quat": [
+      0.421038,
+      -0.273601,
+      0.473725,
+      0.723501
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_04",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.148,
+      -13.399,
+      1.516
+    ],
+    "size": [
+      0.083,
+      0.104,
+      0.058
+    ],
+    "quat": [
+      0.724741,
+      -0.501028,
+      -0.261199,
+      0.394331
+    ],
+    "mass": 3.4453
+  },
+  {
+    "name": "falling_stone_rubble_southwest_05",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.788,
+      -12.735,
+      1.497
+    ],
+    "size": [
+      0.213,
+      0.105,
+      0.051
+    ],
+    "quat": [
+      0.376587,
+      -0.90409,
+      0.032629,
+      -0.199343
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_06",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.174,
+      -13.322,
+      1.85
+    ],
+    "size": [
+      0.18,
+      0.117,
+      0.044
+    ],
+    "quat": [
+      0.466362,
+      -0.37593,
+      -0.313847,
+      -0.73667
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_07",
+    "pile": "rubble_southwest",
+    "pos": [
+      -10.973,
+      -13.21,
+      1.39
+    ],
+    "size": [
+      0.177,
+      0.079,
+      0.058
+    ],
+    "quat": [
+      -0.647603,
+      0.677969,
+      -0.277936,
+      0.209093
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_08",
+    "pile": "rubble_southwest",
+    "pos": [
+      -8.936,
+      -12.192,
+      1.375
+    ],
+    "size": [
+      0.228,
+      0.17,
+      0.12
+    ],
+    "quat": [
+      0.87282,
+      -0.026998,
+      -0.050978,
+      0.484622
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_09",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.219,
+      -11.284,
+      1.445
+    ],
+    "size": [
+      0.164,
+      0.132,
+      0.083
+    ],
+    "quat": [
+      -0.177692,
+      -0.516813,
+      -0.478119,
+      0.687555
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_10",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.977,
+      -11.896,
+      1.409
+    ],
+    "size": [
+      0.235,
+      0.126,
+      0.079
+    ],
+    "quat": [
+      -0.424049,
+      -0.416581,
+      0.668516,
+      -0.44691
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_11",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.609,
+      -12.693,
+      1.954
+    ],
+    "size": [
+      0.184,
+      0.148,
+      0.092
+    ],
+    "quat": [
+      0.079486,
+      -0.127476,
+      -0.782642,
+      0.604072
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_12",
+    "pile": "rubble_southwest",
+    "pos": [
+      -10.662,
+      -11.715,
+      1.213
+    ],
+    "size": [
+      0.125,
+      0.104,
+      0.051
+    ],
+    "quat": [
+      0.34406,
+      0.229991,
+      0.888795,
+      -0.196903
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_13",
+    "pile": "rubble_southwest",
+    "pos": [
+      -11.13,
+      -12.975,
+      1.155
+    ],
+    "size": [
+      0.1,
+      0.136,
+      0.101
+    ],
+    "quat": [
+      0.255241,
+      0.064971,
+      0.919442,
+      -0.291987
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_14",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.333,
+      -12.335,
+      1.592
+    ],
+    "size": [
+      0.114,
+      0.109,
+      0.056
+    ],
+    "quat": [
+      0.70611,
+      0.424026,
+      0.516172,
+      0.234899
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_15",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.227,
+      -11.44,
+      1.806
+    ],
+    "size": [
+      0.219,
+      0.176,
+      0.092
+    ],
+    "quat": [
+      -0.05219,
+      -0.089921,
+      0.988242,
+      0.11211
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_16",
+    "pile": "rubble_southwest",
+    "pos": [
+      -9.554,
+      -12.61,
+      1.291
+    ],
+    "size": [
+      0.199,
+      0.176,
+      0.103
+    ],
+    "quat": [
+      0.568187,
+      -0.70407,
+      -0.27063,
+      0.328951
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southwest_17",
+    "pile": "rubble_southwest",
+    "pos": [
+      -8.535,
+      -12.415,
+      1.563
+    ],
+    "size": [
+      0.196,
+      0.085,
+      0.091
+    ],
+    "quat": [
+      0.341949,
+      0.853302,
+      -0.227003,
+      0.321585
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_00",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.876,
+      -9.648,
+      1.697
+    ],
+    "size": [
+      0.113,
+      0.09,
+      0.051
+    ],
+    "quat": [
+      -0.666381,
+      -0.248987,
+      0.049023,
+      0.701099
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_01",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.878,
+      -10.087,
+      1.047
+    ],
+    "size": [
+      0.204,
+      0.178,
+      0.087
+    ],
+    "quat": [
+      -0.392481,
+      -0.043647,
+      0.483393,
+      0.781271
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_02",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.697,
+      -9.784,
+      1.814
+    ],
+    "size": [
+      0.097,
+      0.067,
+      0.085
+    ],
+    "quat": [
+      0.97833,
+      0.166026,
+      0.059384,
+      0.108533
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_03",
+    "pile": "rubble_southeast",
+    "pos": [
+      11.458,
+      -9.968,
+      1.28
+    ],
+    "size": [
+      0.191,
+      0.071,
+      0.116
+    ],
+    "quat": [
+      -0.384653,
+      0.90319,
+      -0.007227,
+      -0.190363
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_04",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.177,
+      -9.596,
+      1.637
+    ],
+    "size": [
+      0.177,
+      0.076,
+      0.137
+    ],
+    "quat": [
+      0.311894,
+      -0.476628,
+      0.742656,
+      -0.352149
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_05",
+    "pile": "rubble_southeast",
+    "pos": [
+      11.003,
+      -9.021,
+      1.65
+    ],
+    "size": [
+      0.123,
+      0.061,
+      0.135
+    ],
+    "quat": [
+      0.475206,
+      -0.166476,
+      0.591112,
+      0.63012
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_06",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.361,
+      -9.818,
+      1.681
+    ],
+    "size": [
+      0.205,
+      0.138,
+      0.129
+    ],
+    "quat": [
+      -0.645766,
+      0.520095,
+      0.200146,
+      -0.521947
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_07",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.17,
+      -8.989,
+      1.593
+    ],
+    "size": [
+      0.199,
+      0.141,
+      0.088
+    ],
+    "quat": [
+      0.165539,
+      -0.720968,
+      -0.367934,
+      -0.563406
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_08",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.525,
+      -9.37,
+      1.509
+    ],
+    "size": [
+      0.083,
+      0.11,
+      0.093
+    ],
+    "quat": [
+      0.042914,
+      0.809044,
+      -0.509557,
+      0.289756
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_09",
+    "pile": "rubble_southeast",
+    "pos": [
+      12.026,
+      -9.696,
+      1.589
+    ],
+    "size": [
+      0.215,
+      0.09,
+      0.05
+    ],
+    "quat": [
+      0.681694,
+      -0.62996,
+      0.359327,
+      0.09658
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_10",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.322,
+      -8.833,
+      1.527
+    ],
+    "size": [
+      0.203,
+      0.129,
+      0.127
+    ],
+    "quat": [
+      0.170971,
+      0.894467,
+      -0.341502,
+      0.232539
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_11",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.774,
+      -10.409,
+      0.997
+    ],
+    "size": [
+      0.214,
+      0.145,
+      0.088
+    ],
+    "quat": [
+      0.530807,
+      0.082882,
+      0.38016,
+      -0.752896
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_12",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.55,
+      -10.642,
+      1.109
+    ],
+    "size": [
+      0.174,
+      0.175,
+      0.084
+    ],
+    "quat": [
+      0.412248,
+      -0.742837,
+      0.019458,
+      -0.52713
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_13",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.79,
+      -8.718,
+      1.796
+    ],
+    "size": [
+      0.148,
+      0.091,
+      0.105
+    ],
+    "quat": [
+      -0.048293,
+      -0.429927,
+      -0.790444,
+      -0.433623
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_14",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.094,
+      -9.212,
+      1.436
+    ],
+    "size": [
+      0.153,
+      0.16,
+      0.131
+    ],
+    "quat": [
+      -0.820732,
+      -0.137776,
+      0.408208,
+      -0.375211
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_15",
+    "pile": "rubble_southeast",
+    "pos": [
+      10.935,
+      -8.675,
+      1.251
+    ],
+    "size": [
+      0.076,
+      0.149,
+      0.041
+    ],
+    "quat": [
+      0.422829,
+      0.038221,
+      -0.519372,
+      0.741625
+    ],
+    "mass": 3.21
+  },
+  {
+    "name": "falling_stone_rubble_southeast_16",
+    "pile": "rubble_southeast",
+    "pos": [
+      9.763,
+      -9.726,
+      1.364
+    ],
+    "size": [
+      0.184,
+      0.177,
+      0.115
+    ],
+    "quat": [
+      -0.411047,
+      -0.802442,
+      -0.085617,
+      0.424025
+    ],
+    "mass": 3.5
+  },
+  {
+    "name": "falling_stone_rubble_southeast_17",
+    "pile": "rubble_southeast",
+    "pos": [
+      11.828,
+      -9.186,
+      1.217
+    ],
+    "size": [
+      0.122,
+      0.085,
+      0.128
+    ],
+    "quat": [
+      -0.804416,
+      0.530907,
+      -0.265316,
+      -0.025681
+    ],
+    "mass": 3.5
+  }
+]

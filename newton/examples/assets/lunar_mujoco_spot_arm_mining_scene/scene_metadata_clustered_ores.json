@@ -1,0 +1,982 @@
+{
+  "scene": "lunar_highres_hfield_center_crater_clustered_ores",
+  "mujoco_main_file": "lunar_scene_center_crater_clustered_ores.xml",
+  "terrain_type": "heightfield",
+  "gravity": "0 0 -1.62",
+  "map_size_m": [
+    40.0,
+    40.0
+  ],
+  "heightfield": {
+    "file": "lunar_heightfield_center_crater.png",
+    "raw_height_data_file": "lunar_heightfield_raw_meters.npy",
+    "normalized_height_data_file": "lunar_heightfield_normalized.npy",
+    "resolution": [
+      513,
+      513
+    ],
+    "size": [
+      20.0,
+      20.0,
+      1.65,
+      0.12
+    ],
+    "geom_z_offset": -0.88,
+    "world_xy_extent": [
+      -20.0,
+      20.0,
+      -20.0,
+      20.0
+    ],
+    "raw_height_stats_meters": {
+      "min": -0.551542,
+      "max": 0.219134,
+      "std": 0.072256
+    }
+  },
+  "central_crater": {
+    "name": "central_main_crater",
+    "cx": 0.0,
+    "cy": 0.0,
+    "r": 4.8,
+    "depth": 0.62,
+    "rim": 0.2,
+    "central": true
+  },
+  "all_craters": [
+    {
+      "name": "central_main_crater",
+      "cx": 0.0,
+      "cy": 0.0,
+      "r": 4.8,
+      "depth": 0.62,
+      "rim": 0.2,
+      "central": true
+    },
+    {
+      "name": "small_nw",
+      "cx": -12.8,
+      "cy": 9.4,
+      "r": 1.35,
+      "depth": 0.075,
+      "rim": 0.022,
+      "central": false
+    },
+    {
+      "name": "medium_ne",
+      "cx": 12.0,
+      "cy": 10.5,
+      "r": 2.15,
+      "depth": 0.125,
+      "rim": 0.032,
+      "central": false
+    },
+    {
+      "name": "small_se",
+      "cx": 9.5,
+      "cy": -11.8,
+      "r": 1.55,
+      "depth": 0.09,
+      "rim": 0.025,
+      "central": false
+    },
+    {
+      "name": "medium_sw",
+      "cx": -11.5,
+      "cy": -9.0,
+      "r": 2.2,
+      "depth": 0.135,
+      "rim": 0.036,
+      "central": false
+    }
+  ],
+  "falling_stones": {
+    "count": 72,
+    "body_user_tag": 2,
+    "geom_user_tag": 2
+  },
+  "collectables": {
+    "count": 12,
+    "body_user_tag": 1,
+    "geom_user_tag": 1,
+    "objects": [
+      {
+        "name": "ore_00",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          -6.0,
+          -1.2,
+          0.69
+        ],
+        "size": [
+          0.224,
+          0.217,
+          0.15
+        ],
+        "mass": 0.703
+      },
+      {
+        "name": "ore_01",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          -4.5,
+          4.8,
+          0.619
+        ],
+        "size": [
+          0.196,
+          0.164,
+          0.18
+        ],
+        "mass": 0.715
+      },
+      {
+        "name": "ore_02",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          0.0,
+          6.6,
+          0.663
+        ],
+        "size": [
+          0.183,
+          0.161,
+          0.174
+        ],
+        "mass": 0.755
+      },
+      {
+        "name": "ore_03",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          5.5,
+          3.7,
+          0.679
+        ],
+        "size": [
+          0.194,
+          0.174,
+          0.113
+        ],
+        "mass": 0.603
+      },
+      {
+        "name": "ore_04",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          6.2,
+          -3.4,
+          0.627
+        ],
+        "size": [
+          0.195,
+          0.215,
+          0.208
+        ],
+        "mass": 0.352
+      },
+      {
+        "name": "ore_05",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          -2.5,
+          -6.1,
+          0.62
+        ],
+        "size": [
+          0.19,
+          0.189,
+          0.169
+        ],
+        "mass": 0.492
+      },
+      {
+        "name": "ore_06",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          -13.0,
+          -1.6,
+          0.588
+        ],
+        "size": [
+          0.189,
+          0.183,
+          0.14
+        ],
+        "mass": 0.685
+      },
+      {
+        "name": "ore_07",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          -10.0,
+          10.2,
+          0.593
+        ],
+        "size": [
+          0.188,
+          0.14,
+          0.1
+        ],
+        "mass": 0.355
+      },
+      {
+        "name": "ore_08",
+        "description": "golden nodule",
+        "material": "ore_gold",
+        "pos": [
+          11.2,
+          -8.0,
+          0.522
+        ],
+        "size": [
+          0.182,
+          0.182,
+          0.11
+        ],
+        "mass": 0.638
+      },
+      {
+        "name": "ore_09",
+        "description": "blue nodule",
+        "material": "ore_blue",
+        "pos": [
+          13.0,
+          2.5,
+          0.551
+        ],
+        "size": [
+          0.179,
+          0.153,
+          0.151
+        ],
+        "mass": 0.606
+      },
+      {
+        "name": "ore_10",
+        "description": "copper nodule",
+        "material": "ore_copper",
+        "pos": [
+          -15.0,
+          4.8,
+          0.582
+        ],
+        "size": [
+          0.188,
+          0.145,
+          0.119
+        ],
+        "mass": 0.745
+      },
+      {
+        "name": "ore_11",
+        "description": "green nodule",
+        "material": "ore_green",
+        "pos": [
+          9.2,
+          -13.0,
+          0.503
+        ],
+        "size": [
+          0.25,
+          0.235,
+          0.194
+        ],
+        "mass": 0.842
+      }
+    ]
+  },
+  "ore_cluster": {
+    "center_xy": [
+      10.0,
+      10.0
+    ],
+    "approx_radius_m": 1.8,
+    "count": 14,
+    "notes": [
+      "Collectible ore bodies are clustered near (10, 10).",
+      "Each ore body has user=1 and a freejoint.",
+      "Shapes vary across ellipsoid, box, capsule, cylinder, and compound multi-geom bodies."
+    ],
+    "objects": [
+      {
+        "name": "ore_00",
+        "kind": "large_flat_ellipsoid",
+        "material": "ore_gold",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          8.775,
+          9.098,
+          0.724
+        ],
+        "body_quat": [
+          0.729623,
+          0.0,
+          0.0,
+          0.68385
+        ],
+        "mass_total": 0.82,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.36,
+              0.24,
+              0.15
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mass": 0.82
+          }
+        ]
+      },
+      {
+        "name": "ore_01",
+        "kind": "small_round_pebble",
+        "material": "ore_blue",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          9.341,
+          8.795,
+          0.537
+        ],
+        "body_quat": [
+          0.469528,
+          0.0,
+          0.0,
+          0.882918
+        ],
+        "mass_total": 0.28,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.15,
+              0.13,
+              0.12
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mass": 0.28
+          }
+        ]
+      },
+      {
+        "name": "ore_02",
+        "kind": "angular_box_fragment",
+        "material": "ore_copper",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          9.878,
+          9.053,
+          0.645
+        ],
+        "body_quat": [
+          0.512863,
+          0.0,
+          0.0,
+          -0.85847
+        ],
+        "mass_total": 0.55,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "box",
+            "size": [
+              0.24,
+              0.16,
+              0.11
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.944116,
+              0.08035,
+              0.220963,
+              0.231007
+            ],
+            "mass": 0.55
+          }
+        ]
+      },
+      {
+        "name": "ore_03",
+        "kind": "long_capsule_nodule",
+        "material": "ore_green",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          10.477,
+          8.908,
+          0.768
+        ],
+        "body_quat": [
+          0.696361,
+          0.0,
+          0.0,
+          0.717692
+        ],
+        "mass_total": 0.48,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "capsule",
+            "size": [
+              0.09,
+              0.32
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.721988,
+              0.0,
+              0.691905,
+              0.0
+            ],
+            "mass": 0.48
+          }
+        ]
+      },
+      {
+        "name": "ore_04",
+        "kind": "cylindrical_core",
+        "material": "ore_gold",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          11.084,
+          9.282,
+          0.514
+        ],
+        "body_quat": [
+          0.789083,
+          0.0,
+          0.0,
+          0.614286
+        ],
+        "mass_total": 0.72,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "cylinder",
+            "size": [
+              0.16,
+              0.19
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.863243,
+              0.210792,
+              0.421584,
+              0.180679
+            ],
+            "mass": 0.72
+          }
+        ]
+      },
+      {
+        "name": "ore_05",
+        "kind": "compound_two_lobes",
+        "material": "ore_blue",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          8.502,
+          9.884,
+          0.596
+        ],
+        "body_quat": [
+          0.777395,
+          0.0,
+          0.0,
+          0.629013
+        ],
+        "mass_total": 0.66,
+        "geom_count": 2,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.2,
+              0.14,
+              0.13
+            ],
+            "pos": [
+              -0.08,
+              0.0,
+              0.0
+            ],
+            "quat": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mass": 0.34
+          },
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.15,
+              0.17,
+              0.11
+            ],
+            "pos": [
+              0.1,
+              0.03,
+              0.02
+            ],
+            "quat": [
+              0.974002,
+              0.100413,
+              0.030124,
+              0.200825
+            ],
+            "mass": 0.32
+          }
+        ]
+      },
+      {
+        "name": "ore_06",
+        "kind": "tiny_dense_chip",
+        "material": "ore_copper",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          9.39,
+          10.015,
+          0.494
+        ],
+        "body_quat": [
+          0.98741,
+          0.0,
+          0.0,
+          0.158181
+        ],
+        "mass_total": 0.22,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "box",
+            "size": [
+              0.13,
+              0.08,
+              0.055
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.913386,
+              0.18067,
+              0.050186,
+              0.361339
+            ],
+            "mass": 0.22
+          }
+        ]
+      },
+      {
+        "name": "ore_07",
+        "kind": "compound_three_beads",
+        "material": "ore_green",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          10.065,
+          9.861,
+          0.547
+        ],
+        "body_quat": [
+          0.817336,
+          0.0,
+          0.0,
+          0.576161
+        ],
+        "mass_total": 0.6,
+        "geom_count": 3,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.13,
+              0.11,
+              0.1
+            ],
+            "pos": [
+              -0.11,
+              -0.02,
+              0.0
+            ],
+            "quat": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "mass": 0.2
+          },
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.16,
+              0.12,
+              0.1
+            ],
+            "pos": [
+              0.03,
+              0.04,
+              0.02
+            ],
+            "quat": [
+              0.963863,
+              0.080322,
+              0.240966,
+              0.080322
+            ],
+            "mass": 0.24
+          },
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.1,
+              0.09,
+              0.08
+            ],
+            "pos": [
+              0.16,
+              -0.03,
+              0.01
+            ],
+            "quat": [
+              0.950475,
+              0.18009,
+              0.04002,
+              0.250125
+            ],
+            "mass": 0.16
+          }
+        ]
+      },
+      {
+        "name": "ore_08",
+        "kind": "large_irregular_cluster",
+        "material": "ore_gold",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          10.552,
+          10.222,
+          0.548
+        ],
+        "body_quat": [
+          0.788632,
+          0.0,
+          0.0,
+          0.614865
+        ],
+        "mass_total": 1.1,
+        "geom_count": 3,
+        "geoms": [
+          {
+            "type": "box",
+            "size": [
+              0.22,
+              0.14,
+              0.11
+            ],
+            "pos": [
+              -0.1,
+              0.0,
+              0.0
+            ],
+            "quat": [
+              0.963815,
+              0.140556,
+              0.050199,
+              0.220874
+            ],
+            "mass": 0.42
+          },
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.19,
+              0.15,
+              0.13
+            ],
+            "pos": [
+              0.11,
+              0.04,
+              0.03
+            ],
+            "quat": [
+              0.910273,
+              0.20006,
+              0.170051,
+              0.320096
+            ],
+            "mass": 0.42
+          },
+          {
+            "type": "capsule",
+            "size": [
+              0.065,
+              0.2
+            ],
+            "pos": [
+              0.02,
+              -0.12,
+              0.02
+            ],
+            "quat": [
+              0.680954,
+              0.080112,
+              0.72101,
+              0.10014
+            ],
+            "mass": 0.26
+          }
+        ]
+      },
+      {
+        "name": "ore_09",
+        "kind": "thin_plate",
+        "material": "ore_blue",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          11.277,
+          9.992,
+          0.474
+        ],
+        "body_quat": [
+          0.421108,
+          0.0,
+          0.0,
+          -0.90701
+        ],
+        "mass_total": 0.44,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "box",
+            "size": [
+              0.28,
+              0.18,
+              0.045
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.969177,
+              0.119898,
+              0.079932,
+              0.19983
+            ],
+            "mass": 0.44
+          }
+        ]
+      },
+      {
+        "name": "ore_10",
+        "kind": "tall_chunk",
+        "material": "ore_copper",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          9.186,
+          10.789,
+          0.6
+        ],
+        "body_quat": [
+          0.628101,
+          0.0,
+          0.0,
+          0.778132
+        ],
+        "mass_total": 0.76,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.17,
+              0.14,
+              0.28
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.980736,
+              0.050038,
+              0.16012,
+              0.100075
+            ],
+            "mass": 0.76
+          }
+        ]
+      },
+      {
+        "name": "ore_11",
+        "kind": "short_capsule",
+        "material": "ore_green",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          9.857,
+          11.147,
+          0.595
+        ],
+        "body_quat": [
+          0.730737,
+          0.0,
+          0.0,
+          0.682659
+        ],
+        "mass_total": 0.36,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "capsule",
+            "size": [
+              0.075,
+              0.18
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.750714,
+              0.0,
+              0.660628,
+              0.0
+            ],
+            "mass": 0.36
+          }
+        ]
+      },
+      {
+        "name": "ore_12",
+        "kind": "small_boxy_nugget",
+        "material": "ore_gold",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          10.636,
+          10.964,
+          0.298
+        ],
+        "body_quat": [
+          0.973329,
+          0.0,
+          0.0,
+          0.229414
+        ],
+        "mass_total": 0.32,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "box",
+            "size": [
+              0.12,
+              0.1,
+              0.09
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.901172,
+              0.250326,
+              0.150195,
+              0.320417
+            ],
+            "mass": 0.32
+          }
+        ]
+      },
+      {
+        "name": "ore_13",
+        "kind": "medium_ellipsoid",
+        "material": "ore_blue",
+        "cluster": "ore_cluster_near_10_10",
+        "pos": [
+          11.301,
+          11.164,
+          0.356
+        ],
+        "body_quat": [
+          0.809673,
+          0.0,
+          0.0,
+          0.586881
+        ],
+        "mass_total": 0.58,
+        "geom_count": 1,
+        "geoms": [
+          {
+            "type": "ellipsoid",
+            "size": [
+              0.23,
+              0.18,
+              0.12
+            ],
+            "pos": [
+              0,
+              0,
+              0
+            ],
+            "quat": [
+              0.936627,
+              0.120855,
+              0.211496,
+              0.251781
+            ],
+            "mass": 0.58
+          }
+        ]
+      }
+    ]
+  }
+}

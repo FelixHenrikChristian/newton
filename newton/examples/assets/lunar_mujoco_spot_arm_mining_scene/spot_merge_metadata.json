@@ -1,0 +1,85 @@
+{
+  "scene": "lunar_spot_arm_mining_scene",
+  "main_mjcf": "lunar_scene_spot_arm_mining.xml",
+  "base_scene": "lunar_mujoco_dynamic_gravel_textured_obj_ores_scene.zip",
+  "robot_source": {
+    "uploaded_zip": "boston_dynamics_spot.zip",
+    "used_model": "spot_arm.xml",
+    "has_arm": true,
+    "merged_assets": 56,
+    "merged_actuators": 19,
+    "merged_keyframes": [
+      "spot_mining_home"
+    ],
+    "spot_assets_dir": "spot_assets"
+  },
+  "robot_initial_pose": {
+    "body_name": "body",
+    "position_xyz": [
+      6.7,
+      7.1,
+      1.0378
+    ],
+    "yaw_rad": 0.720971,
+    "yaw_deg": 41.309,
+    "quat_wxyz": [
+      0.935726,
+      0.0,
+      0.0,
+      0.352729
+    ],
+    "terrain_z_at_start": 0.28777,
+    "target_cluster_xy": [
+      10.0,
+      10.0
+    ]
+  },
+  "gravel_clearance_for_robot_start": {
+    "clear_radius_m": 1.45,
+    "removed_dynamic_gravel_bodies": 4,
+    "removed_sample": [
+      {
+        "body": "gravel_free_222",
+        "pos": [
+          7.3106,
+          6.7429,
+          0.78616
+        ]
+      },
+      {
+        "body": "gravel_free_256",
+        "pos": [
+          6.6304,
+          7.9378,
+          0.85332
+        ]
+      },
+      {
+        "body": "gravel_free_272",
+        "pos": [
+          6.4433,
+          5.9233,
+          0.82729
+        ]
+      },
+      {
+        "body": "gravel_free_300",
+        "pos": [
+          7.3141,
+          5.9045,
+          0.91349
+        ]
+      }
+    ]
+  },
+  "collection_simulation_conventions": {
+    "ore_bodies": "name prefix ore_, body user=1, geom user=1, pickup sites ore_XX_pickup_site",
+    "ordinary_gravel": "name prefix gravel_free_, body user=3, geom user=3, freejoint dynamic",
+    "spot_actuators": "19 position actuators copied from spot_arm.xml",
+    "recommended_keyframe": "spot_mining_home",
+    "ore_cluster_location": [
+      10.0,
+      10.0
+    ]
+  }
+}
