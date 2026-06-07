@@ -1,13 +1,15 @@
 # Aliengo Z1 MuJoCo Scene
 
 This folder contains a MuJoCo scene for staging a Unitree Aliengo quadruped
-before adding a Unitree Z1 arm.
+with a folded Unitree Z1 arm fixed to the robot trunk.
 
 ## Files
 
 - `aliengo_scene.xml`: MuJoCo scene entry point.
 - `aliengo_assets/*.obj`: Aliengo visual meshes converted from Unitree's
   official `aliengo_description` DAE meshes.
+- `z1_assets/*.obj`: Z1 visual meshes converted from Unitree's official
+  `z1_description` DAE meshes.
 - `LICENSE.unitree_ros`: Upstream Unitree ROS license copied with the converted
   assets.
 
@@ -17,9 +19,22 @@ The Aliengo body, joint, inertial, collision, and mesh data are derived from:
 
 https://github.com/unitreerobotics/unitree_ros/tree/master/robots/aliengo_description
 
+The Z1 arm link, inertial, and mesh data are derived from:
+
+https://github.com/unitreerobotics/unitree_ros/tree/master/robots/z1_description
+
+The Z1 mounting offset follows Unitree's combined Aliengo-Z1 Xacro:
+
+https://github.com/unitreerobotics/unitree_ros/tree/master/robots/aliengoZ1_description
+
 MuJoCo does not decode the upstream DAE meshes directly in this environment, so
 the DAE visual meshes were converted to OBJ while preserving the official URDF
 collision primitives for contact.
+
+The Z1 is modeled as a fixed folded payload attached to Aliengo's `trunk`. Its
+link inertias are included, but its joints and actuators are not exposed, and
+its visual meshes have collision disabled. This keeps the Aliengo action space
+unchanged while accounting for the mounted arm mass.
 
 ## Usage
 
