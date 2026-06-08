@@ -1,21 +1,52 @@
-<mujoco model="aliengo_scene">
+<mujoco model="aliengo_z1_lunar_scene">
   <compiler angle="radian" meshdir="." texturedir="." autolimits="true" />
   <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast" cone="elliptic" iterations="80" tolerance="1e-10" />
-  <statistic center="5 -6 1.5858" extent="2.6" />
+  <size nuser_body="1" nuser_geom="1" />
+  <statistic center="0 0 0" extent="42" />
   <visual>
-    <headlight diffuse="0.55 0.55 0.55" ambient="0.14 0.14 0.14" specular="0.15 0.15 0.15" />
-    <rgba haze="0.04 0.05 0.06 1" />
-    <map znear="0.01" zfar="30" />
+    <headlight diffuse="0.46 0.46 0.46" ambient="0.08 0.08 0.08" specular="0.15 0.15 0.15" />
+    <rgba haze="0.02 0.02 0.025 1" />
+    <map znear="0.02" zfar="100" />
   </visual>
   <default>
-    <geom margin="0.001" />
-    <joint damping="2" armature="0.01" frictionloss="0.02" />
+    <geom condim="4" friction="1.35 0.12 0.02" solref="0.025 1" solimp="0.92 0.98 0.002" margin="0.002" />
+    <joint damping="0.01" />
   </default>
   <asset>
-    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.62 0.73 0.86" rgb2="0.06 0.08 0.11" width="512" height="512" />
-    <texture name="lunar_tex" type="2d" file="lunar_albedo_center_crater.png" />
+    <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.01 0.01 0.015" rgb2="0 0 0" width="512" height="512" />
+    <texture name="lunar_tex" type="2d" file="../lunar_mujoco_spot_arm_mining_scene/lunar_albedo_center_crater.png" />
     <material name="lunar_surface" texture="lunar_tex" texrepeat="8 8" texuniform="true" rgba="0.58 0.56 0.52 1" roughness="1" specular="0.04" />
-    <hfield name="lunar_hfield" file="lunar_heightfield_center_crater.png" nrow="513" ncol="513" size="20.0 20.0 1.65 0.12" />
+    <material name="rock_mat" rgba="0.34 0.33 0.31 1" roughness="1" specular="0.03" />
+    <material name="dark_rock_mat" rgba="0.22 0.22 0.21 1" roughness="1" specular="0.02" />
+    <material name="ore_gold" rgba="0.95 0.72 0.22 1" emission="0.03" specular="0.55" shininess="0.6" />
+    <material name="ore_blue" rgba="0.25 0.55 0.95 1" emission="0.04" specular="0.65" shininess="0.7" />
+    <material name="ore_copper" rgba="0.76 0.38 0.20 1" emission="0.025" specular="0.45" shininess="0.55" />
+    <material name="ore_green" rgba="0.35 0.85 0.45 1" emission="0.04" specular="0.5" shininess="0.65" />
+    <hfield name="lunar_hfield" file="../lunar_mujoco_spot_arm_mining_scene/lunar_heightfield_center_crater.png" nrow="513" ncol="513" size="20.0 20.0 1.65 0.12" />
+    <material name="gravel_sphere_mat" rgba="0.30 0.30 0.28 1" roughness="1" specular="0.02" />
+    <material name="gravel_dark_sphere_mat" rgba="0.20 0.20 0.19 1" roughness="1" specular="0.015" />
+    <mesh name="ore_obj_mesh_model_1" file="../lunar_mujoco_spot_arm_mining_scene/rock1_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_2" file="../lunar_mujoco_spot_arm_mining_scene/rock2_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_3" file="../lunar_mujoco_spot_arm_mining_scene/rock3_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_4" file="../lunar_mujoco_spot_arm_mining_scene/rock4_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_model_5" file="../lunar_mujoco_spot_arm_mining_scene/rock5_centered_unit.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_00" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_00.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_01" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_01.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_02" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_02.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_03" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_03.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_04" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_04.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_05" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_05.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_06" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_06.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_07" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_07.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_08" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_08.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_09" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_09.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_10" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_10.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_11" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_11.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_12" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_12.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_13" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_13.obj" smoothnormal="true" />
+    <mesh name="ore_obj_mesh_scaled_ore_14" file="../lunar_mujoco_spot_arm_mining_scene/ore_obj_mesh_scaled_ore_14.obj" smoothnormal="true" />
+    <texture name="obj_ore_unified_tex" type="2d" file="../lunar_mujoco_spot_arm_mining_scene/obj_ore_unified_texture.png" />
+    <material name="obj_ore_unified_mat" texture="obj_ore_unified_tex" texrepeat="1 1" texuniform="false" rgba="0.75 0.70 0.62 1" roughness="0.9" specular="0.18" />
     <material name="aliengo_body" rgba="0.95 0.42 0.08 1" roughness="0.58" specular="0.22" />
     <material name="aliengo_leg" rgba="0.10 0.105 0.11 1" roughness="0.72" specular="0.16" />
     <material name="aliengo_collision" rgba="0.95 0.50 0.12 0.22" />
@@ -37,12 +68,1533 @@
     <mesh name="z1_Link06" file="z1_assets/z1_Link06.obj" smoothnormal="true" />
   </asset>
   <worldbody>
-    <light name="key_light" directional="true" pos="-3 -4 6" dir="0.45 0.55 -1" diffuse="0.92 0.88 0.80" ambient="0.16 0.16 0.18" specular="0.22 0.22 0.22" />
-    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.0572588" material="lunar_surface" friction="1.35 0.12 0.02" contype="1" conaffinity="3" priority="1" />
-    <camera name="front_view" pos="7.2 -9.0 2.5858" xyaxes="0.81 0.59 0 -0.22 0.30 0.93" fovy="45" />
-    <camera name="side_view" pos="5 -9.3 2.1858" xyaxes="1 0 0 0 0.27 0.96" fovy="45" />
-    <camera name="top_mount_view" pos="3.5 -8.2 3.0358" xyaxes="0.83 -0.56 0 0.36 0.54 0.76" fovy="40" />
-    <body name="trunk" pos="5 -6 1.7653">
+    <light name="sun_low_angle" directional="true" pos="-8 -5 11" dir="0.55 0.35 -1" diffuse="0.95 0.90 0.82" ambient="0.10 0.10 0.12" specular="0.20 0.20 0.20" />
+    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.88" material="lunar_surface" priority="1" user="0" />
+    <site name="central_crater_center" type="sphere" pos="0 0 -0.05" size="0.18" rgba="1 0.15 0.05 0.55" group="3" />
+    <site name="central_crater_rim_marker" type="ellipsoid" pos="0 0 0.16" size="4.8 4.8 0.025" rgba="1 0.2 0.05 0.12" group="3" />
+    <site name="robot_spawn" type="cylinder" pos="-16 -16 0.08" size="0.35 0.02" rgba="0.1 0.55 1.0 0.45" group="3" />
+    <site name="collection_zone" type="box" pos="16 16 0.05" size="1.4 1.4 0.03" rgba="0.1 1.0 0.25 0.35" group="3" />
+    <camera name="overview" pos="0 -33 18" xyaxes="1 0 0 0 0.50 0.87" fovy="43" />
+    <camera name="central_crater_view" pos="0 -15 6.0" xyaxes="1 0 0 0 0.42 0.91" fovy="52" />
+    <camera name="robot_start_view" pos="-16 -19 2.6" xyaxes="1 0 0 0 0.57 0.82" fovy="55" />
+    <site name="surface_gravel_field_marker" type="ellipsoid" pos="0 0 0.22" size="18.8 18.8 0.015" rgba="0.45 0.45 0.45 0.035" group="3" />
+    <site name="ore_cluster_zone" type="ellipsoid" pos="10 10 0.20" size="1.8 1.55 0.035" rgba="1 0.8 0.1 0.16" group="3" />
+    <body name="ore_00" pos="8.79150 9.10610 0.46982" quat="0.158546 0.0 0.0 0.987352" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0471109 0.0381884 0.0686062" />
+      <freejoint name="ore_00_free" />
+      <geom name="ore_00_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_00" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_00_pickup_site" type="sphere" size="0.253" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_01" pos="9.32060 8.64770 0.45908" quat="0.992438 0.0 0.0 0.122743" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0400435 0.014882 0.0459672" />
+      <freejoint name="ore_01_free" />
+      <geom name="ore_01_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_01" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_01_pickup_site" type="sphere" size="0.242" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_02" pos="9.84570 9.07930 0.56753" quat="0.769795 0.0 0.0 -0.638291" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0506472 0.0516924 0.0598071" />
+      <freejoint name="ore_02_free" />
+      <geom name="ore_02_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_02" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_02_pickup_site" type="sphere" size="0.224" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_03" pos="10.43660 8.88120 0.44586" quat="0.772778 0.0 0.0 -0.634676" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.014126 0.0253349 0.0285459" />
+      <freejoint name="ore_03_free" />
+      <geom name="ore_03_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_03" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_03_pickup_site" type="sphere" size="0.181" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_04" pos="11.14560 9.05270 0.41106" quat="0.006862 0.0 0.0 0.999976" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0142273 0.0249542 0.0287234" />
+      <freejoint name="ore_04_free" />
+      <geom name="ore_04_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_04" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_04_pickup_site" type="sphere" size="0.180" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_05" pos="8.60550 9.84470 0.47809" quat="0.959482 0.0 0.0 0.281768" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0301172 0.0244132 0.0438588" />
+      <freejoint name="ore_05_free" />
+      <geom name="ore_05_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_05" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_05_pickup_site" type="sphere" size="0.202" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_06" pos="9.35070 10.15710 0.43167" quat="0.879993 0.0 0.0 -0.474986" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0396635 0.0147408 0.0455311" />
+      <freejoint name="ore_06_free" />
+      <geom name="ore_06_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_06" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_06_pickup_site" type="sphere" size="0.241" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_07" pos="10.03610 9.92960 0.50456" quat="0.588514 0.0 0.0 -0.808487" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0436461 0.0445468 0.0515398" />
+      <freejoint name="ore_07_free" />
+      <geom name="ore_07_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_07" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_07_pickup_site" type="sphere" size="0.208" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_08" pos="10.61970 10.15240 0.39678" quat="0.415203 0.0 0.0 -0.909729" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0390274 0.0699954 0.0788668" />
+      <freejoint name="ore_08_free" />
+      <geom name="ore_08_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_08" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_08_pickup_site" type="sphere" size="0.301" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_09" pos="11.30790 10.11360 0.34471" quat="0.929499 0.0 0.0 0.368825" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0806023 0.141374 0.162728" />
+      <freejoint name="ore_09_free" />
+      <geom name="ore_09_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_09" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_09_pickup_site" type="sphere" size="0.429" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_10" pos="9.22850 10.74940 0.44550" quat="0.364632 0.0 0.0 -0.931152" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0762153 0.0617806 0.11099" />
+      <freejoint name="ore_10_free" />
+      <geom name="ore_10_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_10" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_10_pickup_site" type="sphere" size="0.321" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_11" pos="9.81370 11.12790 0.39835" quat="0.943201 0.0 0.0 -0.332223" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0231986 0.00862169 0.0266305" />
+      <freejoint name="ore_11_free" />
+      <geom name="ore_11_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_11" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_11_pickup_site" type="sphere" size="0.184" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_12" pos="10.74760 10.93720 0.39217" quat="0.816369 0.0 0.0 0.577531" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.124469 0.127038 0.14698" />
+      <freejoint name="ore_12_free" />
+      <geom name="ore_12_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_12" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_12_pickup_site" type="sphere" size="0.351" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_13" pos="11.26660 11.08790 0.21291" quat="0.593213 0.0 0.0 0.805046" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0207759 0.0372615 0.0419841" />
+      <freejoint name="ore_13_free" />
+      <geom name="ore_13_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_13" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_13_pickup_site" type="sphere" size="0.219" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="ore_14" pos="10.21400 10.46020 0.37978" quat="0.969624 0.0 0.0 0.244601" user="1">
+      <inertial pos="0 0 0" mass="2.8" diaginertia="0.0308621 0.0541313 0.0623074" />
+      <freejoint name="ore_14_free" />
+      <geom name="ore_14_obj_geom" type="mesh" mesh="ore_obj_mesh_scaled_ore_14" material="obj_ore_unified_mat" contype="1" conaffinity="1" friction="1.45 0.12 0.02" user="1" />
+      <site name="ore_14_pickup_site" type="sphere" size="0.266" rgba="1 1 1 0.18" group="3" />
+    </body>
+    <body name="gravel_free_000" pos="-10.13230 16.41230 0.58668" user="3">
+      <freejoint name="gravel_free_000_free" />
+      <geom name="gravel_free_000_geom" type="sphere" pos="0 0 0" size="0.03310" material="gravel_dark_sphere_mat" mass="0.227858" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_001" pos="-17.16600 11.72100 0.57394" user="3">
+      <freejoint name="gravel_free_001_free" />
+      <geom name="gravel_free_001_geom" type="sphere" pos="0 0 0" size="0.06080" material="gravel_sphere_mat" mass="1.41218" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_002" pos="-1.47970 -16.31460 0.77535" user="3">
+      <freejoint name="gravel_free_002_free" />
+      <geom name="gravel_free_002_geom" type="sphere" pos="0 0 0" size="0.11250" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_003" pos="-16.03720 1.13790 0.49517" user="3">
+      <freejoint name="gravel_free_003_free" />
+      <geom name="gravel_free_003_geom" type="sphere" pos="0 0 0" size="0.05130" material="gravel_sphere_mat" mass="0.848266" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_004" pos="-2.58470 3.46500 0.71216" user="3">
+      <freejoint name="gravel_free_004_free" />
+      <geom name="gravel_free_004_geom" type="sphere" pos="0 0 0" size="0.06880" material="gravel_sphere_mat" mass="2.04619" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_005" pos="-2.84750 8.17430 0.67165" user="3">
+      <freejoint name="gravel_free_005_free" />
+      <geom name="gravel_free_005_geom" type="sphere" pos="0 0 0" size="0.05810" material="gravel_sphere_mat" mass="1.23228" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_006" pos="-7.64820 -7.60210 0.64149" user="3">
+      <freejoint name="gravel_free_006_free" />
+      <geom name="gravel_free_006_geom" type="sphere" pos="0 0 0" size="0.04900" material="gravel_sphere_mat" mass="0.73921" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_007" pos="-16.35390 -12.15160 0.64857" user="3">
+      <freejoint name="gravel_free_007_free" />
+      <geom name="gravel_free_007_geom" type="sphere" pos="0 0 0" size="0.07010" material="gravel_sphere_mat" mass="2.16438" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_008" pos="7.34870 -2.67320 0.74324" user="3">
+      <freejoint name="gravel_free_008_free" />
+      <geom name="gravel_free_008_geom" type="sphere" pos="0 0 0" size="0.08840" material="gravel_sphere_mat" mass="4.34047" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_009" pos="2.77950 8.74250 0.80962" user="3">
+      <freejoint name="gravel_free_009_free" />
+      <geom name="gravel_free_009_geom" type="sphere" pos="0 0 0" size="0.09590" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_010" pos="5.05170 7.53180 0.65191" user="3">
+      <freejoint name="gravel_free_010_free" />
+      <geom name="gravel_free_010_geom" type="sphere" pos="0 0 0" size="0.02690" material="gravel_sphere_mat" mass="0.122303" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_011" pos="8.09010 -1.36070 0.98211" user="3">
+      <freejoint name="gravel_free_011_free" />
+      <geom name="gravel_free_011_geom" type="sphere" pos="0 0 0" size="0.05720" material="gravel_sphere_mat" mass="1.17589" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_012" pos="-5.87990 -5.55440 0.69883" user="3">
+      <freejoint name="gravel_free_012_free" />
+      <geom name="gravel_free_012_geom" type="sphere" pos="0 0 0" size="0.04810" material="gravel_sphere_mat" mass="0.699222" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_013" pos="9.91010 -0.63600 0.74360" user="3">
+      <freejoint name="gravel_free_013_free" />
+      <geom name="gravel_free_013_geom" type="sphere" pos="0 0 0" size="0.09870" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_014" pos="-14.21340 15.07580 0.44944" user="3">
+      <freejoint name="gravel_free_014_free" />
+      <geom name="gravel_free_014_geom" type="sphere" pos="0 0 0" size="0.05870" material="gravel_dark_sphere_mat" mass="1.27085" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_015" pos="9.89470 -6.36630 0.77461" user="3">
+      <freejoint name="gravel_free_015_free" />
+      <geom name="gravel_free_015_geom" type="sphere" pos="0 0 0" size="0.06190" material="gravel_sphere_mat" mass="1.49022" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_016" pos="-7.88860 0.23710 0.71132" user="3">
+      <freejoint name="gravel_free_016_free" />
+      <geom name="gravel_free_016_geom" type="sphere" pos="0 0 0" size="0.03140" material="gravel_sphere_mat" mass="0.194522" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_017" pos="0.02540 -9.92010 0.58063" user="3">
+      <freejoint name="gravel_free_017_free" />
+      <geom name="gravel_free_017_geom" type="sphere" pos="0 0 0" size="0.06920" material="gravel_sphere_mat" mass="2.08208" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_018" pos="7.51330 3.84760 0.81063" user="3">
+      <freejoint name="gravel_free_018_free" />
+      <geom name="gravel_free_018_geom" type="sphere" pos="0 0 0" size="0.10780" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_019" pos="-1.66760 16.41350 0.82160" user="3">
+      <freejoint name="gravel_free_019_free" />
+      <geom name="gravel_free_019_geom" type="sphere" pos="0 0 0" size="0.04140" material="gravel_sphere_mat" mass="0.445842" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_020" pos="-10.15890 15.86420 0.66462" user="3">
+      <freejoint name="gravel_free_020_free" />
+      <geom name="gravel_free_020_geom" type="sphere" pos="0 0 0" size="0.04140" material="gravel_sphere_mat" mass="0.445842" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_021" pos="1.69120 16.85750 0.60236" user="3">
+      <freejoint name="gravel_free_021_free" />
+      <geom name="gravel_free_021_geom" type="sphere" pos="0 0 0" size="0.09390" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_022" pos="-4.41990 3.11780 0.55602" user="3">
+      <freejoint name="gravel_free_022_free" />
+      <geom name="gravel_free_022_geom" type="sphere" pos="0 0 0" size="0.05190" material="gravel_sphere_mat" mass="0.878379" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_023" pos="-5.49580 -8.54840 0.53017" user="3">
+      <freejoint name="gravel_free_023_free" />
+      <geom name="gravel_free_023_geom" type="sphere" pos="0 0 0" size="0.03400" material="gravel_sphere_mat" mass="0.246954" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_024" pos="-6.41120 -13.66390 0.53039" user="3">
+      <freejoint name="gravel_free_024_free" />
+      <geom name="gravel_free_024_geom" type="sphere" pos="0 0 0" size="0.03260" material="gravel_sphere_mat" mass="0.217687" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_025" pos="-8.39590 -0.34120 0.53132" user="3">
+      <freejoint name="gravel_free_025_free" />
+      <geom name="gravel_free_025_geom" type="sphere" pos="0 0 0" size="0.02930" material="gravel_sphere_mat" mass="0.158046" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_026" pos="7.28680 4.51220 0.82708" user="3">
+      <freejoint name="gravel_free_026_free" />
+      <geom name="gravel_free_026_geom" type="sphere" pos="0 0 0" size="0.10120" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_027" pos="-12.45480 -15.83560 0.63762" user="3">
+      <freejoint name="gravel_free_027_free" />
+      <geom name="gravel_free_027_geom" type="sphere" pos="0 0 0" size="0.06610" material="gravel_sphere_mat" mass="1.81461" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_028" pos="-3.03140 -4.53750 0.94707" user="3">
+      <freejoint name="gravel_free_028_free" />
+      <geom name="gravel_free_028_geom" type="sphere" pos="0 0 0" size="0.02760" material="gravel_sphere_mat" mass="0.132101" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_029" pos="4.73430 6.34050 0.66909" user="3">
+      <freejoint name="gravel_free_029_free" />
+      <geom name="gravel_free_029_geom" type="sphere" pos="0 0 0" size="0.04610" material="gravel_sphere_mat" mass="0.615577" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_030" pos="10.19560 4.45650 0.45945" user="3">
+      <freejoint name="gravel_free_030_free" />
+      <geom name="gravel_free_030_geom" type="sphere" pos="0 0 0" size="0.06140" material="gravel_dark_sphere_mat" mass="1.4544" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_031" pos="18.20340 -15.87650 0.64654" user="3">
+      <freejoint name="gravel_free_031_free" />
+      <geom name="gravel_free_031_geom" type="sphere" pos="0 0 0" size="0.07300" material="gravel_sphere_mat" mass="2.44427" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_032" pos="6.86410 5.59140 0.58847" user="3">
+      <freejoint name="gravel_free_032_free" />
+      <geom name="gravel_free_032_geom" type="sphere" pos="0 0 0" size="0.02890" material="gravel_sphere_mat" mass="0.151661" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_033" pos="-12.75080 -12.51520 0.65663" user="3">
+      <freejoint name="gravel_free_033_free" />
+      <geom name="gravel_free_033_geom" type="sphere" pos="0 0 0" size="0.12610" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_034" pos="5.11830 3.62580 0.94606" user="3">
+      <freejoint name="gravel_free_034_free" />
+      <geom name="gravel_free_034_geom" type="sphere" pos="0 0 0" size="0.03520" material="gravel_dark_sphere_mat" mass="0.274036" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_035" pos="5.49890 -4.62360 0.80084" user="3">
+      <freejoint name="gravel_free_035_free" />
+      <geom name="gravel_free_035_geom" type="sphere" pos="0 0 0" size="0.09910" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_036" pos="8.22220 -4.51160 0.68098" user="3">
+      <freejoint name="gravel_free_036_free" />
+      <geom name="gravel_free_036_geom" type="sphere" pos="0 0 0" size="0.06590" material="gravel_sphere_mat" mass="1.79819" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_037" pos="-9.22410 1.34450 0.72580" user="3">
+      <freejoint name="gravel_free_037_free" />
+      <geom name="gravel_free_037_geom" type="sphere" pos="0 0 0" size="0.06420" material="gravel_sphere_mat" mass="1.66259" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_038" pos="9.78480 -8.49620 0.58815" user="3">
+      <freejoint name="gravel_free_038_free" />
+      <geom name="gravel_free_038_geom" type="sphere" pos="0 0 0" size="0.05650" material="gravel_sphere_mat" mass="1.13325" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_039" pos="-6.07440 -2.43440 0.73993" user="3">
+      <freejoint name="gravel_free_039_free" />
+      <geom name="gravel_free_039_geom" type="sphere" pos="0 0 0" size="0.06660" material="gravel_sphere_mat" mass="1.85611" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_040" pos="-5.55460 4.57770 0.86326" user="3">
+      <freejoint name="gravel_free_040_free" />
+      <geom name="gravel_free_040_geom" type="sphere" pos="0 0 0" size="0.08050" material="gravel_sphere_mat" mass="3.27769" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_041" pos="-12.33320 5.34820 0.86792" user="3">
+      <freejoint name="gravel_free_041_free" />
+      <geom name="gravel_free_041_geom" type="sphere" pos="0 0 0" size="0.04900" material="gravel_sphere_mat" mass="0.73921" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_042" pos="5.92320 -6.91790 0.63619" user="3">
+      <freejoint name="gravel_free_042_free" />
+      <geom name="gravel_free_042_geom" type="sphere" pos="0 0 0" size="0.04850" material="gravel_sphere_mat" mass="0.716812" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_043" pos="-0.86560 -8.81780 0.81674" user="3">
+      <freejoint name="gravel_free_043_free" />
+      <geom name="gravel_free_043_geom" type="sphere" pos="0 0 0" size="0.03490" material="gravel_sphere_mat" mass="0.267089" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_044" pos="17.64430 -2.44080 0.66078" user="3">
+      <freejoint name="gravel_free_044_free" />
+      <geom name="gravel_free_044_geom" type="sphere" pos="0 0 0" size="0.02960" material="gravel_sphere_mat" mass="0.16295" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_045" pos="-16.48670 -1.88560 0.66742" user="3">
+      <freejoint name="gravel_free_045_free" />
+      <geom name="gravel_free_045_geom" type="sphere" pos="0 0 0" size="0.04180" material="gravel_sphere_mat" mass="0.45889" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_046" pos="-0.70540 5.52760 0.96769" user="3">
+      <freejoint name="gravel_free_046_free" />
+      <geom name="gravel_free_046_geom" type="sphere" pos="0 0 0" size="0.05220" material="gravel_sphere_mat" mass="0.893699" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_047" pos="-13.33400 -9.29070 0.69827" user="3">
+      <freejoint name="gravel_free_047_free" />
+      <geom name="gravel_free_047_geom" type="sphere" pos="0 0 0" size="0.03190" material="gravel_sphere_mat" mass="0.203963" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_048" pos="4.15370 -2.64320 1.01904" user="3">
+      <freejoint name="gravel_free_048_free" />
+      <geom name="gravel_free_048_geom" type="sphere" pos="0 0 0" size="0.05270" material="gravel_sphere_mat" mass="0.919627" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_049" pos="-3.67930 4.00620 0.75840" user="3">
+      <freejoint name="gravel_free_049_free" />
+      <geom name="gravel_free_049_geom" type="sphere" pos="0 0 0" size="0.05160" material="gravel_sphere_mat" mass="0.863235" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_050" pos="10.81310 -4.41410 0.62071" user="3">
+      <freejoint name="gravel_free_050_free" />
+      <geom name="gravel_free_050_geom" type="sphere" pos="0 0 0" size="0.06460" material="gravel_sphere_mat" mass="1.69386" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_051" pos="4.60910 4.27250 0.76709" user="3">
+      <freejoint name="gravel_free_051_free" />
+      <geom name="gravel_free_051_geom" type="sphere" pos="0 0 0" size="0.11270" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_052" pos="-12.52830 3.74690 0.74369" user="3">
+      <freejoint name="gravel_free_052_free" />
+      <geom name="gravel_free_052_geom" type="sphere" pos="0 0 0" size="0.05080" material="gravel_sphere_mat" mass="0.823704" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_053" pos="1.12000 -7.46250 0.81983" user="3">
+      <freejoint name="gravel_free_053_free" />
+      <geom name="gravel_free_053_geom" type="sphere" pos="0 0 0" size="0.06880" material="gravel_dark_sphere_mat" mass="2.04619" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_054" pos="-16.49760 8.89440 0.55003" user="3">
+      <freejoint name="gravel_free_054_free" />
+      <geom name="gravel_free_054_geom" type="sphere" pos="0 0 0" size="0.04510" material="gravel_sphere_mat" mass="0.576381" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_055" pos="9.46190 -11.10580 0.67403" user="3">
+      <freejoint name="gravel_free_055_free" />
+      <geom name="gravel_free_055_geom" type="sphere" pos="0 0 0" size="0.11330" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_056" pos="-11.88300 -6.01980 0.56020" user="3">
+      <freejoint name="gravel_free_056_free" />
+      <geom name="gravel_free_056_geom" type="sphere" pos="0 0 0" size="0.11630" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_057" pos="-0.55540 8.11110 0.74959" user="3">
+      <freejoint name="gravel_free_057_free" />
+      <geom name="gravel_free_057_geom" type="sphere" pos="0 0 0" size="0.07110" material="gravel_sphere_mat" mass="2.25834" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_058" pos="3.56040 8.31600 0.76678" user="3">
+      <freejoint name="gravel_free_058_free" />
+      <geom name="gravel_free_058_geom" type="sphere" pos="0 0 0" size="0.06490" material="gravel_sphere_mat" mass="1.71757" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_059" pos="-1.53470 -6.16120 0.78084" user="3">
+      <freejoint name="gravel_free_059_free" />
+      <geom name="gravel_free_059_geom" type="sphere" pos="0 0 0" size="0.02980" material="gravel_sphere_mat" mass="0.166276" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_060" pos="-2.11580 16.77280 0.86060" user="3">
+      <freejoint name="gravel_free_060_free" />
+      <geom name="gravel_free_060_geom" type="sphere" pos="0 0 0" size="0.03080" material="gravel_sphere_mat" mass="0.183583" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_061" pos="-2.50550 -14.51210 0.61330" user="3">
+      <freejoint name="gravel_free_061_free" />
+      <geom name="gravel_free_061_geom" type="sphere" pos="0 0 0" size="0.11820" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_062" pos="1.61840 -9.14690 0.79211" user="3">
+      <freejoint name="gravel_free_062_free" />
+      <geom name="gravel_free_062_geom" type="sphere" pos="0 0 0" size="0.07050" material="gravel_dark_sphere_mat" mass="2.20164" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_063" pos="-2.17290 9.36730 0.82751" user="3">
+      <freejoint name="gravel_free_063_free" />
+      <geom name="gravel_free_063_geom" type="sphere" pos="0 0 0" size="0.03310" material="gravel_sphere_mat" mass="0.227858" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_064" pos="-9.41170 -6.20850 0.52576" user="3">
+      <freejoint name="gravel_free_064_free" />
+      <geom name="gravel_free_064_geom" type="sphere" pos="0 0 0" size="0.06200" material="gravel_dark_sphere_mat" mass="1.49746" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_065" pos="-9.98070 -12.81080 0.85982" user="3">
+      <freejoint name="gravel_free_065_free" />
+      <geom name="gravel_free_065_geom" type="sphere" pos="0 0 0" size="0.05340" material="gravel_dark_sphere_mat" mass="0.956761" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_066" pos="15.30500 -0.82110 0.74690" user="3">
+      <freejoint name="gravel_free_066_free" />
+      <geom name="gravel_free_066_geom" type="sphere" pos="0 0 0" size="0.08570" material="gravel_sphere_mat" mass="3.95478" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_067" pos="5.95930 -1.19280 0.64825" user="3">
+      <freejoint name="gravel_free_067_free" />
+      <geom name="gravel_free_067_geom" type="sphere" pos="0 0 0" size="0.03460" material="gravel_sphere_mat" mass="0.26026" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_068" pos="1.72820 -7.04130 0.57219" user="3">
+      <freejoint name="gravel_free_068_free" />
+      <geom name="gravel_free_068_geom" type="sphere" pos="0 0 0" size="0.02840" material="gravel_sphere_mat" mass="0.143925" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_069" pos="-1.41560 6.15870 0.85261" user="3">
+      <freejoint name="gravel_free_069_free" />
+      <geom name="gravel_free_069_geom" type="sphere" pos="0 0 0" size="0.05200" material="gravel_sphere_mat" mass="0.883466" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_070" pos="5.69970 1.66150 0.52400" user="3">
+      <freejoint name="gravel_free_070_free" />
+      <geom name="gravel_free_070_geom" type="sphere" pos="0 0 0" size="0.04880" material="gravel_sphere_mat" mass="0.730196" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_071" pos="2.96490 17.55460 0.87962" user="3">
+      <freejoint name="gravel_free_071_free" />
+      <geom name="gravel_free_071_geom" type="sphere" pos="0 0 0" size="0.04840" material="gravel_dark_sphere_mat" mass="0.712387" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_072" pos="-12.49530 16.16330 0.62668" user="3">
+      <freejoint name="gravel_free_072_free" />
+      <geom name="gravel_free_072_geom" type="sphere" pos="0 0 0" size="0.07150" material="gravel_sphere_mat" mass="2.29667" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_073" pos="-4.77660 0.03020 0.89044" user="3">
+      <freejoint name="gravel_free_073_free" />
+      <geom name="gravel_free_073_geom" type="sphere" pos="0 0 0" size="0.05160" material="gravel_sphere_mat" mass="0.863235" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_074" pos="4.63290 8.55200 0.52588" user="3">
+      <freejoint name="gravel_free_074_free" />
+      <geom name="gravel_free_074_geom" type="sphere" pos="0 0 0" size="0.02790" material="gravel_sphere_mat" mass="0.136456" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_075" pos="12.22580 -11.33670 0.52045" user="3">
+      <freejoint name="gravel_free_075_free" />
+      <geom name="gravel_free_075_geom" type="sphere" pos="0 0 0" size="0.03780" material="gravel_dark_sphere_mat" mass="0.339356" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_076" pos="-8.80420 2.18000 0.68233" user="3">
+      <freejoint name="gravel_free_076_free" />
+      <geom name="gravel_free_076_geom" type="sphere" pos="0 0 0" size="0.06610" material="gravel_sphere_mat" mass="1.81461" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_077" pos="11.18120 0.64200 0.70400" user="3">
+      <freejoint name="gravel_free_077_free" />
+      <geom name="gravel_free_077_geom" type="sphere" pos="0 0 0" size="0.04350" material="gravel_dark_sphere_mat" mass="0.517187" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_078" pos="-8.81310 17.16070 0.62251" user="3">
+      <freejoint name="gravel_free_078_free" />
+      <geom name="gravel_free_078_geom" type="sphere" pos="0 0 0" size="0.07160" material="gravel_dark_sphere_mat" mass="2.30632" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_079" pos="0.07920 3.78570 0.48887" user="3">
+      <freejoint name="gravel_free_079_free" />
+      <geom name="gravel_free_079_geom" type="sphere" pos="0 0 0" size="0.03340" material="gravel_sphere_mat" mass="0.23411" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_080" pos="9.23180 -12.25270 0.50414" user="3">
+      <freejoint name="gravel_free_080_free" />
+      <geom name="gravel_free_080_geom" type="sphere" pos="0 0 0" size="0.03680" material="gravel_sphere_mat" mass="0.313129" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_081" pos="-7.37310 7.92850 0.58157" user="3">
+      <freejoint name="gravel_free_081_free" />
+      <geom name="gravel_free_081_geom" type="sphere" pos="0 0 0" size="0.04930" material="gravel_dark_sphere_mat" mass="0.752871" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_082" pos="-4.67610 3.97870 0.80051" user="3">
+      <freejoint name="gravel_free_082_free" />
+      <geom name="gravel_free_082_geom" type="sphere" pos="0 0 0" size="0.04300" material="gravel_sphere_mat" mass="0.499557" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_083" pos="-2.04580 9.10860 0.96753" user="3">
+      <freejoint name="gravel_free_083_free" />
+      <geom name="gravel_free_083_geom" type="sphere" pos="0 0 0" size="0.06230" material="gravel_sphere_mat" mass="1.5193" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_084" pos="-10.38440 -4.31870 0.63625" user="3">
+      <freejoint name="gravel_free_084_free" />
+      <geom name="gravel_free_084_geom" type="sphere" pos="0 0 0" size="0.08500" material="gravel_sphere_mat" mass="3.85866" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_085" pos="-1.17180 -15.10300 0.54548" user="3">
+      <freejoint name="gravel_free_085_free" />
+      <geom name="gravel_free_085_geom" type="sphere" pos="0 0 0" size="0.04270" material="gravel_sphere_mat" mass="0.489174" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_086" pos="5.93000 -2.19270 0.56402" user="3">
+      <freejoint name="gravel_free_086_free" />
+      <geom name="gravel_free_086_geom" type="sphere" pos="0 0 0" size="0.12290" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_087" pos="3.26220 -2.85700 0.61379" user="3">
+      <freejoint name="gravel_free_087_free" />
+      <geom name="gravel_free_087_geom" type="sphere" pos="0 0 0" size="0.06350" material="gravel_dark_sphere_mat" mass="1.6088" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_088" pos="-10.05710 4.16990 0.77943" user="3">
+      <freejoint name="gravel_free_088_free" />
+      <geom name="gravel_free_088_geom" type="sphere" pos="0 0 0" size="0.04470" material="gravel_sphere_mat" mass="0.56118" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_089" pos="10.08300 -14.11140 0.45285" user="3">
+      <freejoint name="gravel_free_089_free" />
+      <geom name="gravel_free_089_geom" type="sphere" pos="0 0 0" size="0.03680" material="gravel_sphere_mat" mass="0.313129" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_090" pos="13.07900 7.43150 0.84822" user="3">
+      <freejoint name="gravel_free_090_free" />
+      <geom name="gravel_free_090_geom" type="sphere" pos="0 0 0" size="0.06170" material="gravel_dark_sphere_mat" mass="1.47583" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_091" pos="-12.40920 -7.36170 0.51979" user="3">
+      <freejoint name="gravel_free_091_free" />
+      <geom name="gravel_free_091_geom" type="sphere" pos="0 0 0" size="0.06470" material="gravel_sphere_mat" mass="1.70174" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_092" pos="-12.00980 2.07970 0.56748" user="3">
+      <freejoint name="gravel_free_092_free" />
+      <geom name="gravel_free_092_geom" type="sphere" pos="0 0 0" size="0.03570" material="gravel_dark_sphere_mat" mass="0.28588" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_093" pos="-7.90760 2.72500 0.56046" user="3">
+      <freejoint name="gravel_free_093_free" />
+      <geom name="gravel_free_093_geom" type="sphere" pos="0 0 0" size="0.03810" material="gravel_sphere_mat" mass="0.3475" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_094" pos="-1.33670 -3.19920 0.14688" user="3">
+      <freejoint name="gravel_free_094_free" />
+      <geom name="gravel_free_094_geom" type="sphere" pos="0 0 0" size="0.02850" material="gravel_dark_sphere_mat" mass="0.14545" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_095" pos="-12.36840 -2.42200 1.10790" user="3">
+      <freejoint name="gravel_free_095_free" />
+      <geom name="gravel_free_095_geom" type="sphere" pos="0 0 0" size="0.07200" material="gravel_sphere_mat" mass="2.34519" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_096" pos="-1.77480 -11.55940 0.68851" user="3">
+      <freejoint name="gravel_free_096_free" />
+      <geom name="gravel_free_096_geom" type="sphere" pos="0 0 0" size="0.08630" material="gravel_sphere_mat" mass="4.03843" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_097" pos="17.20510 -0.42210 0.65899" user="3">
+      <freejoint name="gravel_free_097_free" />
+      <geom name="gravel_free_097_geom" type="sphere" pos="0 0 0" size="0.02940" material="gravel_sphere_mat" mass="0.159669" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_098" pos="-3.82360 3.65420 0.71379" user="3">
+      <freejoint name="gravel_free_098_free" />
+      <geom name="gravel_free_098_geom" type="sphere" pos="0 0 0" size="0.02810" material="gravel_sphere_mat" mass="0.139412" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_099" pos="-7.36930 -6.56720 0.71841" user="3">
+      <freejoint name="gravel_free_099_free" />
+      <geom name="gravel_free_099_geom" type="sphere" pos="0 0 0" size="0.04090" material="gravel_dark_sphere_mat" mass="0.429883" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_100" pos="14.21230 -5.38420 0.70562" user="3">
+      <freejoint name="gravel_free_100_free" />
+      <geom name="gravel_free_100_geom" type="sphere" pos="0 0 0" size="0.04740" material="gravel_sphere_mat" mass="0.669137" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_101" pos="-7.85110 -0.59130 0.57684" user="3">
+      <freejoint name="gravel_free_101_free" />
+      <geom name="gravel_free_101_geom" type="sphere" pos="0 0 0" size="0.07120" material="gravel_dark_sphere_mat" mass="2.26788" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_102" pos="-9.56320 0.81880 0.54321" user="3">
+      <freejoint name="gravel_free_102_free" />
+      <geom name="gravel_free_102_geom" type="sphere" pos="0 0 0" size="0.03240" material="gravel_sphere_mat" mass="0.213705" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_103" pos="10.15790 -15.52180 0.64419" user="3">
+      <freejoint name="gravel_free_103_free" />
+      <geom name="gravel_free_103_geom" type="sphere" pos="0 0 0" size="0.08380" material="gravel_sphere_mat" mass="3.69753" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_104" pos="-2.95870 -1.96230 0.48810" user="3">
+      <freejoint name="gravel_free_104_free" />
+      <geom name="gravel_free_104_geom" type="sphere" pos="0 0 0" size="0.03410" material="gravel_sphere_mat" mass="0.24914" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_105" pos="10.07800 4.03390 0.62047" user="3">
+      <freejoint name="gravel_free_105_free" />
+      <geom name="gravel_free_105_geom" type="sphere" pos="0 0 0" size="0.06690" material="gravel_dark_sphere_mat" mass="1.8813" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_106" pos="-15.19360 -11.29570 0.60507" user="3">
+      <freejoint name="gravel_free_106_free" />
+      <geom name="gravel_free_106_geom" type="sphere" pos="0 0 0" size="0.03660" material="gravel_sphere_mat" mass="0.308051" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_107" pos="-4.95190 -5.26520 0.71049" user="3">
+      <freejoint name="gravel_free_107_free" />
+      <geom name="gravel_free_107_geom" type="sphere" pos="0 0 0" size="0.05670" material="gravel_sphere_mat" mass="1.14533" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_108" pos="-2.37920 -9.25300 0.97644" user="3">
+      <freejoint name="gravel_free_108_free" />
+      <geom name="gravel_free_108_geom" type="sphere" pos="0 0 0" size="0.05160" material="gravel_dark_sphere_mat" mass="0.863235" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_109" pos="-16.40680 9.74000 0.64164" user="3">
+      <freejoint name="gravel_free_109_free" />
+      <geom name="gravel_free_109_geom" type="sphere" pos="0 0 0" size="0.09490" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_110" pos="15.21820 11.75990 0.71320" user="3">
+      <freejoint name="gravel_free_110_free" />
+      <geom name="gravel_free_110_geom" type="sphere" pos="0 0 0" size="0.03340" material="gravel_sphere_mat" mass="0.23411" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_111" pos="-5.04230 1.82710 0.99733" user="3">
+      <freejoint name="gravel_free_111_free" />
+      <geom name="gravel_free_111_geom" type="sphere" pos="0 0 0" size="0.04860" material="gravel_dark_sphere_mat" mass="0.721255" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_112" pos="-6.83360 4.50140 0.63365" user="3">
+      <freejoint name="gravel_free_112_free" />
+      <geom name="gravel_free_112_geom" type="sphere" pos="0 0 0" size="0.06900" material="gravel_dark_sphere_mat" mass="2.06408" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_113" pos="14.28200 -4.06760 0.52547" user="3">
+      <freejoint name="gravel_free_113_free" />
+      <geom name="gravel_free_113_geom" type="sphere" pos="0 0 0" size="0.02720" material="gravel_sphere_mat" mass="0.126441" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_114" pos="-10.08790 -14.76240 0.40011" user="3">
+      <freejoint name="gravel_free_114_free" />
+      <geom name="gravel_free_114_geom" type="sphere" pos="0 0 0" size="0.06180" material="gravel_sphere_mat" mass="1.48301" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_115" pos="3.11930 -11.02250 0.63717" user="3">
+      <freejoint name="gravel_free_115_free" />
+      <geom name="gravel_free_115_geom" type="sphere" pos="0 0 0" size="0.11570" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_116" pos="5.71990 -4.89370 0.92674" user="3">
+      <freejoint name="gravel_free_116_free" />
+      <geom name="gravel_free_116_geom" type="sphere" pos="0 0 0" size="0.05740" material="gravel_dark_sphere_mat" mass="1.18827" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_117" pos="7.78630 -7.15520 0.53059" user="3">
+      <freejoint name="gravel_free_117_free" />
+      <geom name="gravel_free_117_geom" type="sphere" pos="0 0 0" size="0.04850" material="gravel_dark_sphere_mat" mass="0.716812" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_118" pos="12.68070 -0.11650 0.82250" user="3">
+      <freejoint name="gravel_free_118_free" />
+      <geom name="gravel_free_118_geom" type="sphere" pos="0 0 0" size="0.05490" material="gravel_sphere_mat" mass="1.03967" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_119" pos="-0.92010 8.09040 0.74109" user="3">
+      <freejoint name="gravel_free_119_free" />
+      <geom name="gravel_free_119_geom" type="sphere" pos="0 0 0" size="0.07430" material="gravel_sphere_mat" mass="2.57719" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_120" pos="-9.17940 5.00010 0.59413" user="3">
+      <freejoint name="gravel_free_120_free" />
+      <geom name="gravel_free_120_geom" type="sphere" pos="0 0 0" size="0.04470" material="gravel_dark_sphere_mat" mass="0.56118" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_121" pos="-1.98920 8.02700 0.83281" user="3">
+      <freejoint name="gravel_free_121_free" />
+      <geom name="gravel_free_121_geom" type="sphere" pos="0 0 0" size="0.05000" material="gravel_sphere_mat" mass="0.785398" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_122" pos="-0.66520 -1.27840 -0.37455" user="3">
+      <freejoint name="gravel_free_122_free" />
+      <geom name="gravel_free_122_geom" type="sphere" pos="0 0 0" size="0.02640" material="gravel_sphere_mat" mass="0.115609" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_123" pos="8.16060 13.58850 0.86657" user="3">
+      <freejoint name="gravel_free_123_free" />
+      <geom name="gravel_free_123_geom" type="sphere" pos="0 0 0" size="0.06850" material="gravel_sphere_mat" mass="2.01954" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_124" pos="4.69270 12.69980 0.76342" user="3">
+      <freejoint name="gravel_free_124_free" />
+      <geom name="gravel_free_124_geom" type="sphere" pos="0 0 0" size="0.07420" material="gravel_sphere_mat" mass="2.5668" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_125" pos="5.55280 -15.64080 0.53063" user="3">
+      <freejoint name="gravel_free_125_free" />
+      <geom name="gravel_free_125_geom" type="sphere" pos="0 0 0" size="0.05990" material="gravel_sphere_mat" mass="1.35039" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_126" pos="-8.28800 -4.53910 0.82223" user="3">
+      <freejoint name="gravel_free_126_free" />
+      <geom name="gravel_free_126_geom" type="sphere" pos="0 0 0" size="0.05460" material="gravel_sphere_mat" mass="1.02272" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_127" pos="-11.89290 -17.65700 0.89543" user="3">
+      <freejoint name="gravel_free_127_free" />
+      <geom name="gravel_free_127_geom" type="sphere" pos="0 0 0" size="0.10280" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_128" pos="-10.70980 0.33130 0.67535" user="3">
+      <freejoint name="gravel_free_128_free" />
+      <geom name="gravel_free_128_geom" type="sphere" pos="0 0 0" size="0.12820" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_129" pos="-1.99690 6.62880 0.57464" user="3">
+      <freejoint name="gravel_free_129_free" />
+      <geom name="gravel_free_129_geom" type="sphere" pos="0 0 0" size="0.04740" material="gravel_sphere_mat" mass="0.669137" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_130" pos="-8.55020 3.26800 0.61810" user="3">
+      <freejoint name="gravel_free_130_free" />
+      <geom name="gravel_free_130_geom" type="sphere" pos="0 0 0" size="0.04030" material="gravel_sphere_mat" mass="0.41124" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_131" pos="-9.93170 7.80440 0.70930" user="3">
+      <freejoint name="gravel_free_131_free" />
+      <geom name="gravel_free_131_geom" type="sphere" pos="0 0 0" size="0.12910" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_132" pos="-15.37040 14.77440 0.63961" user="3">
+      <freejoint name="gravel_free_132_free" />
+      <geom name="gravel_free_132_geom" type="sphere" pos="0 0 0" size="0.04990" material="gravel_sphere_mat" mass="0.780695" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_133" pos="-1.09930 -8.81490 0.90785" user="3">
+      <freejoint name="gravel_free_133_free" />
+      <geom name="gravel_free_133_geom" type="sphere" pos="0 0 0" size="0.06550" material="gravel_dark_sphere_mat" mass="1.76565" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_134" pos="5.81280 2.85130 0.70886" user="3">
+      <freejoint name="gravel_free_134_free" />
+      <geom name="gravel_free_134_geom" type="sphere" pos="0 0 0" size="0.02520" material="gravel_sphere_mat" mass="0.10055" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_135" pos="-4.30770 0.62730 0.64822" user="3">
+      <freejoint name="gravel_free_135_free" />
+      <geom name="gravel_free_135_geom" type="sphere" pos="0 0 0" size="0.04860" material="gravel_sphere_mat" mass="0.721255" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_136" pos="15.30900 -1.80270 0.51814" user="3">
+      <freejoint name="gravel_free_136_free" />
+      <geom name="gravel_free_136_geom" type="sphere" pos="0 0 0" size="0.05360" material="gravel_sphere_mat" mass="0.967552" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_137" pos="3.18230 -1.32230 0.31154" user="3">
+      <freejoint name="gravel_free_137_free" />
+      <geom name="gravel_free_137_geom" type="sphere" pos="0 0 0" size="0.07700" material="gravel_dark_sphere_mat" mass="2.86848" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_138" pos="7.72800 -1.50420 0.84233" user="3">
+      <freejoint name="gravel_free_138_free" />
+      <geom name="gravel_free_138_geom" type="sphere" pos="0 0 0" size="0.06930" material="gravel_sphere_mat" mass="2.09112" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_139" pos="-18.39430 -16.52980 0.50618" user="3">
+      <freejoint name="gravel_free_139_free" />
+      <geom name="gravel_free_139_geom" type="sphere" pos="0 0 0" size="0.07460" material="gravel_sphere_mat" mass="2.60853" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_140" pos="-10.51280 14.42180 0.63606" user="3">
+      <freejoint name="gravel_free_140_free" />
+      <geom name="gravel_free_140_geom" type="sphere" pos="0 0 0" size="0.05000" material="gravel_sphere_mat" mass="0.785398" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_141" pos="4.77710 5.74730 0.69573" user="3">
+      <freejoint name="gravel_free_141_free" />
+      <geom name="gravel_free_141_geom" type="sphere" pos="0 0 0" size="0.03600" material="gravel_dark_sphere_mat" mass="0.293148" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_142" pos="8.44110 13.99130 0.77871" user="3">
+      <freejoint name="gravel_free_142_free" />
+      <geom name="gravel_free_142_geom" type="sphere" pos="0 0 0" size="0.02850" material="gravel_sphere_mat" mass="0.14545" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_143" pos="-8.94730 -3.78440 0.65250" user="3">
+      <freejoint name="gravel_free_143_free" />
+      <geom name="gravel_free_143_geom" type="sphere" pos="0 0 0" size="0.05810" material="gravel_dark_sphere_mat" mass="1.23228" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_144" pos="-11.58750 13.09420 0.71432" user="3">
+      <freejoint name="gravel_free_144_free" />
+      <geom name="gravel_free_144_geom" type="sphere" pos="0 0 0" size="0.10770" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_145" pos="16.03850 7.23310 0.88667" user="3">
+      <freejoint name="gravel_free_145_free" />
+      <geom name="gravel_free_145_geom" type="sphere" pos="0 0 0" size="0.03040" material="gravel_sphere_mat" mass="0.176523" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_146" pos="-7.74900 -15.06710 0.81047" user="3">
+      <freejoint name="gravel_free_146_free" />
+      <geom name="gravel_free_146_geom" type="sphere" pos="0 0 0" size="0.08680" material="gravel_sphere_mat" mass="4.10903" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_147" pos="-8.40640 15.69590 0.64955" user="3">
+      <freejoint name="gravel_free_147_free" />
+      <geom name="gravel_free_147_geom" type="sphere" pos="0 0 0" size="0.05970" material="gravel_sphere_mat" mass="1.33691" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_148" pos="2.60050 6.86960 0.58651" user="3">
+      <freejoint name="gravel_free_148_free" />
+      <geom name="gravel_free_148_geom" type="sphere" pos="0 0 0" size="0.06920" material="gravel_dark_sphere_mat" mass="2.08208" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_149" pos="-4.67200 -13.32780 0.52438" user="3">
+      <freejoint name="gravel_free_149_free" />
+      <geom name="gravel_free_149_geom" type="sphere" pos="0 0 0" size="0.08230" material="gravel_sphere_mat" mass="3.50251" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_150" pos="-6.14900 -4.40240 0.73301" user="3">
+      <freejoint name="gravel_free_150_free" />
+      <geom name="gravel_free_150_geom" type="sphere" pos="0 0 0" size="0.06150" material="gravel_sphere_mat" mass="1.46152" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_151" pos="7.58450 3.67260 0.89561" user="3">
+      <freejoint name="gravel_free_151_free" />
+      <geom name="gravel_free_151_geom" type="sphere" pos="0 0 0" size="0.05180" material="gravel_sphere_mat" mass="0.873311" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_152" pos="16.54280 4.18400 0.78507" user="3">
+      <freejoint name="gravel_free_152_free" />
+      <geom name="gravel_free_152_geom" type="sphere" pos="0 0 0" size="0.03170" material="gravel_sphere_mat" mass="0.200151" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_153" pos="16.09140 -14.29720 0.66983" user="3">
+      <freejoint name="gravel_free_153_free" />
+      <geom name="gravel_free_153_geom" type="sphere" pos="0 0 0" size="0.06820" material="gravel_sphere_mat" mass="1.99312" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_154" pos="-7.95160 -8.92700 0.45840" user="3">
+      <freejoint name="gravel_free_154_free" />
+      <geom name="gravel_free_154_geom" type="sphere" pos="0 0 0" size="0.03240" material="gravel_sphere_mat" mass="0.213705" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_155" pos="1.13740 16.82510 0.46660" user="3">
+      <freejoint name="gravel_free_155_free" />
+      <geom name="gravel_free_155_geom" type="sphere" pos="0 0 0" size="0.04920" material="gravel_sphere_mat" mass="0.748299" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_156" pos="-2.24220 11.78020 0.57295" user="3">
+      <freejoint name="gravel_free_156_free" />
+      <geom name="gravel_free_156_geom" type="sphere" pos="0 0 0" size="0.03270" material="gravel_sphere_mat" mass="0.219696" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_157" pos="-14.08220 -6.77180 0.51851" user="3">
+      <freejoint name="gravel_free_157_free" />
+      <geom name="gravel_free_157_geom" type="sphere" pos="0 0 0" size="0.09120" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_158" pos="6.11770 -3.67210 0.72339" user="3">
+      <freejoint name="gravel_free_158_free" />
+      <geom name="gravel_free_158_geom" type="sphere" pos="0 0 0" size="0.12320" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_159" pos="12.16810 1.76710 0.79904" user="3">
+      <freejoint name="gravel_free_159_free" />
+      <geom name="gravel_free_159_geom" type="sphere" pos="0 0 0" size="0.05910" material="gravel_sphere_mat" mass="1.29701" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_160" pos="10.25630 -2.60220 0.48304" user="3">
+      <freejoint name="gravel_free_160_free" />
+      <geom name="gravel_free_160_geom" type="sphere" pos="0 0 0" size="0.03080" material="gravel_sphere_mat" mass="0.183583" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_161" pos="3.62460 11.15130 0.67853" user="3">
+      <freejoint name="gravel_free_161_free" />
+      <geom name="gravel_free_161_geom" type="sphere" pos="0 0 0" size="0.02840" material="gravel_sphere_mat" mass="0.143925" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_162" pos="0.28270 -10.60670 0.65969" user="3">
+      <freejoint name="gravel_free_162_free" />
+      <geom name="gravel_free_162_geom" type="sphere" pos="0 0 0" size="0.02950" material="gravel_sphere_mat" mass="0.161304" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_163" pos="2.24730 6.05110 0.82100" user="3">
+      <freejoint name="gravel_free_163_free" />
+      <geom name="gravel_free_163_geom" type="sphere" pos="0 0 0" size="0.07800" material="gravel_dark_sphere_mat" mass="2.9817" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_164" pos="9.63540 2.41110 0.78327" user="3">
+      <freejoint name="gravel_free_164_free" />
+      <geom name="gravel_free_164_geom" type="sphere" pos="0 0 0" size="0.12110" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_165" pos="2.91850 -8.37940 0.86747" user="3">
+      <freejoint name="gravel_free_165_free" />
+      <geom name="gravel_free_165_geom" type="sphere" pos="0 0 0" size="0.06860" material="gravel_sphere_mat" mass="2.02839" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_166" pos="7.66470 -8.34840 0.53693" user="3">
+      <freejoint name="gravel_free_166_free" />
+      <geom name="gravel_free_166_geom" type="sphere" pos="0 0 0" size="0.09500" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_167" pos="-1.96340 -15.37720 0.70911" user="3">
+      <freejoint name="gravel_free_167_free" />
+      <geom name="gravel_free_167_geom" type="sphere" pos="0 0 0" size="0.05560" material="gravel_sphere_mat" mass="1.07995" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_168" pos="-2.73200 5.01310 0.93591" user="3">
+      <freejoint name="gravel_free_168_free" />
+      <geom name="gravel_free_168_geom" type="sphere" pos="0 0 0" size="0.04390" material="gravel_sphere_mat" mass="0.531586" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_169" pos="4.94390 2.63550 0.97225" user="3">
+      <freejoint name="gravel_free_169_free" />
+      <geom name="gravel_free_169_geom" type="sphere" pos="0 0 0" size="0.05910" material="gravel_sphere_mat" mass="1.29701" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_170" pos="3.09130 4.95030 0.62198" user="3">
+      <freejoint name="gravel_free_170_free" />
+      <geom name="gravel_free_170_geom" type="sphere" pos="0 0 0" size="0.04110" material="gravel_sphere_mat" mass="0.43622" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_171" pos="-2.94000 -3.90160 0.89183" user="3">
+      <freejoint name="gravel_free_171_free" />
+      <geom name="gravel_free_171_geom" type="sphere" pos="0 0 0" size="0.03730" material="gravel_sphere_mat" mass="0.326067" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_172" pos="0.52260 -7.20740 0.66746" user="3">
+      <freejoint name="gravel_free_172_free" />
+      <geom name="gravel_free_172_geom" type="sphere" pos="0 0 0" size="0.02670" material="gravel_sphere_mat" mass="0.119595" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_173" pos="-10.80260 15.15500 0.78835" user="3">
+      <freejoint name="gravel_free_173_free" />
+      <geom name="gravel_free_173_geom" type="sphere" pos="0 0 0" size="0.05480" material="gravel_sphere_mat" mass="1.034" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_174" pos="-9.64570 1.70160 0.92735" user="3">
+      <freejoint name="gravel_free_174_free" />
+      <geom name="gravel_free_174_geom" type="sphere" pos="0 0 0" size="0.02650" material="gravel_sphere_mat" mass="0.116928" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_175" pos="-8.13550 5.30010 0.58500" user="3">
+      <freejoint name="gravel_free_175_free" />
+      <geom name="gravel_free_175_geom" type="sphere" pos="0 0 0" size="0.06240" material="gravel_dark_sphere_mat" mass="1.52663" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_176" pos="4.26790 -9.65680 0.76738" user="3">
+      <freejoint name="gravel_free_176_free" />
+      <geom name="gravel_free_176_geom" type="sphere" pos="0 0 0" size="0.05360" material="gravel_sphere_mat" mass="0.967552" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_177" pos="-4.58930 -1.11870 0.97204" user="3">
+      <freejoint name="gravel_free_177_free" />
+      <geom name="gravel_free_177_geom" type="sphere" pos="0 0 0" size="0.07130" material="gravel_sphere_mat" mass="2.27745" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_178" pos="4.98610 -6.43440 0.69232" user="3">
+      <freejoint name="gravel_free_178_free" />
+      <geom name="gravel_free_178_geom" type="sphere" pos="0 0 0" size="0.07310" material="gravel_sphere_mat" mass="2.45432" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_179" pos="-4.53750 3.72590 0.58854" user="3">
+      <freejoint name="gravel_free_179_free" />
+      <geom name="gravel_free_179_geom" type="sphere" pos="0 0 0" size="0.11090" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_180" pos="0.73220 8.60060 0.56132" user="3">
+      <freejoint name="gravel_free_180_free" />
+      <geom name="gravel_free_180_geom" type="sphere" pos="0 0 0" size="0.03960" material="gravel_sphere_mat" mass="0.39018" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_181" pos="4.22240 2.00520 1.02989" user="3">
+      <freejoint name="gravel_free_181_free" />
+      <geom name="gravel_free_181_geom" type="sphere" pos="0 0 0" size="0.03940" material="gravel_dark_sphere_mat" mass="0.384298" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_182" pos="4.63510 -9.52890 0.56836" user="3">
+      <freejoint name="gravel_free_182_free" />
+      <geom name="gravel_free_182_geom" type="sphere" pos="0 0 0" size="0.07350" material="gravel_sphere_mat" mass="2.49484" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_183" pos="-9.63420 -18.40230 0.60171" user="3">
+      <freejoint name="gravel_free_183_free" />
+      <geom name="gravel_free_183_geom" type="sphere" pos="0 0 0" size="0.06450" material="gravel_dark_sphere_mat" mass="1.68601" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_184" pos="-5.12330 -11.36660 0.67987" user="3">
+      <freejoint name="gravel_free_184_free" />
+      <geom name="gravel_free_184_geom" type="sphere" pos="0 0 0" size="0.04180" material="gravel_sphere_mat" mass="0.45889" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_185" pos="-13.03700 -8.45890 0.82654" user="3">
+      <freejoint name="gravel_free_185_free" />
+      <geom name="gravel_free_185_geom" type="sphere" pos="0 0 0" size="0.02650" material="gravel_sphere_mat" mass="0.116928" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_186" pos="-0.09870 -4.54300 0.82256" user="3">
+      <freejoint name="gravel_free_186_free" />
+      <geom name="gravel_free_186_geom" type="sphere" pos="0 0 0" size="0.05920" material="gravel_sphere_mat" mass="1.3036" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_187" pos="-10.65030 17.72600 0.69026" user="3">
+      <freejoint name="gravel_free_187_free" />
+      <geom name="gravel_free_187_geom" type="sphere" pos="0 0 0" size="0.09970" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_188" pos="0.61570 -4.20610 0.64361" user="3">
+      <freejoint name="gravel_free_188_free" />
+      <geom name="gravel_free_188_geom" type="sphere" pos="0 0 0" size="0.04540" material="gravel_sphere_mat" mass="0.58796" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_189" pos="6.59320 -5.96150 0.57509" user="3">
+      <freejoint name="gravel_free_189_free" />
+      <geom name="gravel_free_189_geom" type="sphere" pos="0 0 0" size="0.06570" material="gravel_sphere_mat" mass="1.78187" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_190" pos="7.60970 -6.76770 0.60450" user="3">
+      <freejoint name="gravel_free_190_free" />
+      <geom name="gravel_free_190_geom" type="sphere" pos="0 0 0" size="0.05090" material="gravel_sphere_mat" mass="0.828578" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_191" pos="11.36330 -15.83260 0.61937" user="3">
+      <freejoint name="gravel_free_191_free" />
+      <geom name="gravel_free_191_geom" type="sphere" pos="0 0 0" size="0.06020" material="gravel_sphere_mat" mass="1.37078" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_192" pos="4.55620 -1.89910 0.90986" user="3">
+      <freejoint name="gravel_free_192_free" />
+      <geom name="gravel_free_192_geom" type="sphere" pos="0 0 0" size="0.05240" material="gravel_dark_sphere_mat" mass="0.904011" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_193" pos="-2.56190 15.28770 0.79630" user="3">
+      <freejoint name="gravel_free_193_free" />
+      <geom name="gravel_free_193_geom" type="sphere" pos="0 0 0" size="0.03290" material="gravel_sphere_mat" mass="0.223752" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_194" pos="0.75640 -8.07380 0.79414" user="3">
+      <freejoint name="gravel_free_194_free" />
+      <geom name="gravel_free_194_geom" type="sphere" pos="0 0 0" size="0.07190" material="gravel_dark_sphere_mat" mass="2.33543" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_195" pos="-7.09090 8.27570 0.60980" user="3">
+      <freejoint name="gravel_free_195_free" />
+      <geom name="gravel_free_195_geom" type="sphere" pos="0 0 0" size="0.04550" material="gravel_sphere_mat" mass="0.591853" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_196" pos="-6.79940 -5.86750 0.45546" user="3">
+      <freejoint name="gravel_free_196_free" />
+      <geom name="gravel_free_196_geom" type="sphere" pos="0 0 0" size="0.06070" material="gravel_sphere_mat" mass="1.40523" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_197" pos="10.95050 1.85180 0.52075" user="3">
+      <freejoint name="gravel_free_197_free" />
+      <geom name="gravel_free_197_geom" type="sphere" pos="0 0 0" size="0.02920" material="gravel_sphere_mat" mass="0.156433" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_198" pos="-2.92390 -4.72580 0.93192" user="3">
+      <freejoint name="gravel_free_198_free" />
+      <geom name="gravel_free_198_geom" type="sphere" pos="0 0 0" size="0.06660" material="gravel_dark_sphere_mat" mass="1.85611" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_199" pos="13.39270 14.49300 0.64243" user="3">
+      <freejoint name="gravel_free_199_free" />
+      <geom name="gravel_free_199_geom" type="sphere" pos="0 0 0" size="0.03130" material="gravel_sphere_mat" mass="0.192669" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_200" pos="-13.81630 -3.38440 0.55289" user="3">
+      <freejoint name="gravel_free_200_free" />
+      <geom name="gravel_free_200_geom" type="sphere" pos="0 0 0" size="0.04860" material="gravel_dark_sphere_mat" mass="0.721255" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_201" pos="0.29600 -9.67980 0.48841" user="3">
+      <freejoint name="gravel_free_201_free" />
+      <geom name="gravel_free_201_geom" type="sphere" pos="0 0 0" size="0.04540" material="gravel_sphere_mat" mass="0.58796" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_202" pos="6.34160 4.92390 0.89703" user="3">
+      <freejoint name="gravel_free_202_free" />
+      <geom name="gravel_free_202_geom" type="sphere" pos="0 0 0" size="0.11150" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_203" pos="-1.19090 9.09880 0.76247" user="3">
+      <freejoint name="gravel_free_203_free" />
+      <geom name="gravel_free_203_geom" type="sphere" pos="0 0 0" size="0.05940" material="gravel_sphere_mat" mass="1.31686" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_204" pos="-0.45600 5.40230 0.94144" user="3">
+      <freejoint name="gravel_free_204_free" />
+      <geom name="gravel_free_204_geom" type="sphere" pos="0 0 0" size="0.07240" material="gravel_sphere_mat" mass="2.38449" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_205" pos="-5.05080 -1.56810 1.13983" user="3">
+      <freejoint name="gravel_free_205_free" />
+      <geom name="gravel_free_205_geom" type="sphere" pos="0 0 0" size="0.12390" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_206" pos="5.89090 -5.51170 0.53581" user="3">
+      <freejoint name="gravel_free_206_free" />
+      <geom name="gravel_free_206_geom" type="sphere" pos="0 0 0" size="0.05270" material="gravel_dark_sphere_mat" mass="0.919627" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_207" pos="6.77460 -8.74440 0.94052" user="3">
+      <freejoint name="gravel_free_207_free" />
+      <geom name="gravel_free_207_geom" type="sphere" pos="0 0 0" size="0.09520" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_208" pos="10.10080 1.60690 0.62503" user="3">
+      <freejoint name="gravel_free_208_free" />
+      <geom name="gravel_free_208_geom" type="sphere" pos="0 0 0" size="0.04750" material="gravel_sphere_mat" mass="0.673381" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_209" pos="9.56350 13.33120 0.83328" user="3">
+      <freejoint name="gravel_free_209_free" />
+      <geom name="gravel_free_209_geom" type="sphere" pos="0 0 0" size="0.04410" material="gravel_dark_sphere_mat" mass="0.538884" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_210" pos="-14.44060 -16.41860 0.80278" user="3">
+      <freejoint name="gravel_free_210_free" />
+      <geom name="gravel_free_210_geom" type="sphere" pos="0 0 0" size="0.12410" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_211" pos="-9.61480 -17.56480 0.52762" user="3">
+      <freejoint name="gravel_free_211_free" />
+      <geom name="gravel_free_211_geom" type="sphere" pos="0 0 0" size="0.07290" material="gravel_sphere_mat" mass="2.43423" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_212" pos="1.29360 -4.64800 1.04100" user="3">
+      <freejoint name="gravel_free_212_free" />
+      <geom name="gravel_free_212_geom" type="sphere" pos="0 0 0" size="0.06730" material="gravel_dark_sphere_mat" mass="1.91525" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_213" pos="-17.56000 -0.50220 0.51601" user="3">
+      <freejoint name="gravel_free_213_free" />
+      <geom name="gravel_free_213_geom" type="sphere" pos="0 0 0" size="0.07290" material="gravel_sphere_mat" mass="2.43423" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_214" pos="14.52730 10.69440 0.59911" user="3">
+      <freejoint name="gravel_free_214_free" />
+      <geom name="gravel_free_214_geom" type="sphere" pos="0 0 0" size="0.11630" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_215" pos="5.79670 12.05370 0.75170" user="3">
+      <freejoint name="gravel_free_215_free" />
+      <geom name="gravel_free_215_geom" type="sphere" pos="0 0 0" size="0.03140" material="gravel_sphere_mat" mass="0.194522" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_216" pos="12.17430 15.20380 0.83372" user="3">
+      <freejoint name="gravel_free_216_free" />
+      <geom name="gravel_free_216_geom" type="sphere" pos="0 0 0" size="0.03870" material="gravel_dark_sphere_mat" mass="0.364177" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_217" pos="2.47200 6.44600 0.71824" user="3">
+      <freejoint name="gravel_free_217_free" />
+      <geom name="gravel_free_217_geom" type="sphere" pos="0 0 0" size="0.02860" material="gravel_sphere_mat" mass="0.146987" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_218" pos="-2.05010 7.62540 0.72579" user="3">
+      <freejoint name="gravel_free_218_free" />
+      <geom name="gravel_free_218_geom" type="sphere" pos="0 0 0" size="0.02570" material="gravel_sphere_mat" mass="0.106655" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_219" pos="7.32730 -3.77880 0.64830" user="3">
+      <freejoint name="gravel_free_219_free" />
+      <geom name="gravel_free_219_geom" type="sphere" pos="0 0 0" size="0.04880" material="gravel_sphere_mat" mass="0.730196" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_220" pos="1.67690 -9.48150 0.94922" user="3">
+      <freejoint name="gravel_free_220_free" />
+      <geom name="gravel_free_220_geom" type="sphere" pos="0 0 0" size="0.03730" material="gravel_sphere_mat" mass="0.326067" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_221" pos="-6.59900 -6.42120 0.57020" user="3">
+      <freejoint name="gravel_free_221_free" />
+      <geom name="gravel_free_221_geom" type="sphere" pos="0 0 0" size="0.04780" material="gravel_sphere_mat" mass="0.68622" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_223" pos="-18.49280 12.12430 0.73367" user="3">
+      <freejoint name="gravel_free_223_free" />
+      <geom name="gravel_free_223_geom" type="sphere" pos="0 0 0" size="0.04480" material="gravel_sphere_mat" mass="0.564955" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_224" pos="16.46930 7.49230 0.82723" user="3">
+      <freejoint name="gravel_free_224_free" />
+      <geom name="gravel_free_224_geom" type="sphere" pos="0 0 0" size="0.06480" material="gravel_sphere_mat" mass="1.70964" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_225" pos="4.64250 -6.77260 0.73885" user="3">
+      <freejoint name="gravel_free_225_free" />
+      <geom name="gravel_free_225_geom" type="sphere" pos="0 0 0" size="0.11810" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_226" pos="1.96020 -4.55920 1.17992" user="3">
+      <freejoint name="gravel_free_226_free" />
+      <geom name="gravel_free_226_geom" type="sphere" pos="0 0 0" size="0.07090" material="gravel_sphere_mat" mass="2.23933" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_227" pos="-0.03550 -9.64640 0.47702" user="3">
+      <freejoint name="gravel_free_227_free" />
+      <geom name="gravel_free_227_geom" type="sphere" pos="0 0 0" size="0.03060" material="gravel_sphere_mat" mass="0.18003" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_228" pos="-0.87880 7.34770 0.79776" user="3">
+      <freejoint name="gravel_free_228_free" />
+      <geom name="gravel_free_228_geom" type="sphere" pos="0 0 0" size="0.04900" material="gravel_sphere_mat" mass="0.73921" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_229" pos="9.24080 -7.97660 0.57973" user="3">
+      <freejoint name="gravel_free_229_free" />
+      <geom name="gravel_free_229_geom" type="sphere" pos="0 0 0" size="0.05030" material="gravel_sphere_mat" mass="0.79962" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_230" pos="-12.73680 -13.23140 0.70086" user="3">
+      <freejoint name="gravel_free_230_free" />
+      <geom name="gravel_free_230_geom" type="sphere" pos="0 0 0" size="0.04140" material="gravel_sphere_mat" mass="0.445842" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_231" pos="-0.00990 16.15370 0.92694" user="3">
+      <freejoint name="gravel_free_231_free" />
+      <geom name="gravel_free_231_geom" type="sphere" pos="0 0 0" size="0.09830" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_232" pos="-13.20800 -17.28690 0.48297" user="3">
+      <freejoint name="gravel_free_232_free" />
+      <geom name="gravel_free_232_geom" type="sphere" pos="0 0 0" size="0.08130" material="gravel_sphere_mat" mass="3.37638" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_233" pos="13.55170 4.05960 0.61530" user="3">
+      <freejoint name="gravel_free_233_free" />
+      <geom name="gravel_free_233_geom" type="sphere" pos="0 0 0" size="0.08210" material="gravel_sphere_mat" mass="3.47704" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_234" pos="12.94060 -14.44240 0.60334" user="3">
+      <freejoint name="gravel_free_234_free" />
+      <geom name="gravel_free_234_geom" type="sphere" pos="0 0 0" size="0.12320" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_235" pos="-2.38120 9.65860 0.65836" user="3">
+      <freejoint name="gravel_free_235_free" />
+      <geom name="gravel_free_235_geom" type="sphere" pos="0 0 0" size="0.04200" material="gravel_sphere_mat" mass="0.465509" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_236" pos="-4.62010 2.45570 1.02998" user="3">
+      <freejoint name="gravel_free_236_free" />
+      <geom name="gravel_free_236_geom" type="sphere" pos="0 0 0" size="0.04040" material="gravel_dark_sphere_mat" mass="0.414309" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_237" pos="-8.27990 7.39040 0.72081" user="3">
+      <freejoint name="gravel_free_237_free" />
+      <geom name="gravel_free_237_geom" type="sphere" pos="0 0 0" size="0.10610" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_238" pos="-0.90730 2.78710 -0.08583" user="3">
+      <freejoint name="gravel_free_238_free" />
+      <geom name="gravel_free_238_geom" type="sphere" pos="0 0 0" size="0.02710" material="gravel_sphere_mat" mass="0.125051" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_239" pos="-13.33440 -9.74820 0.53037" user="3">
+      <freejoint name="gravel_free_239_free" />
+      <geom name="gravel_free_239_geom" type="sphere" pos="0 0 0" size="0.07040" material="gravel_sphere_mat" mass="2.19229" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_240" pos="-3.21100 3.05130 0.80524" user="3">
+      <freejoint name="gravel_free_240_free" />
+      <geom name="gravel_free_240_geom" type="sphere" pos="0 0 0" size="0.09790" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_241" pos="-6.23370 7.66930 0.55087" user="3">
+      <freejoint name="gravel_free_241_free" />
+      <geom name="gravel_free_241_geom" type="sphere" pos="0 0 0" size="0.02590" material="gravel_dark_sphere_mat" mass="0.109164" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_242" pos="-5.08360 -16.96030 0.63454" user="3">
+      <freejoint name="gravel_free_242_free" />
+      <geom name="gravel_free_242_geom" type="sphere" pos="0 0 0" size="0.03610" material="gravel_sphere_mat" mass="0.295598" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_243" pos="-5.25060 -2.81520 0.78270" user="3">
+      <freejoint name="gravel_free_243_free" />
+      <geom name="gravel_free_243_geom" type="sphere" pos="0 0 0" size="0.07030" material="gravel_dark_sphere_mat" mass="2.18296" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_244" pos="0.87600 0.80110 -0.38224" user="3">
+      <freejoint name="gravel_free_244_free" />
+      <geom name="gravel_free_244_geom" type="sphere" pos="0 0 0" size="0.04240" material="gravel_dark_sphere_mat" mass="0.478936" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_245" pos="3.63140 7.28060 0.90751" user="3">
+      <freejoint name="gravel_free_245_free" />
+      <geom name="gravel_free_245_geom" type="sphere" pos="0 0 0" size="0.05700" material="gravel_sphere_mat" mass="1.1636" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_246" pos="8.05230 -7.45470 0.60665" user="3">
+      <freejoint name="gravel_free_246_free" />
+      <geom name="gravel_free_246_geom" type="sphere" pos="0 0 0" size="0.06340" material="gravel_dark_sphere_mat" mass="1.60121" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_247" pos="14.84120 13.46380 0.73183" user="3">
+      <freejoint name="gravel_free_247_free" />
+      <geom name="gravel_free_247_geom" type="sphere" pos="0 0 0" size="0.02950" material="gravel_sphere_mat" mass="0.161304" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_248" pos="-14.31800 -11.21150 0.80237" user="3">
+      <freejoint name="gravel_free_248_free" />
+      <geom name="gravel_free_248_geom" type="sphere" pos="0 0 0" size="0.03390" material="gravel_sphere_mat" mass="0.244782" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_249" pos="8.56440 -4.80120 0.63381" user="3">
+      <freejoint name="gravel_free_249_free" />
+      <geom name="gravel_free_249_geom" type="sphere" pos="0 0 0" size="0.05760" material="gravel_dark_sphere_mat" mass="1.20074" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_250" pos="-7.20220 -16.19990 0.82523" user="3">
+      <freejoint name="gravel_free_250_free" />
+      <geom name="gravel_free_250_geom" type="sphere" pos="0 0 0" size="0.07850" material="gravel_sphere_mat" mass="3.03941" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_251" pos="-8.36120 -13.74520 1.05512" user="3">
+      <freejoint name="gravel_free_251_free" />
+      <geom name="gravel_free_251_geom" type="sphere" pos="0 0 0" size="0.12470" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_252" pos="-1.43100 -10.66000 0.69960" user="3">
+      <freejoint name="gravel_free_252_free" />
+      <geom name="gravel_free_252_geom" type="sphere" pos="0 0 0" size="0.06910" material="gravel_dark_sphere_mat" mass="2.07307" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_253" pos="7.10670 4.97850 0.65186" user="3">
+      <freejoint name="gravel_free_253_free" />
+      <geom name="gravel_free_253_geom" type="sphere" pos="0 0 0" size="0.06730" material="gravel_sphere_mat" mass="1.91525" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_254" pos="5.03440 8.02310 0.43375" user="3">
+      <freejoint name="gravel_free_254_free" />
+      <geom name="gravel_free_254_geom" type="sphere" pos="0 0 0" size="0.05600" material="gravel_dark_sphere_mat" mass="1.10343" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_255" pos="3.66380 4.34510 0.66717" user="3">
+      <freejoint name="gravel_free_255_free" />
+      <geom name="gravel_free_255_geom" type="sphere" pos="0 0 0" size="0.03820" material="gravel_sphere_mat" mass="0.350243" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_257" pos="-1.50770 6.55530 0.61664" user="3">
+      <freejoint name="gravel_free_257_free" />
+      <geom name="gravel_free_257_geom" type="sphere" pos="0 0 0" size="0.02820" material="gravel_dark_sphere_mat" mass="0.140905" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_258" pos="-3.91690 5.86800 0.66669" user="3">
+      <freejoint name="gravel_free_258_free" />
+      <geom name="gravel_free_258_geom" type="sphere" pos="0 0 0" size="0.04380" material="gravel_sphere_mat" mass="0.527961" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_259" pos="2.46570 -7.07520 0.78330" user="3">
+      <freejoint name="gravel_free_259_free" />
+      <geom name="gravel_free_259_geom" type="sphere" pos="0 0 0" size="0.04590" material="gravel_dark_sphere_mat" mass="0.6076" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_260" pos="-4.61680 -3.53610 0.59752" user="3">
+      <freejoint name="gravel_free_260_free" />
+      <geom name="gravel_free_260_geom" type="sphere" pos="0 0 0" size="0.07290" material="gravel_sphere_mat" mass="2.43423" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_261" pos="14.25770 8.90130 0.69656" user="3">
+      <freejoint name="gravel_free_261_free" />
+      <geom name="gravel_free_261_geom" type="sphere" pos="0 0 0" size="0.04980" material="gravel_sphere_mat" mass="0.776011" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_262" pos="-4.32230 2.77120 0.84687" user="3">
+      <freejoint name="gravel_free_262_free" />
+      <geom name="gravel_free_262_geom" type="sphere" pos="0 0 0" size="0.04300" material="gravel_sphere_mat" mass="0.499557" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_263" pos="-16.91320 14.66980 0.67801" user="3">
+      <freejoint name="gravel_free_263_free" />
+      <geom name="gravel_free_263_geom" type="sphere" pos="0 0 0" size="0.09460" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_264" pos="11.93740 -13.53550 0.68033" user="3">
+      <freejoint name="gravel_free_264_free" />
+      <geom name="gravel_free_264_geom" type="sphere" pos="0 0 0" size="0.03820" material="gravel_dark_sphere_mat" mass="0.350243" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_265" pos="-11.52630 -15.03510 0.73446" user="3">
+      <freejoint name="gravel_free_265_free" />
+      <geom name="gravel_free_265_geom" type="sphere" pos="0 0 0" size="0.03780" material="gravel_sphere_mat" mass="0.339356" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_266" pos="-14.56370 -8.45140 0.65176" user="3">
+      <freejoint name="gravel_free_266_free" />
+      <geom name="gravel_free_266_geom" type="sphere" pos="0 0 0" size="0.08180" material="gravel_sphere_mat" mass="3.43906" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_267" pos="4.69440 -15.60770 0.72850" user="3">
+      <freejoint name="gravel_free_267_free" />
+      <geom name="gravel_free_267_geom" type="sphere" pos="0 0 0" size="0.05320" material="gravel_sphere_mat" mass="0.946051" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_268" pos="6.70350 11.86890 0.70272" user="3">
+      <freejoint name="gravel_free_268_free" />
+      <geom name="gravel_free_268_geom" type="sphere" pos="0 0 0" size="0.06040" material="gravel_sphere_mat" mass="1.38449" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_269" pos="-9.10460 9.82760 0.68795" user="3">
+      <freejoint name="gravel_free_269_free" />
+      <geom name="gravel_free_269_geom" type="sphere" pos="0 0 0" size="0.06060" material="gravel_sphere_mat" mass="1.39829" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_270" pos="-0.31030 -5.99000 0.86998" user="3">
+      <freejoint name="gravel_free_270_free" />
+      <geom name="gravel_free_270_geom" type="sphere" pos="0 0 0" size="0.10860" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_271" pos="-0.65410 7.85490 0.83312" user="3">
+      <freejoint name="gravel_free_271_free" />
+      <geom name="gravel_free_271_geom" type="sphere" pos="0 0 0" size="0.05880" material="gravel_sphere_mat" mass="1.27736" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_273" pos="-4.12550 -3.01370 0.80917" user="3">
+      <freejoint name="gravel_free_273_free" />
+      <geom name="gravel_free_273_geom" type="sphere" pos="0 0 0" size="0.04540" material="gravel_sphere_mat" mass="0.58796" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_274" pos="2.32420 -4.70020 1.10669" user="3">
+      <freejoint name="gravel_free_274_free" />
+      <geom name="gravel_free_274_geom" type="sphere" pos="0 0 0" size="0.06570" material="gravel_sphere_mat" mass="1.78187" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_275" pos="-14.94460 -12.73660 0.70103" user="3">
+      <freejoint name="gravel_free_275_free" />
+      <geom name="gravel_free_275_geom" type="sphere" pos="0 0 0" size="0.03680" material="gravel_sphere_mat" mass="0.313129" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_276" pos="12.20800 -9.55360 0.61341" user="3">
+      <freejoint name="gravel_free_276_free" />
+      <geom name="gravel_free_276_geom" type="sphere" pos="0 0 0" size="0.03280" material="gravel_sphere_mat" mass="0.221718" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_277" pos="-8.38110 2.87350 0.67277" user="3">
+      <freejoint name="gravel_free_277_free" />
+      <geom name="gravel_free_277_geom" type="sphere" pos="0 0 0" size="0.10600" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_278" pos="-4.70640 -10.59780 0.85896" user="3">
+      <freejoint name="gravel_free_278_free" />
+      <geom name="gravel_free_278_geom" type="sphere" pos="0 0 0" size="0.06030" material="gravel_sphere_mat" mass="1.37763" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_279" pos="-7.58170 5.50610 0.75189" user="3">
+      <freejoint name="gravel_free_279_free" />
+      <geom name="gravel_free_279_geom" type="sphere" pos="0 0 0" size="0.03240" material="gravel_dark_sphere_mat" mass="0.213705" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_280" pos="0.15210 -12.54330 0.38130" user="3">
+      <freejoint name="gravel_free_280_free" />
+      <geom name="gravel_free_280_geom" type="sphere" pos="0 0 0" size="0.04580" material="gravel_sphere_mat" mass="0.603638" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_281" pos="15.56820 -13.93770 0.90399" user="3">
+      <freejoint name="gravel_free_281_free" />
+      <geom name="gravel_free_281_geom" type="sphere" pos="0 0 0" size="0.07390" material="gravel_sphere_mat" mass="2.53579" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_282" pos="-5.37660 13.67510 0.43530" user="3">
+      <freejoint name="gravel_free_282_free" />
+      <geom name="gravel_free_282_geom" type="sphere" pos="0 0 0" size="0.07340" material="gravel_sphere_mat" mass="2.48467" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_283" pos="17.15030 16.93210 0.78094" user="3">
+      <freejoint name="gravel_free_283_free" />
+      <geom name="gravel_free_283_geom" type="sphere" pos="0 0 0" size="0.12910" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_284" pos="-14.54780 3.54340 0.72223" user="3">
+      <freejoint name="gravel_free_284_free" />
+      <geom name="gravel_free_284_geom" type="sphere" pos="0 0 0" size="0.06860" material="gravel_sphere_mat" mass="2.02839" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_285" pos="6.33380 1.91790 0.66416" user="3">
+      <freejoint name="gravel_free_285_free" />
+      <geom name="gravel_free_285_geom" type="sphere" pos="0 0 0" size="0.03860" material="gravel_sphere_mat" mass="0.361361" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_286" pos="-10.41840 3.31150 0.72535" user="3">
+      <freejoint name="gravel_free_286_free" />
+      <geom name="gravel_free_286_geom" type="sphere" pos="0 0 0" size="0.08960" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_287" pos="-2.82530 -7.78230 0.85869" user="3">
+      <freejoint name="gravel_free_287_free" />
+      <geom name="gravel_free_287_geom" type="sphere" pos="0 0 0" size="0.02950" material="gravel_sphere_mat" mass="0.161304" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_288" pos="-3.43750 -9.92510 0.74061" user="3">
+      <freejoint name="gravel_free_288_free" />
+      <geom name="gravel_free_288_geom" type="sphere" pos="0 0 0" size="0.03800" material="gravel_sphere_mat" mass="0.344771" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_289" pos="7.87140 -2.61850 0.79299" user="3">
+      <freejoint name="gravel_free_289_free" />
+      <geom name="gravel_free_289_geom" type="sphere" pos="0 0 0" size="0.03640" material="gravel_dark_sphere_mat" mass="0.303029" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_290" pos="12.53370 -12.95990 0.56302" user="3">
+      <freejoint name="gravel_free_290_free" />
+      <geom name="gravel_free_290_geom" type="sphere" pos="0 0 0" size="0.07140" material="gravel_sphere_mat" mass="2.28704" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_291" pos="-4.06370 -5.76470 0.71677" user="3">
+      <freejoint name="gravel_free_291_free" />
+      <geom name="gravel_free_291_geom" type="sphere" pos="0 0 0" size="0.03960" material="gravel_dark_sphere_mat" mass="0.39018" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_292" pos="-5.29830 3.56670 0.75200" user="3">
+      <freejoint name="gravel_free_292_free" />
+      <geom name="gravel_free_292_geom" type="sphere" pos="0 0 0" size="0.07350" material="gravel_sphere_mat" mass="2.49484" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_293" pos="1.41980 18.06530 0.77959" user="3">
+      <freejoint name="gravel_free_293_free" />
+      <geom name="gravel_free_293_geom" type="sphere" pos="0 0 0" size="0.11840" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_294" pos="17.28450 -10.55870 0.70049" user="3">
+      <freejoint name="gravel_free_294_free" />
+      <geom name="gravel_free_294_geom" type="sphere" pos="0 0 0" size="0.07110" material="gravel_sphere_mat" mass="2.25834" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_295" pos="0.98570 -5.21980 0.91086" user="3">
+      <freejoint name="gravel_free_295_free" />
+      <geom name="gravel_free_295_geom" type="sphere" pos="0 0 0" size="0.08290" material="gravel_sphere_mat" mass="3.57967" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_296" pos="8.30050 17.16900 0.88715" user="3">
+      <freejoint name="gravel_free_296_free" />
+      <geom name="gravel_free_296_geom" type="sphere" pos="0 0 0" size="0.05850" material="gravel_sphere_mat" mass="1.2579" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_297" pos="-3.66110 2.87470 1.05916" user="3">
+      <freejoint name="gravel_free_297_free" />
+      <geom name="gravel_free_297_geom" type="sphere" pos="0 0 0" size="0.06630" material="gravel_dark_sphere_mat" mass="1.83114" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_298" pos="7.20070 -6.97760 0.45583" user="3">
+      <freejoint name="gravel_free_298_free" />
+      <geom name="gravel_free_298_geom" type="sphere" pos="0 0 0" size="0.05100" material="gravel_dark_sphere_mat" mass="0.833471" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_299" pos="6.10000 -6.42820 0.80334" user="3">
+      <freejoint name="gravel_free_299_free" />
+      <geom name="gravel_free_299_geom" type="sphere" pos="0 0 0" size="0.11410" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_301" pos="-6.84870 4.90350 0.60244" user="3">
+      <freejoint name="gravel_free_301_free" />
+      <geom name="gravel_free_301_geom" type="sphere" pos="0 0 0" size="0.04150" material="gravel_sphere_mat" mass="0.44908" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_302" pos="12.50810 -9.78660 0.90423" user="3">
+      <freejoint name="gravel_free_302_free" />
+      <geom name="gravel_free_302_geom" type="sphere" pos="0 0 0" size="0.06740" material="gravel_sphere_mat" mass="1.9238" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_303" pos="5.11530 -8.27610 0.58854" user="3">
+      <freejoint name="gravel_free_303_free" />
+      <geom name="gravel_free_303_geom" type="sphere" pos="0 0 0" size="0.02850" material="gravel_sphere_mat" mass="0.14545" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_304" pos="-1.11660 13.80540 0.74559" user="3">
+      <freejoint name="gravel_free_304_free" />
+      <geom name="gravel_free_304_geom" type="sphere" pos="0 0 0" size="0.05570" material="gravel_sphere_mat" mass="1.08579" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_305" pos="-9.49810 -5.60100 0.67280" user="3">
+      <freejoint name="gravel_free_305_free" />
+      <geom name="gravel_free_305_geom" type="sphere" pos="0 0 0" size="0.04450" material="gravel_sphere_mat" mass="0.553681" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_306" pos="13.70670 -15.20130 0.55743" user="3">
+      <freejoint name="gravel_free_306_free" />
+      <geom name="gravel_free_306_geom" type="sphere" pos="0 0 0" size="0.06930" material="gravel_sphere_mat" mass="2.09112" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_307" pos="2.63580 -6.98480 0.91702" user="3">
+      <freejoint name="gravel_free_307_free" />
+      <geom name="gravel_free_307_geom" type="sphere" pos="0 0 0" size="0.09130" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_308" pos="8.64000 -10.05490 0.62110" user="3">
+      <freejoint name="gravel_free_308_free" />
+      <geom name="gravel_free_308_geom" type="sphere" pos="0 0 0" size="0.05520" material="gravel_sphere_mat" mass="1.05681" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_309" pos="-14.41780 -10.80010 0.72903" user="3">
+      <freejoint name="gravel_free_309_free" />
+      <geom name="gravel_free_309_geom" type="sphere" pos="0 0 0" size="0.04850" material="gravel_sphere_mat" mass="0.716812" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_310" pos="8.43770 -2.67400 0.57792" user="3">
+      <freejoint name="gravel_free_310_free" />
+      <geom name="gravel_free_310_geom" type="sphere" pos="0 0 0" size="0.07020" material="gravel_sphere_mat" mass="2.17366" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_311" pos="-15.71370 0.85260 0.66851" user="3">
+      <freejoint name="gravel_free_311_free" />
+      <geom name="gravel_free_311_geom" type="sphere" pos="0 0 0" size="0.04810" material="gravel_sphere_mat" mass="0.699222" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_312" pos="0.09260 5.68560 1.00153" user="3">
+      <freejoint name="gravel_free_312_free" />
+      <geom name="gravel_free_312_geom" type="sphere" pos="0 0 0" size="0.06160" material="gravel_sphere_mat" mass="1.46866" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_313" pos="16.04990 -5.37800 0.68437" user="3">
+      <freejoint name="gravel_free_313_free" />
+      <geom name="gravel_free_313_geom" type="sphere" pos="0 0 0" size="0.05570" material="gravel_sphere_mat" mass="1.08579" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_314" pos="17.15230 -12.43300 0.78052" user="3">
+      <freejoint name="gravel_free_314_free" />
+      <geom name="gravel_free_314_geom" type="sphere" pos="0 0 0" size="0.04110" material="gravel_sphere_mat" mass="0.43622" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_315" pos="1.88050 12.34910 0.62751" user="3">
+      <freejoint name="gravel_free_315_free" />
+      <geom name="gravel_free_315_geom" type="sphere" pos="0 0 0" size="0.05750" material="gravel_sphere_mat" mass="1.19449" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_316" pos="-2.90530 -6.71820 0.84521" user="3">
+      <freejoint name="gravel_free_316_free" />
+      <geom name="gravel_free_316_geom" type="sphere" pos="0 0 0" size="0.05450" material="gravel_dark_sphere_mat" mass="1.01711" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_317" pos="5.09860 3.12750 1.08551" user="3">
+      <freejoint name="gravel_free_317_free" />
+      <geom name="gravel_free_317_geom" type="sphere" pos="0 0 0" size="0.07930" material="gravel_sphere_mat" mass="3.13328" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_318" pos="17.15320 7.89150 0.79752" user="3">
+      <freejoint name="gravel_free_318_free" />
+      <geom name="gravel_free_318_geom" type="sphere" pos="0 0 0" size="0.05160" material="gravel_sphere_mat" mass="0.863235" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_319" pos="17.93760 -15.70300 0.77807" user="3">
+      <freejoint name="gravel_free_319_free" />
+      <geom name="gravel_free_319_geom" type="sphere" pos="0 0 0" size="0.04530" material="gravel_dark_sphere_mat" mass="0.584083" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_320" pos="12.97820 -11.71100 0.41656" user="3">
+      <freejoint name="gravel_free_320_free" />
+      <geom name="gravel_free_320_geom" type="sphere" pos="0 0 0" size="0.04420" material="gravel_sphere_mat" mass="0.542559" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_321" pos="-8.65170 3.62240 0.82091" user="3">
+      <freejoint name="gravel_free_321_free" />
+      <geom name="gravel_free_321_geom" type="sphere" pos="0 0 0" size="0.11950" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_322" pos="-9.40770 17.66730 0.38122" user="3">
+      <freejoint name="gravel_free_322_free" />
+      <geom name="gravel_free_322_geom" type="sphere" pos="0 0 0" size="0.02790" material="gravel_sphere_mat" mass="0.136456" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_323" pos="-3.57380 -4.06450 0.81967" user="3">
+      <freejoint name="gravel_free_323_free" />
+      <geom name="gravel_free_323_geom" type="sphere" pos="0 0 0" size="0.04450" material="gravel_dark_sphere_mat" mass="0.553681" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_324" pos="13.18210 -15.81430 0.78998" user="3">
+      <freejoint name="gravel_free_324_free" />
+      <geom name="gravel_free_324_geom" type="sphere" pos="0 0 0" size="0.05320" material="gravel_dark_sphere_mat" mass="0.946051" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_325" pos="9.38520 0.31500 0.83456" user="3">
+      <freejoint name="gravel_free_325_free" />
+      <geom name="gravel_free_325_geom" type="sphere" pos="0 0 0" size="0.11240" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_326" pos="8.50020 15.26120 0.73005" user="3">
+      <freejoint name="gravel_free_326_free" />
+      <geom name="gravel_free_326_geom" type="sphere" pos="0 0 0" size="0.04080" material="gravel_sphere_mat" mass="0.426737" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_327" pos="-8.21340 4.33010 0.80898" user="3">
+      <freejoint name="gravel_free_327_free" />
+      <geom name="gravel_free_327_geom" type="sphere" pos="0 0 0" size="0.06580" material="gravel_dark_sphere_mat" mass="1.79002" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_328" pos="-2.31950 -4.44100 0.83917" user="3">
+      <freejoint name="gravel_free_328_free" />
+      <geom name="gravel_free_328_geom" type="sphere" pos="0 0 0" size="0.04370" material="gravel_sphere_mat" mass="0.524354" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_329" pos="-5.73360 -5.66870 0.62504" user="3">
+      <freejoint name="gravel_free_329_free" />
+      <geom name="gravel_free_329_geom" type="sphere" pos="0 0 0" size="0.04050" material="gravel_sphere_mat" mass="0.417393" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_330" pos="4.53810 4.02830 0.77906" user="3">
+      <freejoint name="gravel_free_330_free" />
+      <geom name="gravel_free_330_geom" type="sphere" pos="0 0 0" size="0.12350" material="gravel_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_331" pos="6.33010 -6.11140 0.67688" user="3">
+      <freejoint name="gravel_free_331_free" />
+      <geom name="gravel_free_331_geom" type="sphere" pos="0 0 0" size="0.03600" material="gravel_sphere_mat" mass="0.293148" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_332" pos="-7.02380 -3.09060 0.55664" user="3">
+      <freejoint name="gravel_free_332_free" />
+      <geom name="gravel_free_332_geom" type="sphere" pos="0 0 0" size="0.03590" material="gravel_sphere_mat" mass="0.290712" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_333" pos="12.59710 -9.83060 0.87293" user="3">
+      <freejoint name="gravel_free_333_free" />
+      <geom name="gravel_free_333_geom" type="sphere" pos="0 0 0" size="0.06500" material="gravel_sphere_mat" mass="1.72552" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_334" pos="6.63050 -15.91790 0.99870" user="3">
+      <freejoint name="gravel_free_334_free" />
+      <geom name="gravel_free_334_geom" type="sphere" pos="0 0 0" size="0.06170" material="gravel_sphere_mat" mass="1.47583" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_335" pos="-7.70270 11.70320 0.54942" user="3">
+      <freejoint name="gravel_free_335_free" />
+      <geom name="gravel_free_335_geom" type="sphere" pos="0 0 0" size="0.02890" material="gravel_sphere_mat" mass="0.151661" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_336" pos="-4.60800 -3.12540 0.60816" user="3">
+      <freejoint name="gravel_free_336_free" />
+      <geom name="gravel_free_336_geom" type="sphere" pos="0 0 0" size="0.04740" material="gravel_sphere_mat" mass="0.669137" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_337" pos="6.36700 11.45520 0.54251" user="3">
+      <freejoint name="gravel_free_337_free" />
+      <geom name="gravel_free_337_geom" type="sphere" pos="0 0 0" size="0.02780" material="gravel_dark_sphere_mat" mass="0.134994" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_338" pos="17.07800 -1.20830 0.75867" user="3">
+      <freejoint name="gravel_free_338_free" />
+      <geom name="gravel_free_338_geom" type="sphere" pos="0 0 0" size="0.07320" material="gravel_sphere_mat" mass="2.46441" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_339" pos="12.13490 1.80840 0.81387" user="3">
+      <freejoint name="gravel_free_339_free" />
+      <geom name="gravel_free_339_geom" type="sphere" pos="0 0 0" size="0.04360" material="gravel_sphere_mat" mass="0.520762" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_340" pos="-5.78840 12.68680 0.38028" user="3">
+      <freejoint name="gravel_free_340_free" />
+      <geom name="gravel_free_340_geom" type="sphere" pos="0 0 0" size="0.02780" material="gravel_sphere_mat" mass="0.134994" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_341" pos="-9.15790 8.17640 0.55252" user="3">
+      <freejoint name="gravel_free_341_free" />
+      <geom name="gravel_free_341_geom" type="sphere" pos="0 0 0" size="0.04810" material="gravel_dark_sphere_mat" mass="0.699222" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_342" pos="-10.66470 17.21070 0.59987" user="3">
+      <freejoint name="gravel_free_342_free" />
+      <geom name="gravel_free_342_geom" type="sphere" pos="0 0 0" size="0.05150" material="gravel_sphere_mat" mass="0.858226" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_343" pos="-2.69760 5.07870 0.70382" user="3">
+      <freejoint name="gravel_free_343_free" />
+      <geom name="gravel_free_343_geom" type="sphere" pos="0 0 0" size="0.05820" material="gravel_sphere_mat" mass="1.23865" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_344" pos="1.01740 -7.05790 0.47173" user="3">
+      <freejoint name="gravel_free_344_free" />
+      <geom name="gravel_free_344_geom" type="sphere" pos="0 0 0" size="0.05830" material="gravel_sphere_mat" mass="1.24505" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_345" pos="2.44470 11.52470 0.42781" user="3">
+      <freejoint name="gravel_free_345_free" />
+      <geom name="gravel_free_345_geom" type="sphere" pos="0 0 0" size="0.05120" material="gravel_sphere_mat" mass="0.843315" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_346" pos="-5.02250 5.20800 0.65119" user="3">
+      <freejoint name="gravel_free_346_free" />
+      <geom name="gravel_free_346_geom" type="sphere" pos="0 0 0" size="0.04120" material="gravel_sphere_mat" mass="0.439412" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_347" pos="1.94710 -6.62000 0.87596" user="3">
+      <freejoint name="gravel_free_347_free" />
+      <geom name="gravel_free_347_geom" type="sphere" pos="0 0 0" size="0.05900" material="gravel_sphere_mat" mass="1.29043" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_348" pos="15.90690 -5.98480 0.66224" user="3">
+      <freejoint name="gravel_free_348_free" />
+      <geom name="gravel_free_348_geom" type="sphere" pos="0 0 0" size="0.03560" material="gravel_sphere_mat" mass="0.283485" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_349" pos="13.21830 -17.18580 0.74797" user="3">
+      <freejoint name="gravel_free_349_free" />
+      <geom name="gravel_free_349_geom" type="sphere" pos="0 0 0" size="0.05100" material="gravel_dark_sphere_mat" mass="0.833471" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_350" pos="-13.11650 9.36900 0.49218" user="3">
+      <freejoint name="gravel_free_350_free" />
+      <geom name="gravel_free_350_geom" type="sphere" pos="0 0 0" size="0.04210" material="gravel_sphere_mat" mass="0.468842" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_351" pos="-2.20570 1.65390 -0.11917" user="3">
+      <freejoint name="gravel_free_351_free" />
+      <geom name="gravel_free_351_geom" type="sphere" pos="0 0 0" size="0.02670" material="gravel_sphere_mat" mass="0.119595" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_352" pos="-1.67420 -15.42420 0.47928" user="3">
+      <freejoint name="gravel_free_352_free" />
+      <geom name="gravel_free_352_geom" type="sphere" pos="0 0 0" size="0.05210" material="gravel_sphere_mat" mass="0.888573" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_353" pos="-16.33610 4.28340 0.59245" user="3">
+      <freejoint name="gravel_free_353_free" />
+      <geom name="gravel_free_353_geom" type="sphere" pos="0 0 0" size="0.04190" material="gravel_dark_sphere_mat" mass="0.462191" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_354" pos="-1.37310 17.00030 0.84516" user="3">
+      <freejoint name="gravel_free_354_free" />
+      <geom name="gravel_free_354_geom" type="sphere" pos="0 0 0" size="0.02720" material="gravel_sphere_mat" mass="0.126441" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_355" pos="3.12810 -11.84400 0.71800" user="3">
+      <freejoint name="gravel_free_355_free" />
+      <geom name="gravel_free_355_geom" type="sphere" pos="0 0 0" size="0.08150" material="gravel_sphere_mat" mass="3.40136" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_356" pos="5.69470 -7.44510 0.66767" user="3">
+      <freejoint name="gravel_free_356_free" />
+      <geom name="gravel_free_356_geom" type="sphere" pos="0 0 0" size="0.07980" material="gravel_sphere_mat" mass="3.19292" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_357" pos="6.73070 0.07810 0.60842" user="3">
+      <freejoint name="gravel_free_357_free" />
+      <geom name="gravel_free_357_geom" type="sphere" pos="0 0 0" size="0.02860" material="gravel_sphere_mat" mass="0.146987" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_358" pos="10.13700 -1.38440 0.80893" user="3">
+      <freejoint name="gravel_free_358_free" />
+      <geom name="gravel_free_358_geom" type="sphere" pos="0 0 0" size="0.10830" material="gravel_dark_sphere_mat" mass="4.5" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <body name="gravel_free_359" pos="-6.05090 10.07630 0.56977" user="3">
+      <freejoint name="gravel_free_359_free" />
+      <geom name="gravel_free_359_geom" type="sphere" pos="0 0 0" size="0.06840" material="gravel_sphere_mat" mass="2.0107" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
+    </body>
+    <light name="robot_follow_light" mode="targetbodycom" target="trunk" pos="3 0 4" cutoff="30" />
+    <body name="trunk" pos="6.7 7.1 0.8641">
       <freejoint name="floating_base" />
       <inertial pos="0.008811 0.003839 0.000273" mass="11.644" fullinertia="0.051944892 0.24693924 0.270948307 0.001703617 0.000235941 0.000119783" />
       <geom name="trunk_visual" type="mesh" mesh="aliengo_trunk" material="aliengo_body" contype="0" conaffinity="0" group="2" rgba="0.95 0.42 0.08 1" />
@@ -184,6 +1736,10 @@
         <geom name="z1_link00_collision" type="cylinder" size="0.0325 0.0255" pos="0 0 0.0255" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
       </body>
     </body>
+    <site name="aliengo_start_site" type="cylinder" pos="6.7000 7.1000 0.3278" size="0.55 0.025" rgba="0.1 0.4 1 0.35" group="3" />
+    <site name="ore_grasp_target_area" type="ellipsoid" pos="10 10 0.24" size="1.9 1.6 0.045" rgba="1 0.7 0.1 0.16" group="3" />
+    <camera name="aliengo_to_ore_view" pos="7.0 3.8 3.0" xyaxes="0.72 -0.69 0 0.34 0.35 0.87" fovy="50" />
+    <camera name="aliengo_arm_close_view" pos="8.2 7.0 1.8" xyaxes="0.67 -0.74 0 0.27 0.25 0.93" fovy="45" />
   </worldbody>
   <actuator>
     <general name="FR_hip" joint="FR_hip_joint" gainprm="80" biasprm="-8 -80 -4" ctrlrange="-1.12173 1.32173" forcerange="-35.278 35.278" gaintype="fixed" biastype="affine" />
@@ -200,6 +1756,6 @@
     <general name="RL_calf" joint="RL_calf_joint" gainprm="100" biasprm="-150 -100 -5" ctrlrange="-1.27507 0.854228" forcerange="-44.4 44.4" gaintype="fixed" biastype="affine" />
   </actuator>
   <keyframe>
-    <key name="stand" qpos="5 -6 1.7653 1 0 0 0 -0.1 0.8 -1.5 0.1 0.8 -1.5 -0.1 1 -1.5 0.1 1 -1.5" ctrl="0 0 0 0 0 0 0 0 0 0 0 0" />
+    <key name="stand" qpos="6.7 7.1 0.8641 1 0 0 0 -0.1 0.8 -1.5 0.1 0.8 -1.5 -0.1 1 -1.5 0.1 1 -1.5" ctrl="0 0 0 0 0 0 0 0 0 0 0 0" />
   </keyframe>
 </mujoco>
