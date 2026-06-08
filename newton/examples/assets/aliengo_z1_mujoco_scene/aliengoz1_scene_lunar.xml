@@ -2,7 +2,7 @@
   <compiler angle="radian" meshdir="." texturedir="." autolimits="true" />
   <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast" cone="elliptic" iterations="80" tolerance="1e-10" />
   <size nuser_body="1" nuser_geom="1" />
-  <statistic center="0 0 0" extent="42" />
+  <statistic center="6.9 7.2 0.9" extent="3.2" />
   <visual>
     <headlight diffuse="0.46 0.46 0.46" ambient="0.08 0.08 0.08" specular="0.15 0.15 0.15" />
     <rgba haze="0.02 0.02 0.025 1" />
@@ -18,6 +18,7 @@
     <material name="lunar_surface" texture="lunar_tex" texrepeat="8 8" texuniform="true" rgba="0.58 0.56 0.52 1" roughness="1" specular="0.04" />
     <material name="rock_mat" rgba="0.34 0.33 0.31 1" roughness="1" specular="0.03" />
     <material name="dark_rock_mat" rgba="0.22 0.22 0.21 1" roughness="1" specular="0.02" />
+    <material name="aliengo_ik_rock_mat" rgba="0.28 0.28 0.26 1" roughness="1" specular="0.02" />
     <material name="ore_gold" rgba="0.95 0.72 0.22 1" emission="0.03" specular="0.55" shininess="0.6" />
     <material name="ore_blue" rgba="0.25 0.55 0.95 1" emission="0.04" specular="0.65" shininess="0.7" />
     <material name="ore_copper" rgba="0.76 0.38 0.20 1" emission="0.025" specular="0.45" shininess="0.55" />
@@ -70,6 +71,7 @@
   <worldbody>
     <light name="sun_low_angle" directional="true" pos="-8 -5 11" dir="0.55 0.35 -1" diffuse="0.95 0.90 0.82" ambient="0.10 0.10 0.12" specular="0.20 0.20 0.20" />
     <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.88" material="lunar_surface" priority="1" user="0" />
+    <camera name="aliengo_default_close_view" pos="8.2 6.6 1.55" xyaxes="0.358979 0.933346 0 -0.369258 0.142022 0.918411" fovy="45" />
     <site name="central_crater_center" type="sphere" pos="0 0 -0.05" size="0.18" rgba="1 0.15 0.05 0.55" group="3" />
     <site name="central_crater_rim_marker" type="ellipsoid" pos="0 0 0.16" size="4.8 4.8 0.025" rgba="1 0.2 0.05 0.12" group="3" />
     <site name="robot_spawn" type="cylinder" pos="-16 -16 0.08" size="0.35 0.02" rgba="0.1 0.55 1.0 0.45" group="3" />
@@ -1594,7 +1596,11 @@
       <geom name="gravel_free_359_geom" type="sphere" pos="0 0 0" size="0.06840" material="gravel_sphere_mat" mass="2.0107" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
     </body>
     <light name="robot_follow_light" mode="targetbodycom" target="trunk" pos="3 0 4" cutoff="30" />
-    <body name="trunk" pos="6.7 7.1 0.8641">
+    <body name="aliengo_ik_rock" pos="7.1803 7.5221 0.2784" quat="0.935752 0 0 0.352658">
+      <freejoint name="aliengo_ik_rock_free_joint" />
+      <geom name="aliengo_ik_rock_geom" type="ellipsoid" size="0.06 0.042 0.032" material="aliengo_ik_rock_mat" density="350" condim="6" friction="8 0.4 0.25" contype="1" conaffinity="1" />
+    </body>
+    <body name="trunk" pos="6.4733 7.4256 0.8248">
       <freejoint name="floating_base" />
       <inertial pos="0.008811 0.003839 0.000273" mass="11.644" fullinertia="0.051944892 0.24693924 0.270948307 0.001703617 0.000235941 0.000119783" />
       <geom name="trunk_visual" type="mesh" mesh="aliengo_trunk" material="aliengo_body" contype="0" conaffinity="0" group="2" rgba="0.95 0.42 0.08 1" />
@@ -1736,7 +1742,7 @@
         <geom name="z1_link00_collision" type="cylinder" size="0.0325 0.0255" pos="0 0 0.0255" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
       </body>
     </body>
-    <site name="aliengo_start_site" type="cylinder" pos="6.7000 7.1000 0.3278" size="0.55 0.025" rgba="0.1 0.4 1 0.35" group="3" />
+    <site name="aliengo_start_site" type="cylinder" pos="6.3733 7.2256 0.3783" size="0.55 0.025" rgba="0.1 0.4 1 0.35" group="3" />
     <site name="ore_grasp_target_area" type="ellipsoid" pos="10 10 0.24" size="1.9 1.6 0.045" rgba="1 0.7 0.1 0.16" group="3" />
     <camera name="aliengo_to_ore_view" pos="7.0 3.8 3.0" xyaxes="0.72 -0.69 0 0.34 0.35 0.87" fovy="50" />
     <camera name="aliengo_arm_close_view" pos="8.2 7.0 1.8" xyaxes="0.67 -0.74 0 0.27 0.25 0.93" fovy="45" />
@@ -1756,6 +1762,6 @@
     <general name="RL_calf" joint="RL_calf_joint" gainprm="100" biasprm="-150 -100 -5" ctrlrange="-1.27507 0.854228" forcerange="-44.4 44.4" gaintype="fixed" biastype="affine" />
   </actuator>
   <keyframe>
-    <key name="stand" qpos="6.7 7.1 0.8641 1 0 0 0 -0.1 0.8 -1.5 0.1 0.8 -1.5 -0.1 1 -1.5 0.1 1 -1.5" ctrl="0 0 0 0 0 0 0 0 0 0 0 0" />
+    <key name="stand" qpos="6.3733 7.2256 0.8748 1 0 0 0 -0.1 0.8 -1.5 0.1 0.8 -1.5 -0.1 1 -1.5 0.1 1 -1.5" ctrl="0 0 0 0 0 0 0 0 0 0 0 0" />
   </keyframe>
 </mujoco>
