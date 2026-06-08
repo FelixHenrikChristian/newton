@@ -1600,7 +1600,7 @@
       <freejoint name="aliengo_ik_rock_free_joint" />
       <geom name="aliengo_ik_rock_geom" type="ellipsoid" size="0.06 0.042 0.032" material="aliengo_ik_rock_mat" density="350" condim="6" friction="8 0.4 0.25" contype="1" conaffinity="1" />
     </body>
-    <body name="trunk" pos="6.4733 7.4256 0.8248">
+    <body name="trunk" pos="6.4733 7.4256 0.7748">
       <freejoint name="floating_base" />
       <inertial pos="0.008811 0.003839 0.000273" mass="11.644" fullinertia="0.051944892 0.24693924 0.270948307 0.001703617 0.000235941 0.000119783" />
       <geom name="trunk_visual" type="mesh" mesh="aliengo_trunk" material="aliengo_body" contype="0" conaffinity="0" group="2" rgba="0.95 0.42 0.08 1" />
