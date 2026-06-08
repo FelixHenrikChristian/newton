@@ -31,12 +31,14 @@ MuJoCo does not decode the upstream DAE meshes directly in this environment, so
 the DAE visual meshes were converted to OBJ while preserving the official URDF
 collision primitives for contact.
 
-The Z1 is modeled as a fixed folded payload attached to Aliengo's `trunk`. Its
-link inertias are included, but its joints and actuators are not exposed. The
-Z1 has simplified collision primitives that collide with the ground only; they
-do not collide with Aliengo or with other Z1 links. This keeps the Aliengo
-action space unchanged while accounting for the mounted arm mass and preventing
-the arm from passing through the floor when the robot falls.
+The flat inspection scenes keep the Z1 modeled as a fixed folded payload
+attached to Aliengo's `trunk`. The lunar IK scene exposes six Z1 hinge joints
+and position actuators so scripts can solve and preview arm motion without
+embedding trajectories in the XML. The Z1 has simplified collision primitives
+that collide with the ground only; they do not collide with Aliengo or with
+other Z1 links. This keeps the Aliengo locomotion action space unchanged while
+accounting for the mounted arm mass and preventing the arm from passing through
+the floor when the robot falls.
 
 ## Usage
 
