@@ -452,7 +452,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Keep z1_joint6 fixed because TCP position and down-axis objectives do not constrain wrist roll.",
     )
     parser.add_argument(
-        "--gripper-open-angle", type=float, default=0.65, help="Open angle for the Z1 gripper mover [rad]."
+        "--gripper-open-angle", type=float, default=0.75, help="Open angle for the Z1 gripper mover [rad]."
     )
     parser.add_argument("--gripper-open-start", type=float, default=0.4, help="Time to start opening the gripper [s].")
     parser.add_argument(
