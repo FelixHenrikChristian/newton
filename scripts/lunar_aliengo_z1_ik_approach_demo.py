@@ -60,7 +60,7 @@ DOWN_AXIS_LENGTH = 0.12  # 第二个 IK 位置目标相对夹爪尖中点沿局�
 UNFOLD_DURATION = 2.0  # 从初始折叠姿态移动到预抓取点的时间 [s]。
 DESCENT_DURATION = 2.0  # 从预抓取点垂直下探到最终目标点的时间 [s]。
 PREGRASP_HEIGHT = 0.30  # 预抓取点高于最终目标点的高度 [m]。
-FINAL_CLEARANCE = 0.0  # 最终夹爪尖中点高于椭球顶部的间隙 [m]。
+FINAL_CLEARANCE = -0.06  # 最终夹爪尖中点高于椭球顶部的间隙 [m], 负值表示低于顶部。
 GRASP_TARGET_OFFSET = (0.0, 0.0, 0.0)  # 在椭球顶部目标点基础上叠加的世界坐标偏移 [m]。
 
 IK_ITERS = 32  # 每帧 IK 求解迭代次数。
@@ -69,7 +69,7 @@ IK_STEP_SIZE = 0.8  # Levenberg-Marquardt IK 单步更新尺度。
 IK_LAMBDA_INITIAL = 0.1  # IK 初始阻尼系数。
 MAX_JOINT_STEP = 0.05  # 每帧允许写回完整场景的最大 Z1 关节角变化 [rad]。
 DOWN_AXIS_RAMP_DURATION = 2.0  # 夹爪朝下约束从 0 平滑增加到目标权重的时间 [s]。
-DOWN_AXIS_WEIGHT = 1.2  # 夹爪局部 +X 轴朝世界 -Z 方向的约束权重。
+DOWN_AXIS_WEIGHT = 0.5  # 夹爪局部 +X 轴朝世界 -Z 方向的约束权重。
 LIMIT_WEIGHT = 1.0  # IK 关节限位残差权重。
 LOCK_WRIST_ROLL = True  # 是否固定 z1_joint6，避免仅靠位置目标时腕部绕夹爪轴自由旋转。
 WRIST_ROLL_BIAS = 0.0  # 固定 z1_joint6 的偏置; 非零只会整体旋转夹爪开口方向。
@@ -392,6 +392,12 @@ class LunarAliengoZ1IkApproachDemo:
         gripper_stator_quat = _parse_quat_attr(
             _find_mjcf_element(mjcf_root, "body", Z1_EE_BODY_NAME), "quat", (1.0, 0.0, 0.0, 0.0)
         )
+        # 原始夹爪延伸方向在 parent frame (link06) 中是 +X。stator body 加了
+        # quat 后，local +X 已经不再是延伸方向。需要用 quat 的逆把 parent +X
+        # 映射回新的 stator local frame，作为 down_obj 的方向参考轴。
+        stator_rot = _quat_wxyz_matrix(gripper_stator_quat)
+        self.gripper_extend_dir = (stator_rot.T @ np.array([1.0, 0.0, 0.0], dtype=np.float32))
+        self.gripper_extend_dir /= max(float(np.linalg.norm(self.gripper_extend_dir)), 1e-8)
         ik_builder = newton.ModelBuilder()
         ik_builder.add_mjcf(
             _build_z1_ik_mjcf(z1_base_tf, z1_limits, gripper_stator_quat),
@@ -427,10 +433,12 @@ class LunarAliengoZ1IkApproachDemo:
             target_positions=wp.array([wp.vec3(*self.current_target)], dtype=wp.vec3),
             weight=1.0,
         )
-        # 方向目标: 让夹爪的 +X 轴大致朝下, 形成从上往下接近椭球的姿态。
+        # 方向目标: 让夹爪延伸方向大致朝下, 形成从上往下接近椭球的姿态。
+        # gripper_extend_dir 是经 stator quat 逆变换后的真实延伸方向。
+        extend_offset = _wp_vec3(self.gripper_extend_dir * DOWN_AXIS_LENGTH)
         self.down_obj = ik.IKObjectivePosition(
             link_index=self.ik_ee_body_index,
-            link_offset=self.track_offset + wp.vec3(DOWN_AXIS_LENGTH, 0.0, 0.0),
+            link_offset=self.track_offset + extend_offset,
             target_positions=wp.array([wp.vec3(*self._down_axis_target(self.current_target))], dtype=wp.vec3),
             weight=DOWN_AXIS_WEIGHT,
         )
@@ -616,6 +624,20 @@ class LunarAliengoZ1IkApproachDemo:
         self.current_target = self._target_at_time()
         self.z1_q = self._solve_ik_target(self.current_target)
         self._set_scene_state(self.z1_q)
+
+        # 每 0.5s 打印一次诊断信息: 目标位置 vs 实际夹爪尖位置。
+        if int(self.sim_time * 2) != int((self.sim_time + self.frame_dt) * 2):
+            body_q = self.state.body_q.numpy()
+            actual = self._link_point_position(body_q, self.z1_ee_body_index, self.track_offset)
+            err = float(np.linalg.norm(actual - self.current_target))
+            print(
+                f"[DIAG t={self.sim_time:.2f}s] "
+                f"target={np.round(self.current_target, 4)}, "
+                f"actual={np.round(actual, 4)}, "
+                f"err={err:.4f}m, "
+                f"z1_q={np.round(self.z1_q, 3)}"
+            )
+
         self.sim_time += self.frame_dt
 
     def render(self) -> None:
