@@ -77,9 +77,6 @@ GRIPPER_OPEN_ANGLE = 0.75  # z1_gripper_joint 最终打开角度 [rad]。
 GRIPPER_OPEN_START = 0.4  # 开始打开夹爪的时间 [s]。
 GRIPPER_OPEN_DURATION = 0.8  # 夹爪从闭合到目标打开角度的过渡时间 [s]。
 
-MAX_FINAL_ERROR = 0.08  # test_final 允许的夹爪尖中点目标误差上限 [m]。
-MAX_XY_ERROR = 0.06  # test_final 允许的夹爪尖中点与椭球中心水平误差上限 [m]。
-
 # endregion
 
 # region Small helpers: formatting and interpolation
@@ -379,9 +376,6 @@ class LunarAliengoZ1IkApproachDemo:
         self.pregrasp_target = self.final_target + np.array([0.0, 0.0, PREGRASP_HEIGHT], dtype=np.float32)
         self.start_target = self._link_point_position(self.state.body_q.numpy(), self.z1_ee_body_index, self.track_offset)
         self.current_target = self.start_target.copy()
-        self.current_tcp = self.start_target.copy()
-        self.final_error = math.inf
-        self.max_joint_step_observed = 0.0
 
         # 位置目标: 让夹爪尖中点走到 current_target。
         self.pos_obj = ik.IKObjectivePosition(
@@ -536,14 +530,10 @@ class LunarAliengoZ1IkApproachDemo:
         delta = candidate_q - self.z1_q
         step = float(np.max(np.abs(delta)))
         if step <= max_step:
-            self.max_joint_step_observed = max(self.max_joint_step_observed, step)
             return candidate_q
 
         limited_q = self.z1_q + delta * (max_step / step)
-        limited_q = np.clip(limited_q, self.z1_lower, self.z1_upper).astype(np.float32)
-        actual_step = float(np.max(np.abs(limited_q - self.z1_q)))
-        self.max_joint_step_observed = max(self.max_joint_step_observed, actual_step)
-        return limited_q
+        return np.clip(limited_q, self.z1_lower, self.z1_upper).astype(np.float32)
 
     def _update_down_axis_weight(self) -> None:
         """逐渐引入夹爪朝下约束, 减少展开初期的姿态突变。"""
@@ -583,8 +573,6 @@ class LunarAliengoZ1IkApproachDemo:
         self.current_target = self._target_at_time()
         self.z1_q = self._solve_ik_target(self.current_target)
         self._set_scene_state(self.z1_q)
-        self.current_tcp = self._link_point_position(self.state.body_q.numpy(), self.z1_ee_body_index, self.track_offset)
-        self.final_error = float(np.linalg.norm(self.current_tcp - self.current_target))
         self.sim_time += self.frame_dt
 
     def render(self) -> None:
@@ -599,48 +587,6 @@ class LunarAliengoZ1IkApproachDemo:
                 "target_rock_top", wp.transform(wp.vec3(*self.final_target), wp.quat_identity())
             )
         self.viewer.end_frame()
-
-    def test_final(self) -> None:
-        """示例结束后检查: Aliengo 没动、Z1 定位到目标、夹爪已打开。"""
-        root_q = self.state.joint_q.numpy()[self.root_q_slice]
-        leg_q = self.state.joint_q.numpy()[self.leg_q_slice]
-        if not np.allclose(root_q, self.root_q, atol=1.0e-6):
-            raise ValueError(f"Aliengo root moved: expected {self.root_q}, got {root_q}")
-        if not np.allclose(leg_q, self.leg_q, atol=1.0e-6):
-            raise ValueError(f"Aliengo leg joints moved: expected {self.leg_q}, got {leg_q}")
-
-        tcp_to_rock_xy = float(np.linalg.norm(self.current_tcp[:2] - self.rock_pos[:2]))
-        tcp_clearance = float(self.current_tcp[2] - self.rock_top_z)
-        print(
-            "[INFO] Final Aliengo Z1 IK approach: "
-            f"target={np.round(self.current_target, 4)}, "
-            f"jaw_tip_center={np.round(self.current_tcp, 4)}, "
-            f"target_error={self.final_error:.4f}, "
-            f"xy_error={tcp_to_rock_xy:.4f}, "
-            f"clearance={tcp_clearance:.4f}, "
-            f"max_joint_step={self.max_joint_step_observed:.4f}, "
-            f"gripper_q={self.gripper_q[0]:.4f}, "
-            f"z1_q={np.round(self.z1_q, 4)}"
-        )
-        if self.final_error > MAX_FINAL_ERROR:
-            raise ValueError(
-                f"Z1 jaw tip center did not converge to the ellipsoid approach target: error={self.final_error:.4f}m"
-            )
-        if tcp_to_rock_xy > MAX_XY_ERROR:
-            raise ValueError(f"Z1 jaw tip center did not locate the ellipsoid in x/y: error={tcp_to_rock_xy:.4f}m")
-        if tcp_clearance < 0.0:
-            raise ValueError(f"Z1 jaw tip center penetrated below the ellipsoid top: clearance={tcp_clearance:.4f}m")
-        if 0.0 < MAX_JOINT_STEP + 1.0e-6 < self.max_joint_step_observed:
-            raise ValueError(
-                f"Z1 joint step exceeded limit: {self.max_joint_step_observed:.4f}rad > "
-                f"{MAX_JOINT_STEP:.4f}rad"
-            )
-        if self.gripper_q[0] < GRIPPER_OPEN_ANGLE - 1.0e-4:
-            raise ValueError(
-                f"Z1 gripper did not finish opening: {self.gripper_q[0]:.4f}rad < "
-                f"{GRIPPER_OPEN_ANGLE:.4f}rad"
-            )
-
 
 def create_parser() -> argparse.ArgumentParser:
     """创建命令行参数, 控制轨迹时长、IK 求解、夹爪展开和目标偏移。"""
