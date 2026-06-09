@@ -1723,7 +1723,7 @@
                     <joint name="z1_joint6" type="hinge" pos="0 0 0" axis="1 0 0" range="-2.792526803 2.792526803" actuatorfrcrange="-30 30" damping="1" frictionloss="1" />
                     <inertial pos="0.02415690 -0.00017355 -0.00143876" mass="0.28875807" fullinertia="0.00018328 0.00014750 0.00014680 0.00000122 0.00000054 0.00000008" />
                     <geom name="z1_link06_visual" type="mesh" mesh="z1_Link06" material="z1_white" rgba="0.83 0.84 0.82 1" contype="0" conaffinity="0" group="2" />
-                    <body name="z1_gripper_stator" pos="0.051 0 0">
+                    <body name="z1_gripper_stator" pos="0.051 0 0" quat="0.9238795 0 0.3826834 0">
                       <inertial pos="0.04764427 -0.00035819 -0.00249162" mass="0.52603655" fullinertia="0.00038683 0.00068614 0.00066293 -0.00000359 0.00007662 0.00000209" />
                       <geom name="z1_gripper_stator_visual" type="mesh" mesh="z1_GripperStator" material="z1_white" rgba="0.83 0.84 0.82 1" contype="0" conaffinity="0" group="2" />
                       <body name="z1_gripper_mover" pos="0.049 0 0">

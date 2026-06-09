@@ -55,7 +55,7 @@ Z1_GRIPPER_STATOR_GEOM_NAME = "z1_gripper_stator_collision"
 Z1_GRIPPER_MOVER_GEOM_NAME = "z1_gripper_mover_collision"
 
 # 用第二个 IK 位置目标把夹爪 +X 方向拉向世界坐标的向下方向。
-DOWN_AXIS_LENGTH = 0.08  # 第二个 IK 位置目标相对夹爪尖中点沿局部 +X 的距离 [m]。
+DOWN_AXIS_LENGTH = 0.12  # 第二个 IK 位置目标相对夹爪尖中点沿局部 +X 的距离 [m], 不改变夹爪尺寸。
 
 UNFOLD_DURATION = 2.0  # 从初始折叠姿态移动到预抓取点的时间 [s]。
 DESCENT_DURATION = 2.0  # 从预抓取点垂直下探到最终目标点的时间 [s]。
@@ -69,11 +69,12 @@ IK_STEP_SIZE = 0.8  # Levenberg-Marquardt IK 单步更新尺度。
 IK_LAMBDA_INITIAL = 0.1  # IK 初始阻尼系数。
 MAX_JOINT_STEP = 0.05  # 每帧允许写回完整场景的最大 Z1 关节角变化 [rad]。
 DOWN_AXIS_RAMP_DURATION = 2.0  # 夹爪朝下约束从 0 平滑增加到目标权重的时间 [s]。
-DOWN_AXIS_WEIGHT = 0.7  # 夹爪局部 +X 轴朝世界 -Z 方向的约束权重。
+DOWN_AXIS_WEIGHT = 1.2  # 夹爪局部 +X 轴朝世界 -Z 方向的约束权重。
 LIMIT_WEIGHT = 1.0  # IK 关节限位残差权重。
 LOCK_WRIST_ROLL = True  # 是否固定 z1_joint6，避免仅靠位置目标时腕部绕夹爪轴自由旋转。
+WRIST_ROLL_BIAS = 0.0  # 固定 z1_joint6 的偏置; 非零只会整体旋转夹爪开口方向。
 
-GRIPPER_OPEN_ANGLE = 0.75  # z1_gripper_joint 最终打开角度 [rad]。
+GRIPPER_OPEN_ANGLE = 1.25  # z1_gripper_joint 最终打开角度 [rad], 略超过 MJCF 原始 0.75 上限以便先看视觉效果。
 GRIPPER_OPEN_START = 0.4  # 开始打开夹爪的时间 [s]。
 GRIPPER_OPEN_DURATION = 0.8  # 夹爪从闭合到目标打开角度的过渡时间 [s]。
 
@@ -126,6 +127,18 @@ def _parse_vec_attr(element: ET.Element, attr: str, default: tuple[float, float,
     return values
 
 
+def _parse_quat_attr(element: ET.Element, attr: str, default: tuple[float, float, float, float]) -> np.ndarray:
+    """读取 MJCF 元素上的四元数属性, 顺序为 wxyz。"""
+    text = element.get(attr)
+    if text is None:
+        return np.asarray(default, dtype=np.float32)
+
+    values = np.fromstring(text, sep=" ", dtype=np.float32)
+    if values.shape != (4,):
+        raise ValueError(f"Expected MJCF '{attr}' on '{element.get('name')}' to have four values, got: {text}")
+    return values
+
+
 def _find_mjcf_element(root: ET.Element, tag: str, name: str) -> ET.Element:
     """在 MJCF 树里按 tag 和 name 找唯一元素。"""
     matches = [elem for elem in root.iter(tag) if elem.get("name") == name]
@@ -149,6 +162,23 @@ def _axis_angle_matrix(axis: np.ndarray, angle: float) -> np.ndarray:
             [c + x * x * one_c, x * y * one_c - z * s, x * z * one_c + y * s],
             [y * x * one_c + z * s, c + y * y * one_c, y * z * one_c - x * s],
             [z * x * one_c - y * s, z * y * one_c + x * s, c + z * z * one_c],
+        ],
+        dtype=np.float32,
+    )
+
+
+def _quat_wxyz_matrix(quat: np.ndarray) -> np.ndarray:
+    """根据 MJCF wxyz 四元数生成 3x3 旋转矩阵。"""
+    norm = float(np.linalg.norm(quat))
+    if norm <= 1.0e-8:
+        raise ValueError("Cannot build a rotation matrix from a zero-length quaternion.")
+
+    w, x, y, z = quat / norm
+    return np.array(
+        [
+            [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - z * w), 2.0 * (x * z + y * w)],
+            [2.0 * (x * y + z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - x * w)],
+            [2.0 * (x * z - y * w), 2.0 * (y * z + x * w), 1.0 - 2.0 * (x * x + y * y)],
         ],
         dtype=np.float32,
     )
@@ -230,8 +260,10 @@ def _mesh_asset_bounds(mjcf: Path, root: ET.Element, mesh_name: str) -> tuple[np
 
 def _gripper_tip_offset_from_geom(mjcf: Path, root: ET.Element, geom: ET.Element) -> np.ndarray:
     geom_pos = _parse_vec_attr(geom, "pos", (0.0, 0.0, 0.0))
+    geom_rot = _quat_wxyz_matrix(_parse_quat_attr(geom, "quat", (1.0, 0.0, 0.0, 0.0)))
     if geom.get("type", "sphere") == "box":
-        return geom_pos + np.array([_parse_vec_attr(geom, "size")[0], 0.0, 0.0], dtype=np.float32)
+        tip = np.array([_parse_vec_attr(geom, "size")[0], 0.0, 0.0], dtype=np.float32)
+        return geom_pos + geom_rot @ tip
 
     mesh_name = geom.get("mesh")
     if mesh_name is None:
@@ -239,7 +271,7 @@ def _gripper_tip_offset_from_geom(mjcf: Path, root: ET.Element, geom: ET.Element
 
     mins, maxs = _mesh_asset_bounds(mjcf, root, mesh_name)
     center = 0.5 * (mins + maxs)
-    return geom_pos + np.array([maxs[0], center[1], center[2]], dtype=np.float32)
+    return geom_pos + geom_rot @ np.array([maxs[0], center[1], center[2]], dtype=np.float32)
 
 
 def _gripper_tip_center_offset(mjcf: Path, open_angle: float) -> np.ndarray:
@@ -275,10 +307,13 @@ def _parse_joint_refs(mjcf: Path, names: tuple[str, ...]) -> tuple[float, ...]:
 # region IK-only MJCF builder
 
 
-def _build_z1_ik_mjcf(base_tf: np.ndarray, limits: tuple[tuple[float, float], ...]) -> str:
+def _build_z1_ik_mjcf(
+    base_tf: np.ndarray, limits: tuple[tuple[float, float], ...], gripper_stator_quat: np.ndarray
+) -> str:
     """构造只包含 Z1 机械臂的临时 MJCF, 专门给 IK 求解器使用。"""
     pos = base_tf[:3]
     quat = _quat_xyzw_to_mjcf_wxyz(base_tf[3:7])
+    stator_quat = _format_vec(gripper_stator_quat)
     ranges = [_format_vec(limit) for limit in limits]
     return f"""<mujoco model="aliengo_z1_ik_chain">
   <compiler angle="radian" autolimits="true" />
@@ -296,7 +331,7 @@ def _build_z1_ik_mjcf(base_tf: np.ndarray, limits: tuple[tuple[float, float], ..
                 <joint name="z1_joint5" type="hinge" axis="0 0 1" range="{ranges[4]}" />
                 <body name="z1_link06" pos="0.0492 0 0">
                   <joint name="z1_joint6" type="hinge" axis="1 0 0" range="{ranges[5]}" />
-                  <body name="z1_gripper_stator" pos="0.051 0 0" />
+                  <body name="z1_gripper_stator" pos="0.051 0 0" quat="{stator_quat}" />
                 </body>
               </body>
             </body>
@@ -353,8 +388,16 @@ class LunarAliengoZ1IkApproachDemo:
 
         # IK 只需要 Z1 链条本身。单独构造一个小模型能避免把整条狗和场景都放进 IK。
         z1_limits = self._z1_limits()
+        mjcf_root = ET.parse(self.mjcf).getroot()
+        gripper_stator_quat = _parse_quat_attr(
+            _find_mjcf_element(mjcf_root, "body", Z1_EE_BODY_NAME), "quat", (1.0, 0.0, 0.0, 0.0)
+        )
         ik_builder = newton.ModelBuilder()
-        ik_builder.add_mjcf(_build_z1_ik_mjcf(z1_base_tf, z1_limits), up_axis="Z", enable_self_collisions=False)
+        ik_builder.add_mjcf(
+            _build_z1_ik_mjcf(z1_base_tf, z1_limits, gripper_stator_quat),
+            up_axis="Z",
+            enable_self_collisions=False,
+        )
         self.ik_model = ik_builder.finalize()
         self.ik_state = self.ik_model.state()
         self.ik_ee_body_index = self._find_body_index_in_labels(self.ik_model.body_label, Z1_EE_BODY_NAME)
@@ -515,7 +558,7 @@ class LunarAliengoZ1IkApproachDemo:
         )
         z1_q = self.ik_joint_q.numpy()[0].astype(np.float32)
         if LOCK_WRIST_ROLL:
-            z1_q[5] = 0.0
+            z1_q[5] = WRIST_ROLL_BIAS
         z1_q = self._limit_joint_step(z1_q)
         self.ik_joint_q.assign(z1_q.reshape(1, -1))
         return z1_q
