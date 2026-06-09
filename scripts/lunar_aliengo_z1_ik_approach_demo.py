@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import struct
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -133,6 +134,94 @@ def _axis_angle_matrix(axis: np.ndarray, angle: float) -> np.ndarray:
     )
 
 
+def _resolve_mesh_asset_path(mjcf: Path, root: ET.Element, mesh_asset: ET.Element) -> Path:
+    file_attr = mesh_asset.get("file")
+    if file_attr is None:
+        raise ValueError(f"Expected MJCF mesh asset '{mesh_asset.get('name')}' to define 'file'.")
+
+    path = Path(file_attr)
+    if path.is_absolute():
+        return path
+
+    compiler = root.find("compiler")
+    meshdir = Path(compiler.get("meshdir", ".")) if compiler is not None else Path(".")
+    return (mjcf.parent / meshdir / path).resolve()
+
+
+def _stl_mesh_bounds(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    data = path.read_bytes()
+    vertices: list[tuple[float, float, float]] = []
+
+    if len(data) >= 84:
+        triangle_count = struct.unpack_from("<I", data, 80)[0]
+        if 84 + triangle_count * 50 == len(data):
+            offset = 84
+            for _ in range(triangle_count):
+                offset += 12
+                for _ in range(3):
+                    vertices.append(struct.unpack_from("<fff", data, offset))
+                    offset += 12
+                offset += 2
+            values = np.asarray(vertices, dtype=np.float32)
+            return values.min(axis=0), values.max(axis=0)
+
+    for line in data.decode(errors="ignore").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("vertex "):
+            vertices.append(tuple(float(value) for value in stripped.split()[1:4]))
+
+    if not vertices:
+        raise ValueError(f"Could not read STL vertices from {path}.")
+
+    values = np.asarray(vertices, dtype=np.float32)
+    return values.min(axis=0), values.max(axis=0)
+
+
+def _obj_mesh_bounds(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    vertices = []
+    for line in path.read_text(errors="ignore").splitlines():
+        if line.startswith("v "):
+            vertices.append(tuple(float(value) for value in line.split()[1:4]))
+
+    if not vertices:
+        raise ValueError(f"Could not read OBJ vertices from {path}.")
+
+    values = np.asarray(vertices, dtype=np.float32)
+    return values.min(axis=0), values.max(axis=0)
+
+
+def _mesh_asset_bounds(mjcf: Path, root: ET.Element, mesh_name: str) -> tuple[np.ndarray, np.ndarray]:
+    mesh_asset = _find_mjcf_element(root, "mesh", mesh_name)
+    mesh_path = _resolve_mesh_asset_path(mjcf, root, mesh_asset)
+    suffix = mesh_path.suffix.lower()
+
+    if suffix == ".stl":
+        mins, maxs = _stl_mesh_bounds(mesh_path)
+    elif suffix == ".obj":
+        mins, maxs = _obj_mesh_bounds(mesh_path)
+    else:
+        raise ValueError(f"Unsupported gripper mesh format for IK target bounds: {mesh_path}")
+
+    scale = _parse_vec_attr(mesh_asset, "scale", (1.0, 1.0, 1.0))
+    scaled_mins = np.minimum(mins * scale, maxs * scale)
+    scaled_maxs = np.maximum(mins * scale, maxs * scale)
+    return scaled_mins, scaled_maxs
+
+
+def _gripper_tip_offset_from_geom(mjcf: Path, root: ET.Element, geom: ET.Element) -> np.ndarray:
+    geom_pos = _parse_vec_attr(geom, "pos", (0.0, 0.0, 0.0))
+    if geom.get("type", "sphere") == "box":
+        return geom_pos + np.array([_parse_vec_attr(geom, "size")[0], 0.0, 0.0], dtype=np.float32)
+
+    mesh_name = geom.get("mesh")
+    if mesh_name is None:
+        raise ValueError(f"Expected gripper geom '{geom.get('name')}' to define 'mesh' or box 'size'.")
+
+    mins, maxs = _mesh_asset_bounds(mjcf, root, mesh_name)
+    center = 0.5 * (mins + maxs)
+    return geom_pos + np.array([maxs[0], center[1], center[2]], dtype=np.float32)
+
+
 def _gripper_tip_center_offset(mjcf: Path, open_angle: float) -> np.ndarray:
     """计算张开后两爪尖中点在 z1_gripper_stator 局部坐标系里的位置。"""
     root = ET.parse(mjcf).getroot()
@@ -143,12 +232,8 @@ def _gripper_tip_center_offset(mjcf: Path, open_angle: float) -> np.ndarray:
 
     # MJCF 中 body/geom 的 pos 是局部坐标。这里算出来的 link_offset 也保持为局部坐标,
     # 所以后续夹爪怎么运动, 这个点都会跟着 z1_gripper_stator 一起变换到世界坐标。
-    stator_tip = _parse_vec_attr(stator_geom, "pos", (0.0, 0.0, 0.0)) + np.array(
-        [_parse_vec_attr(stator_geom, "size")[0], 0.0, 0.0], dtype=np.float32
-    )
-    mover_tip_closed = _parse_vec_attr(mover_geom, "pos", (0.0, 0.0, 0.0)) + np.array(
-        [_parse_vec_attr(mover_geom, "size")[0], 0.0, 0.0], dtype=np.float32
-    )
+    stator_tip = _gripper_tip_offset_from_geom(mjcf, root, stator_geom)
+    mover_tip_closed = _gripper_tip_offset_from_geom(mjcf, root, mover_geom)
     mover_rotation = _axis_angle_matrix(_parse_vec_attr(gripper_joint, "axis", (0.0, 0.0, 1.0)), float(open_angle))
     mover_tip = _parse_vec_attr(mover_body, "pos", (0.0, 0.0, 0.0)) + mover_rotation @ mover_tip_closed
     return 0.5 * (stator_tip + mover_tip)

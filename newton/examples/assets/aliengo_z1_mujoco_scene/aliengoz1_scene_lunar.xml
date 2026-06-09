@@ -59,7 +59,9 @@
     <material name="z1_white" rgba="0.83 0.84 0.82 1" roughness="0.62" specular="0.18" />
     <material name="z1_dark" rgba="0.08 0.085 0.09 1" roughness="0.74" specular="0.12" />
     <mesh name="z1_GripperMover" file="z1_assets/z1_GripperMover.obj" smoothnormal="true" />
+    <mesh name="z1_GripperMover_collision_low" file="z1_assets/z1_GripperMover_collision_low.stl" />
     <mesh name="z1_GripperStator" file="z1_assets/z1_GripperStator.obj" smoothnormal="true" />
+    <mesh name="z1_GripperStator_collision_low" file="z1_assets/z1_GripperStator_collision_low.stl" />
     <mesh name="z1_Link00" file="z1_assets/z1_Link00.obj" smoothnormal="true" />
     <mesh name="z1_Link01" file="z1_assets/z1_Link01.obj" smoothnormal="true" />
     <mesh name="z1_Link02" file="z1_assets/z1_Link02.obj" smoothnormal="true" />
@@ -1728,9 +1730,9 @@
                         <joint name="z1_gripper_joint" type="hinge" pos="0 0 0" axis="0 -1 0" range="0 0.75" actuatorfrcrange="-12 12" damping="0.2" frictionloss="0.05" />
                         <inertial pos="0.01320633 0.00476708 0.00380534" mass="0.27621302" fullinertia="0.00017716 0.00026787 0.00035728 0.00001683 -0.00001786 0.00000262" />
                         <geom name="z1_gripper_mover_visual" type="mesh" mesh="z1_GripperMover" material="z1_dark" rgba="0.08 0.085 0.09 1" contype="0" conaffinity="0" group="2" />
-                        <geom name="z1_gripper_mover_collision" type="box" size="0.0605 0.041 0.023625" pos="0.0395 0 0.002625" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                        <geom name="z1_gripper_mover_collision" type="mesh" mesh="z1_GripperMover_collision_low" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
                       </body>
-                      <geom name="z1_gripper_stator_collision" type="box" size="0.078 0.041 0.0344" pos="0.071 0 -0.001925" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                      <geom name="z1_gripper_stator_collision" type="mesh" mesh="z1_GripperStator_collision_low" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
                     </body>
                     <geom name="z1_link06_collision" type="cylinder" size="0.0325 0.0255" pos="0.0255 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0 0.707106781 0" />
                   </body>

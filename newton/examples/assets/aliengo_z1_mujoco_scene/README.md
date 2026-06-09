@@ -40,6 +40,10 @@ other Z1 links. This keeps the Aliengo locomotion action space unchanged while
 accounting for the mounted arm mass and preventing the arm from passing through
 the floor when the robot falls.
 
+The Z1 gripper collision meshes are low-face-count simplifications of Unitree's
+official gripper collision STL files so the rendered collision shape preserves
+the jaw opening instead of using a filled axis-aligned box.
+
 ## Usage
 
 Load:
