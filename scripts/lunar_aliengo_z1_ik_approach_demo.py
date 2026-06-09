@@ -45,6 +45,7 @@ ROCK_GEOM_NAME = "aliengo_ik_rock_geom"
 ALIENGO_ROOT_JOINT_NAME = "floating_base"
 Z1_BASE_BODY_NAME = "z1_link00"
 Z1_EE_BODY_NAME = "z1_gripper_stator"
+Z1_GRIPPER_JOINT_NAME = "z1_gripper_joint"
 
 TCP_OFFSET_IN_GRIPPER = wp.vec3(0.145, 0.0, 0.0)
 DOWN_AXIS_LENGTH = 0.08
@@ -133,6 +134,7 @@ class LunarAliengoZ1IkApproachDemo:
         )
         self.leg_q_slice, self.leg_dof_slice = self._find_joint_slices(LEG_JOINT_NAMES)
         self.z1_q_slice, self.z1_dof_slice = self._find_joint_slices(Z1_JOINT_NAMES)
+        self.gripper_q_slice, self.gripper_dof_slice = self._find_joint_slices((Z1_GRIPPER_JOINT_NAME,))
         self.rock_body_index = self._find_body_index(ROCK_BODY_NAME)
         self.rock_shape_index = self._find_shape_index(ROCK_GEOM_NAME)
         self.z1_base_body_index = self._find_body_index(Z1_BASE_BODY_NAME)
@@ -141,6 +143,7 @@ class LunarAliengoZ1IkApproachDemo:
         self.root_q = self.model.joint_q.numpy()[self.root_q_slice].astype(np.float32)
         self.leg_q = np.asarray(_parse_joint_refs(self.mjcf, LEG_JOINT_NAMES), dtype=np.float32)
         self.z1_q = np.zeros(len(Z1_JOINT_NAMES), dtype=np.float32)
+        self.gripper_q = np.zeros(1, dtype=np.float32)
         self.full_joint_q = self.model.joint_q.numpy().astype(np.float32)
 
         self._set_scene_state(self.z1_q)
@@ -261,6 +264,7 @@ class LunarAliengoZ1IkApproachDemo:
         self.full_joint_q[self.root_q_slice] = self.root_q
         self.full_joint_q[self.leg_q_slice] = self.leg_q
         self.full_joint_q[self.z1_q_slice] = z1_q
+        self.full_joint_q[self.gripper_q_slice] = self.gripper_q
         self.state.joint_q.assign(self.full_joint_q)
         self.state.joint_qd.zero_()
         self.state.body_qd.zero_()
@@ -332,6 +336,12 @@ class LunarAliengoZ1IkApproachDemo:
 
         self.down_obj.weight = self.base_down_axis_weight * _smoothstep(self.sim_time / ramp_duration)
 
+    def _update_gripper(self) -> None:
+        open_start = float(self.args.gripper_open_start)
+        open_duration = max(float(self.args.gripper_open_duration), 1.0e-6)
+        alpha = _smoothstep((self.sim_time - open_start) / open_duration)
+        self.gripper_q[0] = float(self.args.gripper_open_angle) * alpha
+
     def _print_scene_info(self) -> None:
         print(
             "[INFO] Lunar Aliengo Z1 IK approach: "
@@ -349,6 +359,7 @@ class LunarAliengoZ1IkApproachDemo:
 
     def step(self) -> None:
         self._update_down_axis_weight()
+        self._update_gripper()
         self.current_target = self._target_at_time()
         self.z1_q = self._solve_ik_target(self.current_target)
         self._set_scene_state(self.z1_q)
@@ -382,6 +393,7 @@ class LunarAliengoZ1IkApproachDemo:
             f"xy_error={tcp_to_rock_xy:.4f}, "
             f"clearance={tcp_clearance:.4f}, "
             f"max_joint_step={self.max_joint_step_observed:.4f}, "
+            f"gripper_q={self.gripper_q[0]:.4f}, "
             f"z1_q={np.round(self.z1_q, 4)}"
         )
         if self.final_error > float(self.args.max_final_error):
@@ -394,6 +406,11 @@ class LunarAliengoZ1IkApproachDemo:
             raise ValueError(
                 f"Z1 joint step exceeded limit: {self.max_joint_step_observed:.4f}rad > "
                 f"{float(self.args.max_joint_step):.4f}rad"
+            )
+        if self.gripper_q[0] < float(self.args.gripper_open_angle) - 1.0e-4:
+            raise ValueError(
+                f"Z1 gripper did not finish opening: {self.gripper_q[0]:.4f}rad < "
+                f"{float(self.args.gripper_open_angle):.4f}rad"
             )
 
 
@@ -433,6 +450,13 @@ def create_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Keep z1_joint6 fixed because TCP position and down-axis objectives do not constrain wrist roll.",
+    )
+    parser.add_argument(
+        "--gripper-open-angle", type=float, default=0.65, help="Open angle for the Z1 gripper mover [rad]."
+    )
+    parser.add_argument("--gripper-open-start", type=float, default=0.4, help="Time to start opening the gripper [s].")
+    parser.add_argument(
+        "--gripper-open-duration", type=float, default=0.8, help="Time over which the gripper opens [s]."
     )
     parser.add_argument(
         "--down-axis-weight", type=float, default=0.7, help="Weight for aligning the gripper +X axis downward."

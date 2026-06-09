@@ -1725,6 +1725,7 @@
                       <inertial pos="0.04764427 -0.00035819 -0.00249162" mass="0.52603655" fullinertia="0.00038683 0.00068614 0.00066293 -0.00000359 0.00007662 0.00000209" />
                       <geom name="z1_gripper_stator_visual" type="mesh" mesh="z1_GripperStator" material="z1_white" rgba="0.83 0.84 0.82 1" contype="0" conaffinity="0" group="2" />
                       <body name="z1_gripper_mover" pos="0.049 0 0">
+                        <joint name="z1_gripper_joint" type="hinge" pos="0 0 0" axis="0 -1 0" range="0 0.75" actuatorfrcrange="-12 12" damping="0.2" frictionloss="0.05" />
                         <inertial pos="0.01320633 0.00476708 0.00380534" mass="0.27621302" fullinertia="0.00017716 0.00026787 0.00035728 0.00001683 -0.00001786 0.00000262" />
                         <geom name="z1_gripper_mover_visual" type="mesh" mesh="z1_GripperMover" material="z1_dark" rgba="0.08 0.085 0.09 1" contype="0" conaffinity="0" group="2" />
                         <geom name="z1_gripper_mover_collision" type="box" size="0.0605 0.041 0.023625" pos="0.0395 0 0.002625" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
@@ -1772,6 +1773,7 @@
     <position name="z1_joint4" joint="z1_joint4" kp="60" ctrlrange="-1.518436449 1.518436449" forcerange="-30 30" />
     <position name="z1_joint5" joint="z1_joint5" kp="40" ctrlrange="-1.343903524 1.343903524" forcerange="-30 30" />
     <position name="z1_joint6" joint="z1_joint6" kp="40" ctrlrange="-2.792526803 2.792526803" forcerange="-30 30" />
+    <position name="z1_gripper_joint" joint="z1_gripper_joint" kp="20" ctrlrange="0 0.75" forcerange="-12 12" />
   </actuator>
   <keyframe>
     <key name="stand" qpos="6.3733 7.2256 0.8748 1 0 0 0 -0.1 0.8 -1.5 0.1 0.8 -1.5 -0.1 1 -1.5 0.1 1 -1.5" ctrl="0 0 0 0 0 0 0 0 0 0 0 0" />
