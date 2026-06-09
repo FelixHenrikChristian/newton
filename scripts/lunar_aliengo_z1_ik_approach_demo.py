@@ -55,7 +55,30 @@ Z1_GRIPPER_STATOR_GEOM_NAME = "z1_gripper_stator_collision"
 Z1_GRIPPER_MOVER_GEOM_NAME = "z1_gripper_mover_collision"
 
 # 用第二个 IK 位置目标把夹爪 +X 方向拉向世界坐标的向下方向。
-DOWN_AXIS_LENGTH = 0.08
+DOWN_AXIS_LENGTH = 0.08  # 第二个 IK 位置目标相对夹爪尖中点沿局部 +X 的距离 [m]。
+
+UNFOLD_DURATION = 2.0  # 从初始折叠姿态移动到预抓取点的时间 [s]。
+DESCENT_DURATION = 2.0  # 从预抓取点垂直下探到最终目标点的时间 [s]。
+PREGRASP_HEIGHT = 0.30  # 预抓取点高于最终目标点的高度 [m]。
+FINAL_CLEARANCE = 0.0  # 最终夹爪尖中点高于椭球顶部的间隙 [m]。
+GRASP_TARGET_OFFSET = (0.0, 0.0, 0.0)  # 在椭球顶部目标点基础上叠加的世界坐标偏移 [m]。
+
+IK_ITERS = 32  # 每帧 IK 求解迭代次数。
+IK_SEEDS = 1  # IK 候选种子数量；大于 1 时启用 Roberts 采样。
+IK_STEP_SIZE = 0.8  # Levenberg-Marquardt IK 单步更新尺度。
+IK_LAMBDA_INITIAL = 0.1  # IK 初始阻尼系数。
+MAX_JOINT_STEP = 0.05  # 每帧允许写回完整场景的最大 Z1 关节角变化 [rad]。
+DOWN_AXIS_RAMP_DURATION = 2.0  # 夹爪朝下约束从 0 平滑增加到目标权重的时间 [s]。
+DOWN_AXIS_WEIGHT = 0.7  # 夹爪局部 +X 轴朝世界 -Z 方向的约束权重。
+LIMIT_WEIGHT = 1.0  # IK 关节限位残差权重。
+LOCK_WRIST_ROLL = True  # 是否固定 z1_joint6，避免仅靠位置目标时腕部绕夹爪轴自由旋转。
+
+GRIPPER_OPEN_ANGLE = 0.75  # z1_gripper_joint 最终打开角度 [rad]。
+GRIPPER_OPEN_START = 0.4  # 开始打开夹爪的时间 [s]。
+GRIPPER_OPEN_DURATION = 0.8  # 夹爪从闭合到目标打开角度的过渡时间 [s]。
+
+MAX_FINAL_ERROR = 0.08  # test_final 允许的夹爪尖中点目标误差上限 [m]。
+MAX_XY_ERROR = 0.06  # test_final 允许的夹爪尖中点与椭球中心水平误差上限 [m]。
 
 # endregion
 
@@ -345,15 +368,15 @@ class LunarAliengoZ1IkApproachDemo:
         self.rock_top_z = float(self.rock_pos[2] + self.rock_radii[2])
 
         # track_offset 是“夹爪上的哪个局部点要去追踪目标”。这里选择张开后两爪尖中点。
-        self.track_offset_np = _gripper_tip_center_offset(self.mjcf, float(args.gripper_open_angle)).astype(np.float32)
+        self.track_offset_np = _gripper_tip_center_offset(self.mjcf, GRIPPER_OPEN_ANGLE).astype(np.float32)
         self.track_offset = _wp_vec3(self.track_offset_np)
-        grasp_target_offset = np.asarray(args.grasp_target_offset, dtype=np.float32)
+        grasp_target_offset = np.asarray(GRASP_TARGET_OFFSET, dtype=np.float32)
 
         # final_target 是“世界坐标里的目标点”。默认是椭球顶部, 可用命令行 offset 微调。
         self.final_target = np.array(
-            [self.rock_pos[0], self.rock_pos[1], self.rock_top_z + float(args.final_clearance)], dtype=np.float32
+            [self.rock_pos[0], self.rock_pos[1], self.rock_top_z + FINAL_CLEARANCE], dtype=np.float32
         ) + grasp_target_offset
-        self.pregrasp_target = self.final_target + np.array([0.0, 0.0, float(args.pregrasp_height)], dtype=np.float32)
+        self.pregrasp_target = self.final_target + np.array([0.0, 0.0, PREGRASP_HEIGHT], dtype=np.float32)
         self.start_target = self._link_point_position(self.state.body_q.numpy(), self.z1_ee_body_index, self.track_offset)
         self.current_target = self.start_target.copy()
         self.current_tcp = self.start_target.copy()
@@ -372,13 +395,13 @@ class LunarAliengoZ1IkApproachDemo:
             link_index=self.ik_ee_body_index,
             link_offset=self.track_offset + wp.vec3(DOWN_AXIS_LENGTH, 0.0, 0.0),
             target_positions=wp.array([wp.vec3(*self._down_axis_target(self.current_target))], dtype=wp.vec3),
-            weight=float(args.down_axis_weight),
+            weight=DOWN_AXIS_WEIGHT,
         )
-        self.base_down_axis_weight = float(args.down_axis_weight)
+        self.base_down_axis_weight = DOWN_AXIS_WEIGHT
         self.limit_obj = ik.IKObjectiveJointLimit(
             joint_limit_lower=self.ik_model.joint_limit_lower,
             joint_limit_upper=self.ik_model.joint_limit_upper,
-            weight=float(args.limit_weight),
+            weight=LIMIT_WEIGHT,
         )
         self.z1_lower = self.model.joint_limit_lower.numpy()[self.z1_dof_slice].astype(np.float32)
         self.z1_upper = self.model.joint_limit_upper.numpy()[self.z1_dof_slice].astype(np.float32)
@@ -386,10 +409,10 @@ class LunarAliengoZ1IkApproachDemo:
             model=self.ik_model,
             n_problems=1,
             objectives=[self.pos_obj, self.down_obj, self.limit_obj],
-            lambda_initial=float(args.lambda_initial),
+            lambda_initial=IK_LAMBDA_INITIAL,
             jacobian_mode=ik.IKJacobianType.ANALYTIC,
-            sampler=ik.IKSampler.ROBERTS if int(args.ik_seeds) > 1 else ik.IKSampler.NONE,
-            n_seeds=int(args.ik_seeds),
+            sampler=ik.IKSampler.ROBERTS if IK_SEEDS > 1 else ik.IKSampler.NONE,
+            n_seeds=IK_SEEDS,
         )
 
         self.viewer.set_model(self.model)
@@ -475,16 +498,13 @@ class LunarAliengoZ1IkApproachDemo:
 
     def _target_at_time(self) -> np.ndarray:
         """根据当前时间生成平滑目标轨迹: 先展开到预抓取点, 再下降到最终点。"""
-        unfold_duration = float(self.args.unfold_duration)
-        descent_duration = float(self.args.descent_duration)
-
-        if self.sim_time < unfold_duration:
-            alpha = _smoothstep(self.sim_time / max(unfold_duration, 1.0e-6))
+        if self.sim_time < UNFOLD_DURATION:
+            alpha = _smoothstep(self.sim_time / max(UNFOLD_DURATION, 1.0e-6))
             return (1.0 - alpha) * self.start_target + alpha * self.pregrasp_target
 
-        descent_t = self.sim_time - unfold_duration
-        if descent_t < descent_duration:
-            alpha = _smoothstep(descent_t / max(descent_duration, 1.0e-6))
+        descent_t = self.sim_time - UNFOLD_DURATION
+        if descent_t < DESCENT_DURATION:
+            alpha = _smoothstep(descent_t / max(DESCENT_DURATION, 1.0e-6))
             return (1.0 - alpha) * self.pregrasp_target + alpha * self.final_target
 
         return self.final_target.copy()
@@ -496,11 +516,11 @@ class LunarAliengoZ1IkApproachDemo:
         self.ik_solver.step(
             self.ik_joint_q,
             self.ik_joint_q,
-            iterations=int(self.args.ik_iters),
-            step_size=float(self.args.ik_step_size),
+            iterations=IK_ITERS,
+            step_size=IK_STEP_SIZE,
         )
         z1_q = self.ik_joint_q.numpy()[0].astype(np.float32)
-        if self.args.lock_wrist_roll:
+        if LOCK_WRIST_ROLL:
             z1_q[5] = 0.0
         z1_q = self._limit_joint_step(z1_q)
         self.ik_joint_q.assign(z1_q.reshape(1, -1))
@@ -509,7 +529,7 @@ class LunarAliengoZ1IkApproachDemo:
     def _limit_joint_step(self, candidate_q: np.ndarray) -> np.ndarray:
         """限制每帧关节角变化, 避免 IK 在相邻帧之间跳变太大。"""
         candidate_q = np.clip(candidate_q, self.z1_lower, self.z1_upper)
-        max_step = float(self.args.max_joint_step)
+        max_step = MAX_JOINT_STEP
         if max_step <= 0.0:
             return candidate_q
 
@@ -527,19 +547,17 @@ class LunarAliengoZ1IkApproachDemo:
 
     def _update_down_axis_weight(self) -> None:
         """逐渐引入夹爪朝下约束, 减少展开初期的姿态突变。"""
-        ramp_duration = float(self.args.down_axis_ramp_duration)
-        if ramp_duration <= 0.0:
+        if DOWN_AXIS_RAMP_DURATION <= 0.0:
             self.down_obj.weight = self.base_down_axis_weight
             return
 
-        self.down_obj.weight = self.base_down_axis_weight * _smoothstep(self.sim_time / ramp_duration)
+        self.down_obj.weight = self.base_down_axis_weight * _smoothstep(self.sim_time / DOWN_AXIS_RAMP_DURATION)
 
     def _update_gripper(self) -> None:
         """按时间平滑打开夹爪, 只展开不执行闭合抓取。"""
-        open_start = float(self.args.gripper_open_start)
-        open_duration = max(float(self.args.gripper_open_duration), 1.0e-6)
-        alpha = _smoothstep((self.sim_time - open_start) / open_duration)
-        self.gripper_q[0] = float(self.args.gripper_open_angle) * alpha
+        open_duration = max(GRIPPER_OPEN_DURATION, 1.0e-6)
+        alpha = _smoothstep((self.sim_time - GRIPPER_OPEN_START) / open_duration)
+        self.gripper_q[0] = GRIPPER_OPEN_ANGLE * alpha
 
     def _print_scene_info(self) -> None:
         """打印场景、目标和固定姿态信息, 方便检查当前配置是否合理。"""
@@ -604,23 +622,23 @@ class LunarAliengoZ1IkApproachDemo:
             f"gripper_q={self.gripper_q[0]:.4f}, "
             f"z1_q={np.round(self.z1_q, 4)}"
         )
-        if self.final_error > float(self.args.max_final_error):
+        if self.final_error > MAX_FINAL_ERROR:
             raise ValueError(
                 f"Z1 jaw tip center did not converge to the ellipsoid approach target: error={self.final_error:.4f}m"
             )
-        if tcp_to_rock_xy > float(self.args.max_xy_error):
+        if tcp_to_rock_xy > MAX_XY_ERROR:
             raise ValueError(f"Z1 jaw tip center did not locate the ellipsoid in x/y: error={tcp_to_rock_xy:.4f}m")
         if tcp_clearance < 0.0:
             raise ValueError(f"Z1 jaw tip center penetrated below the ellipsoid top: clearance={tcp_clearance:.4f}m")
-        if 0.0 < float(self.args.max_joint_step) + 1.0e-6 < self.max_joint_step_observed:
+        if 0.0 < MAX_JOINT_STEP + 1.0e-6 < self.max_joint_step_observed:
             raise ValueError(
                 f"Z1 joint step exceeded limit: {self.max_joint_step_observed:.4f}rad > "
-                f"{float(self.args.max_joint_step):.4f}rad"
+                f"{MAX_JOINT_STEP:.4f}rad"
             )
-        if self.gripper_q[0] < float(self.args.gripper_open_angle) - 1.0e-4:
+        if self.gripper_q[0] < GRIPPER_OPEN_ANGLE - 1.0e-4:
             raise ValueError(
                 f"Z1 gripper did not finish opening: {self.gripper_q[0]:.4f}rad < "
-                f"{float(self.args.gripper_open_angle):.4f}rad"
+                f"{GRIPPER_OPEN_ANGLE:.4f}rad"
             )
 
 
@@ -630,68 +648,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.description = "Use Newton IK to unfold Aliengo's Z1 arm and descend from above toward the lunar ellipsoid."
     parser.set_defaults(num_frames=360, viewer="gl")
     parser.add_argument("--mjcf", type=str, default=str(DEFAULT_SCENE), help="Path to the Aliengo+Z1 lunar MJCF file.")
-    parser.add_argument(
-        "--unfold-duration", type=float, default=2.0, help="Time to move from folded pose to pregrasp [s]."
-    )
-    parser.add_argument(
-        "--descent-duration", type=float, default=2.0, help="Time to descend from pregrasp to target [s]."
-    )
-    parser.add_argument(
-        "--pregrasp-height", type=float, default=0.30, help="Height above final target before descent [m]."
-    )
-    parser.add_argument(
-        "--final-clearance", type=float, default=0.0, help="Jaw-tip center clearance above ellipsoid top [m]."
-    )
-    parser.add_argument(
-        "--grasp-target-offset",
-        type=float,
-        nargs=3,
-        default=(0.0, 0.0, 0.0),
-        metavar=("X", "Y", "Z"),
-        help="World-space offset added to the ellipsoid approach target [m].",
-    )
-    parser.add_argument("--ik-iters", type=int, default=32, help="IK iterations per frame.")
-    parser.add_argument("--ik-seeds", type=int, default=1, help="Candidate IK seeds per frame.")
-    parser.add_argument("--ik-step-size", type=float, default=0.8, help="IK LM step size.")
-    parser.add_argument("--lambda-initial", type=float, default=0.1, help="Initial IK LM damping.")
-    parser.add_argument(
-        "--max-joint-step",
-        type=float,
-        default=0.05,
-        help="Maximum Z1 joint-coordinate change applied per frame [rad]. Set <= 0 to disable.",
-    )
-    parser.add_argument(
-        "--down-axis-ramp-duration",
-        type=float,
-        default=2.0,
-        help="Time to ramp in the downward gripper-axis objective [s]. Set <= 0 to apply immediately.",
-    )
-    parser.add_argument(
-        "--lock-wrist-roll",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Keep z1_joint6 fixed because position and down-axis objectives do not constrain wrist roll.",
-    )
-    parser.add_argument(
-        "--gripper-open-angle", type=float, default=0.75, help="Open angle for the Z1 gripper mover [rad]."
-    )
-    parser.add_argument("--gripper-open-start", type=float, default=0.4, help="Time to start opening the gripper [s].")
-    parser.add_argument(
-        "--gripper-open-duration", type=float, default=0.8, help="Time over which the gripper opens [s]."
-    )
-    parser.add_argument(
-        "--down-axis-weight", type=float, default=0.7, help="Weight for aligning the gripper +X axis downward."
-    )
-    parser.add_argument("--limit-weight", type=float, default=1.0, help="Weight for Z1 joint-limit residuals.")
-    parser.add_argument(
-        "--max-final-error", type=float, default=0.08, help="Maximum allowed gripper jaw-tip center target error [m]."
-    )
-    parser.add_argument(
-        "--max-xy-error",
-        type=float,
-        default=0.06,
-        help="Maximum allowed gripper jaw-tip center x/y error from ellipsoid center [m].",
-    )
     parser.add_argument(
         "--show-ik-targets", action="store_true", help="Draw target gizmos when the viewer supports it."
     )
