@@ -171,6 +171,7 @@ class LunarAliengoZ1IkApproachDemo:
         self.current_target = self.start_target.copy()
         self.current_tcp = self.start_target.copy()
         self.final_error = math.inf
+        self.max_joint_step_observed = 0.0
 
         self.pos_obj = ik.IKObjectivePosition(
             link_index=self.ik_ee_body_index,
@@ -184,11 +185,14 @@ class LunarAliengoZ1IkApproachDemo:
             target_positions=wp.array([wp.vec3(*self._down_axis_target(self.current_target))], dtype=wp.vec3),
             weight=float(args.down_axis_weight),
         )
+        self.base_down_axis_weight = float(args.down_axis_weight)
         self.limit_obj = ik.IKObjectiveJointLimit(
             joint_limit_lower=self.ik_model.joint_limit_lower,
             joint_limit_upper=self.ik_model.joint_limit_upper,
             weight=float(args.limit_weight),
         )
+        self.z1_lower = self.model.joint_limit_lower.numpy()[self.z1_dof_slice].astype(np.float32)
+        self.z1_upper = self.model.joint_limit_upper.numpy()[self.z1_dof_slice].astype(np.float32)
         self.ik_solver = ik.IKSolver(
             model=self.ik_model,
             n_problems=1,
@@ -295,7 +299,38 @@ class LunarAliengoZ1IkApproachDemo:
             iterations=int(self.args.ik_iters),
             step_size=float(self.args.ik_step_size),
         )
-        return self.ik_joint_q.numpy()[0].astype(np.float32)
+        z1_q = self.ik_joint_q.numpy()[0].astype(np.float32)
+        if self.args.lock_wrist_roll:
+            z1_q[5] = 0.0
+        z1_q = self._limit_joint_step(z1_q)
+        self.ik_joint_q.assign(z1_q.reshape(1, -1))
+        return z1_q
+
+    def _limit_joint_step(self, candidate_q: np.ndarray) -> np.ndarray:
+        candidate_q = np.clip(candidate_q, self.z1_lower, self.z1_upper)
+        max_step = float(self.args.max_joint_step)
+        if max_step <= 0.0:
+            return candidate_q
+
+        delta = candidate_q - self.z1_q
+        step = float(np.max(np.abs(delta)))
+        if step <= max_step:
+            self.max_joint_step_observed = max(self.max_joint_step_observed, step)
+            return candidate_q
+
+        limited_q = self.z1_q + delta * (max_step / step)
+        limited_q = np.clip(limited_q, self.z1_lower, self.z1_upper).astype(np.float32)
+        actual_step = float(np.max(np.abs(limited_q - self.z1_q)))
+        self.max_joint_step_observed = max(self.max_joint_step_observed, actual_step)
+        return limited_q
+
+    def _update_down_axis_weight(self) -> None:
+        ramp_duration = float(self.args.down_axis_ramp_duration)
+        if ramp_duration <= 0.0:
+            self.down_obj.weight = self.base_down_axis_weight
+            return
+
+        self.down_obj.weight = self.base_down_axis_weight * _smoothstep(self.sim_time / ramp_duration)
 
     def _print_scene_info(self) -> None:
         print(
@@ -313,6 +348,7 @@ class LunarAliengoZ1IkApproachDemo:
         )
 
     def step(self) -> None:
+        self._update_down_axis_weight()
         self.current_target = self._target_at_time()
         self.z1_q = self._solve_ik_target(self.current_target)
         self._set_scene_state(self.z1_q)
@@ -345,6 +381,7 @@ class LunarAliengoZ1IkApproachDemo:
             f"target_error={self.final_error:.4f}, "
             f"xy_error={tcp_to_rock_xy:.4f}, "
             f"clearance={tcp_clearance:.4f}, "
+            f"max_joint_step={self.max_joint_step_observed:.4f}, "
             f"z1_q={np.round(self.z1_q, 4)}"
         )
         if self.final_error > float(self.args.max_final_error):
@@ -353,6 +390,11 @@ class LunarAliengoZ1IkApproachDemo:
             raise ValueError(f"Z1 TCP did not locate the ellipsoid in x/y: error={tcp_to_rock_xy:.4f}m")
         if tcp_clearance < 0.0:
             raise ValueError(f"Z1 TCP penetrated below the ellipsoid top: clearance={tcp_clearance:.4f}m")
+        if 0.0 < float(self.args.max_joint_step) + 1.0e-6 < self.max_joint_step_observed:
+            raise ValueError(
+                f"Z1 joint step exceeded limit: {self.max_joint_step_observed:.4f}rad > "
+                f"{float(self.args.max_joint_step):.4f}rad"
+            )
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -371,9 +413,27 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--final-clearance", type=float, default=0.04, help="TCP clearance above ellipsoid top [m].")
     parser.add_argument("--ik-iters", type=int, default=32, help="IK iterations per frame.")
-    parser.add_argument("--ik-seeds", type=int, default=8, help="Candidate IK seeds per frame.")
+    parser.add_argument("--ik-seeds", type=int, default=1, help="Candidate IK seeds per frame.")
     parser.add_argument("--ik-step-size", type=float, default=0.8, help="IK LM step size.")
     parser.add_argument("--lambda-initial", type=float, default=0.1, help="Initial IK LM damping.")
+    parser.add_argument(
+        "--max-joint-step",
+        type=float,
+        default=0.05,
+        help="Maximum Z1 joint-coordinate change applied per frame [rad]. Set <= 0 to disable.",
+    )
+    parser.add_argument(
+        "--down-axis-ramp-duration",
+        type=float,
+        default=2.0,
+        help="Time to ramp in the downward gripper-axis objective [s]. Set <= 0 to apply immediately.",
+    )
+    parser.add_argument(
+        "--lock-wrist-roll",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Keep z1_joint6 fixed because TCP position and down-axis objectives do not constrain wrist roll.",
+    )
     parser.add_argument(
         "--down-axis-weight", type=float, default=0.7, help="Weight for aligning the gripper +X axis downward."
     )

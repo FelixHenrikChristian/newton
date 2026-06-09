@@ -1596,7 +1596,7 @@
       <geom name="gravel_free_359_geom" type="sphere" pos="0 0 0" size="0.06840" material="gravel_sphere_mat" mass="2.0107" contype="1" conaffinity="1" friction="1.35 0.08 0.015" user="3" />
     </body>
     <light name="robot_follow_light" mode="targetbodycom" target="trunk" pos="3 0 4" cutoff="30" />
-    <body name="aliengo_ik_rock" pos="7.1803 7.5221 0.2784" quat="0.935752 0 0 0.352658">
+    <body name="aliengo_ik_rock" pos="7.1803 7.5221 0.42" quat="0.935752 0 0 0.352658">
       <freejoint name="aliengo_ik_rock_free_joint" />
       <geom name="aliengo_ik_rock_geom" type="ellipsoid" size="0.06 0.042 0.032" material="aliengo_ik_rock_mat" density="350" condim="6" friction="8 0.4 0.25" contype="1" conaffinity="1" />
     </body>
