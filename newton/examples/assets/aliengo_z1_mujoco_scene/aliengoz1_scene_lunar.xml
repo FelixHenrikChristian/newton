@@ -1730,9 +1730,11 @@
                         <joint name="z1_gripper_joint" type="hinge" pos="0 0 0" axis="0 -1 0" range="0 0.75" actuatorfrcrange="-12 12" damping="0.2" frictionloss="0.05" />
                         <inertial pos="0.01320633 0.00476708 0.00380534" mass="0.27621302" fullinertia="0.00017716 0.00026787 0.00035728 0.00001683 -0.00001786 0.00000262" />
                         <geom name="z1_gripper_mover_visual" type="mesh" mesh="z1_GripperMover" material="z1_dark" rgba="0.08 0.085 0.09 1" contype="0" conaffinity="0" group="2" />
-                        <geom name="z1_gripper_mover_collision" type="mesh" mesh="z1_GripperMover_collision_low" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                        <geom name="z1_gripper_mover_rear_collision" type="box" pos="0.018 0 0.016" size="0.035 0.022 0.009" quat="0.992198 0 -0.124675 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="1" conaffinity="1" friction="8 0.4 0.25" condim="6" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                        <geom name="z1_gripper_mover_collision" type="box" pos="0.066 0 0.012" size="0.034 0.022 0.009" quat="0.970296 0 0.241922 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="1" conaffinity="1" friction="8 0.4 0.25" condim="6" solref="0.02 1" solimp="0.9 0.95 0.001" />
                       </body>
-                      <geom name="z1_gripper_stator_collision" type="mesh" mesh="z1_GripperStator_collision_low" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                      <geom name="z1_gripper_stator_rear_collision" type="box" pos="0.044 0 -0.018" size="0.041 0.022 0.009" quat="0.992198 0 0.124675 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="1" conaffinity="1" friction="8 0.4 0.25" condim="6" solref="0.02 1" solimp="0.9 0.95 0.001" />
+                      <geom name="z1_gripper_stator_collision" type="box" pos="0.111 0 -0.018" size="0.038 0.022 0.009" quat="0.971338 0 -0.237703 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="1" conaffinity="1" friction="8 0.4 0.25" condim="6" solref="0.02 1" solimp="0.9 0.95 0.001" />
                     </body>
                     <geom name="z1_link06_collision" type="cylinder" size="0.0325 0.0255" pos="0.0255 0 0" rgba="0.2 0.7 1.0 0.22" group="3" contype="2" conaffinity="0" friction="0.8 0.02 0.01" condim="3" solref="0.02 1" solimp="0.9 0.95 0.001" quat="0.707106781 0 0.707106781 0" />
                   </body>
