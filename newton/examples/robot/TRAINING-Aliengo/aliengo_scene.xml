@@ -15,7 +15,7 @@
     <texture name="skybox" type="skybox" builtin="gradient" rgb1="0.62 0.73 0.86" rgb2="0.06 0.08 0.11" width="512" height="512" />
     <texture name="lunar_tex" type="2d" file="lunar_albedo_center_crater.png" />
     <material name="lunar_surface" texture="lunar_tex" texrepeat="8 8" texuniform="true" rgba="0.58 0.56 0.52 1" roughness="1" specular="0.04" />
-    <hfield name="lunar_hfield" file="lunar_heightfield_center_crater.png" nrow="513" ncol="513" size="20.0 20.0 1.65 0.12" />
+    <hfield name="lunar_hfield" file="lunar_heightfield_center_crater.png" nrow="513" ncol="513" size="20.0 20.0 0.825 0.12" />
     <material name="aliengo_body" rgba="0.95 0.42 0.08 1" roughness="0.58" specular="0.22" />
     <material name="aliengo_leg" rgba="0.10 0.105 0.11 1" roughness="0.72" specular="0.16" />
     <material name="aliengo_collision" rgba="0.95 0.50 0.12 0.22" />
@@ -38,7 +38,7 @@
   </asset>
   <worldbody>
     <light name="key_light" directional="true" pos="-3 -4 6" dir="0.45 0.55 -1" diffuse="0.92 0.88 0.80" ambient="0.16 0.16 0.18" specular="0.22 0.22 0.22" />
-    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 -0.0572588" material="lunar_surface" friction="1.35 0.12 0.02" contype="1" conaffinity="3" priority="1" />
+    <geom name="lunar_terrain" type="hfield" hfield="lunar_hfield" pos="0 0 0.5861379" material="lunar_surface" friction="1.35 0.12 0.02" contype="1" conaffinity="3" priority="1" />
     <camera name="front_view" pos="7.2 -9.0 2.5858" xyaxes="0.81 0.59 0 -0.22 0.30 0.93" fovy="45" />
     <camera name="side_view" pos="5 -9.3 2.1858" xyaxes="1 0 0 0 0.27 0.96" fovy="45" />
     <camera name="top_mount_view" pos="3.5 -8.2 3.0358" xyaxes="0.83 -0.56 0 0.36 0.54 0.76" fovy="40" />
