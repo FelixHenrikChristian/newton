@@ -6,12 +6,13 @@ from pathlib import Path
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
 
 from spot_env import SpotWalkEnv
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+VecEnvType = str
 
 
 def _resolve_scene_path(xml_path: Path) -> Path:
@@ -30,6 +31,14 @@ def make_env(xml_path: Path, seed: int, rank: int, reset_base_height: float):
     return _init
 
 
+def make_vec_env(env_fns: list, vec_env_type: VecEnvType):
+    if vec_env_type == "auto":
+        vec_env_type = "subproc" if len(env_fns) > 1 else "dummy"
+    if vec_env_type == "subproc":
+        return SubprocVecEnv(env_fns, start_method="spawn")
+    return DummyVecEnv(env_fns)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train Spot walking with PPO.")
     parser.add_argument("--xml", type=Path, default=Path("spot_scene.xml"))
@@ -39,6 +48,8 @@ def main() -> None:
     parser.add_argument("--run-name", type=str, default="spot_walk")
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--reset-base-height", type=float, default=1.68)
+    parser.add_argument("--vec-env", choices=("auto", "dummy", "subproc"), default="auto")
+    parser.add_argument("--n-steps", type=int, default=2048)
     args = parser.parse_args()
 
     xml_path = _resolve_scene_path(args.xml)
@@ -46,16 +57,15 @@ def main() -> None:
     checkpoint_dir = run_dir / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    env = DummyVecEnv(
-        [make_env(xml_path, args.seed, i, args.reset_base_height) for i in range(args.num_envs)]
-    )
+    env_fns = [make_env(xml_path, args.seed, i, args.reset_base_height) for i in range(args.num_envs)]
+    env = make_vec_env(env_fns, args.vec_env)
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
     model = PPO(
         "MlpPolicy",
         env,
         learning_rate=3e-4,
-        n_steps=2048,
+        n_steps=args.n_steps,
         batch_size=256,
         n_epochs=5,
         gamma=0.99,
