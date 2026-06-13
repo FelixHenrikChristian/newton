@@ -57,7 +57,7 @@ def main() -> None:
     )
 
     checkpoint_callback = CheckpointCallback(
-        save_freq=max(10_000 // args.num_envs, 1),
+        save_freq=max(100_000 // args.num_envs, 1),
         save_path=str(checkpoint_dir),
         name_prefix="ppo_aliengo",
         save_vecnormalize=True,
