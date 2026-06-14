@@ -34,12 +34,10 @@ ARM_JOINTS = (
     "arm_f1x",
 )
 
-FOOT_GEOMS = (
-    "FL",
-    "FR",
-    "HL",
-    "HR",
-)
+FOOT_GEOMS = ("FL", "FR", "HL", "HR")
+
+OBS_DIM = 49
+ACT_DIM = 12
 
 
 def _quat_to_matrix(quat: np.ndarray) -> np.ndarray:
@@ -48,13 +46,13 @@ def _quat_to_matrix(quat: np.ndarray) -> np.ndarray:
     return mat.reshape(3, 3)
 
 
-class SpotWalkEnv(gym.Env):
-    """Gymnasium environment for training Spot locomotion in MuJoCo.
+class SpotGo2StyleEnv(gym.Env):
+    """Spot locomotion environment using a Go2-style velocity-tracking setup.
 
-    The MJCF leg actuator bias terms make ctrl=0 match the stand keyframe.
-    Actions therefore command offsets around the standing pose, matching the
-    Aliengo training convention. The stock arm and gripper actuators are held
-    at the `stand` keyframe target while walking.
+    Observations follow a common quadruped locomotion layout: base angular
+    velocity, projected gravity, command, relative joint positions, joint
+    velocities, previous action, and foot contacts. Actions are small offsets
+    around the stand pose.
     """
 
     metadata = {"render_modes": ["human"], "render_fps": 50}
@@ -62,24 +60,37 @@ class SpotWalkEnv(gym.Env):
     def __init__(
         self,
         xml_path: str | Path = "spot_scene.xml",
-        frame_skip: int = 10,
-        episode_seconds: float = 12.0,
+        control_decimation: int = 10,
+        episode_seconds: float = 20.0,
         command_range: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
-            (0.2, 0.8),
+            (0.1, 0.6),
             (-0.2, 0.2),
-            (-0.6, 0.6),
+            (-0.5, 0.5),
         ),
-        reset_base_height: float = 1.68,
+        reset_base_height: float = 1.72,
+        target_base_height: float = 1.68,
+        action_scale: float = 0.25,
+        nominal_leg_ctrl: tuple[float, float, float] = (0.0, -0.1, 0.3),
+        actuator_gain_scale: float = 3.0,
+        randomize_domain: bool = True,
+        use_curriculum: bool = True,
         render_mode: str | None = None,
     ) -> None:
         self.xml_path = Path(xml_path)
         self.model = mujoco.MjModel.from_xml_path(str(self.xml_path))
         self.data = mujoco.MjData(self.model)
 
-        self.frame_skip = frame_skip
-        self.dt = self.model.opt.timestep * self.frame_skip
+        self.control_decimation = control_decimation
+        self.dt = self.model.opt.timestep * self.control_decimation
         self.max_steps = int(episode_seconds / self.dt)
         self.command_range = command_range
+        self.reset_base_height = reset_base_height
+        self.target_base_height = target_base_height
+        self.action_scale = np.full(ACT_DIM, action_scale, dtype=np.float32)
+        self.nominal_leg_ctrl = np.array(nominal_leg_ctrl * 4, dtype=np.float32)
+        self.actuator_gain_scale = actuator_gain_scale
+        self.randomize_domain = randomize_domain
+        self.use_curriculum = use_curriculum
         self.render_mode = render_mode
 
         self.root_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "freejoint")
@@ -87,43 +98,54 @@ class SpotWalkEnv(gym.Env):
             raise ValueError("Expected a freejoint named 'freejoint' in spot_scene.xml")
         self.root_qposadr = int(self.model.jnt_qposadr[self.root_joint_id])
         self.root_dofadr = int(self.model.jnt_dofadr[self.root_joint_id])
+        self.root_body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, "body")
+        if self.root_body_id < 0:
+            raise ValueError("Expected a body named 'body' in spot_scene.xml")
 
         self.leg_actuator_ids = self._find_ids(mujoco.mjtObj.mjOBJ_ACTUATOR, LEG_JOINTS)
         self.arm_actuator_ids = self._find_ids(mujoco.mjtObj.mjOBJ_ACTUATOR, ARM_JOINTS)
         self.leg_joint_ids = self._find_ids(mujoco.mjtObj.mjOBJ_JOINT, LEG_JOINTS)
         self.arm_joint_ids = self._find_ids(mujoco.mjtObj.mjOBJ_JOINT, ARM_JOINTS)
+        self.foot_geom_ids = self._find_ids(mujoco.mjtObj.mjOBJ_GEOM, FOOT_GEOMS)
+        self.terrain_geom_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "lunar_terrain")
 
         self.leg_qpos_ids = self.model.jnt_qposadr[self.leg_joint_ids].astype(np.int32)
         self.leg_dof_ids = self.model.jnt_dofadr[self.leg_joint_ids].astype(np.int32)
         self.arm_qpos_ids = self.model.jnt_qposadr[self.arm_joint_ids].astype(np.int32)
         self.arm_dof_ids = self.model.jnt_dofadr[self.arm_joint_ids].astype(np.int32)
 
-        self.foot_geom_ids = self._find_ids(mujoco.mjtObj.mjOBJ_GEOM, FOOT_GEOMS)
-        self.terrain_geom_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, "lunar_terrain")
-
-        self.action_scale = np.array([0.25, 0.65, 0.65] * 4, dtype=np.float32)
         self.ctrl_low = self.model.actuator_ctrlrange[self.leg_actuator_ids, 0].astype(np.float32)
         self.ctrl_high = self.model.actuator_ctrlrange[self.leg_actuator_ids, 1].astype(np.float32)
 
         self.stand_key_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "stand")
         if self.stand_key_id < 0:
             raise ValueError("Expected a keyframe named 'stand' in spot_scene.xml")
-
         self.stand_qpos = self.model.key_qpos[self.stand_key_id].copy()
         self.stand_leg_qpos = self.stand_qpos[self.leg_qpos_ids].astype(np.float32)
+        self.nominal_leg_qpos = self.stand_leg_qpos + self.nominal_leg_ctrl
         self.stand_arm_qpos = self.stand_qpos[self.arm_qpos_ids].astype(np.float32)
-        self.stand_leg_ctrl = self.model.key_ctrl[self.stand_key_id, self.leg_actuator_ids].astype(np.float32)
         self.stand_arm_ctrl = self.model.key_ctrl[self.stand_key_id, self.arm_actuator_ids].astype(np.float32)
-        self.reset_base_height = reset_base_height
-        self.stand_height = float(self.reset_base_height)
+        self.stand_height = float(self.target_base_height)
 
-        self.last_action = np.zeros(12, dtype=np.float32)
+        self._base_body_mass = float(self.model.body_mass[self.root_body_id])
+        self._base_terrain_friction = (
+            self.model.geom_friction[self.terrain_geom_id].copy() if self.terrain_geom_id >= 0 else None
+        )
+        self._base_leg_gainprm = self.model.actuator_gainprm[self.leg_actuator_ids].copy()
+        self._base_leg_biasprm = self.model.actuator_biasprm[self.leg_actuator_ids].copy()
+        self._base_leg_gainprm[:, 0] *= self.actuator_gain_scale
+        self._base_leg_biasprm[:, 0] *= self.actuator_gain_scale
+        self._base_leg_biasprm[:, 1] *= self.actuator_gain_scale
+        self._base_leg_biasprm[:, 2] *= self.actuator_gain_scale ** 0.5
+
+        self.last_action = np.zeros(ACT_DIM, dtype=np.float32)
         self.command = np.zeros(3, dtype=np.float32)
         self.step_count = 0
+        self.curriculum_level = 0.0
+        self.last_episode_steps = self.max_steps
 
-        self.action_space = spaces.Box(-1.0, 1.0, shape=(12,), dtype=np.float32)
-        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(52,), dtype=np.float32)
-
+        self.action_space = spaces.Box(-1.0, 1.0, shape=(ACT_DIM,), dtype=np.float32)
+        self.observation_space = spaces.Box(-np.inf, np.inf, shape=(OBS_DIM,), dtype=np.float32)
         self.viewer = None
 
     def reset(
@@ -133,16 +155,22 @@ class SpotWalkEnv(gym.Env):
         options: dict[str, Any] | None = None,
     ) -> tuple[np.ndarray, dict[str, Any]]:
         super().reset(seed=seed)
+
+        if self.use_curriculum:
+            success = self.last_episode_steps >= 0.75 * self.max_steps
+            delta = 0.005 if success else -0.002
+            self.curriculum_level = float(np.clip(self.curriculum_level + delta, 0.0, 1.0))
+
         mujoco.mj_resetDataKeyframe(self.model, self.data, self.stand_key_id)
+        self._apply_domain_randomization()
 
         self.data.qpos[self.root_qposadr + 2] = self.reset_base_height
-        leg_noise = self.np_random.uniform(-0.03, 0.03, size=12)
-        self.data.qpos[self.leg_qpos_ids] = self.stand_leg_qpos + leg_noise
+        leg_noise = self.np_random.uniform(-0.05, 0.05, size=ACT_DIM)
+        self.data.qpos[self.leg_qpos_ids] = self.nominal_leg_qpos + leg_noise
         self.data.qpos[self.arm_qpos_ids] = self.stand_arm_qpos
-
         self.data.qvel[:] = self.np_random.uniform(-0.02, 0.02, size=self.model.nv)
         self.data.qvel[self.arm_dof_ids] = 0.0
-        self.data.ctrl[self.leg_actuator_ids] = self.stand_leg_ctrl
+        self.data.ctrl[self.leg_actuator_ids] = self.nominal_leg_ctrl
         self.data.ctrl[self.arm_actuator_ids] = self.stand_arm_ctrl
 
         if options and "command" in options:
@@ -152,6 +180,7 @@ class SpotWalkEnv(gym.Env):
 
         self.last_action.fill(0.0)
         self.step_count = 0
+        self.last_episode_steps = 0
         mujoco.mj_forward(self.model, self.data)
         return self._get_obs(), self._get_info()
 
@@ -159,24 +188,27 @@ class SpotWalkEnv(gym.Env):
         action = np.asarray(action, dtype=np.float32)
         action = np.clip(action, -1.0, 1.0)
 
-        leg_ctrl = np.clip(self.stand_leg_ctrl + action * self.action_scale, self.ctrl_low, self.ctrl_high)
+        leg_ctrl = np.clip(self.nominal_leg_ctrl + action * self.action_scale, self.ctrl_low, self.ctrl_high)
         self.data.ctrl[self.leg_actuator_ids] = leg_ctrl
         self.data.ctrl[self.arm_actuator_ids] = self.stand_arm_ctrl
 
-        for _ in range(self.frame_skip):
+        for _ in range(self.control_decimation):
             mujoco.mj_step(self.model, self.data)
 
-        obs = self._get_obs()
         reward, reward_terms = self._reward(action)
-
+        self.last_action = action.copy()
         self.step_count += 1
+        self.last_episode_steps = self.step_count
+
         terminated = self._is_unhealthy()
         truncated = self.step_count >= self.max_steps
-        self.last_action = action.copy()
-
         info = self._get_info()
-        info.update(reward_terms)
-        return obs, reward, terminated, truncated, info
+        info["reward_components"] = reward_terms
+
+        if self.render_mode == "human":
+            self.render()
+
+        return self._get_obs(), reward, terminated, truncated, info
 
     def render(self) -> None:
         if self.render_mode != "human":
@@ -199,9 +231,41 @@ class SpotWalkEnv(gym.Env):
             raise ValueError(f"Missing objects in MJCF: {missing}")
         return ids
 
+    def _restore_domain_parameters(self) -> None:
+        self.model.body_mass[self.root_body_id] = self._base_body_mass
+        if self.terrain_geom_id >= 0 and self._base_terrain_friction is not None:
+            self.model.geom_friction[self.terrain_geom_id] = self._base_terrain_friction
+        self.model.actuator_gainprm[self.leg_actuator_ids] = self._base_leg_gainprm
+        self.model.actuator_biasprm[self.leg_actuator_ids] = self._base_leg_biasprm
+
+    def _apply_domain_randomization(self) -> None:
+        self._restore_domain_parameters()
+        if not self.randomize_domain:
+            return
+
+        mass_scale = float(self.np_random.uniform(0.85, 1.15))
+        self.model.body_mass[self.root_body_id] = self._base_body_mass * mass_scale
+
+        if self.terrain_geom_id >= 0 and self._base_terrain_friction is not None:
+            friction_scale = float(self.np_random.uniform(0.7, 1.3))
+            self.model.geom_friction[self.terrain_geom_id] = self._base_terrain_friction * friction_scale
+
+        actuator_scale = self.np_random.uniform(0.85, 1.15, size=(len(self.leg_actuator_ids), 1))
+        self.model.actuator_gainprm[self.leg_actuator_ids] = self._base_leg_gainprm * actuator_scale
+        self.model.actuator_biasprm[self.leg_actuator_ids] = self._base_leg_biasprm * actuator_scale
+
     def _sample_command(self) -> np.ndarray:
         ranges = np.asarray(self.command_range, dtype=np.float32)
-        return self.np_random.uniform(ranges[:, 0], ranges[:, 1]).astype(np.float32)
+        if not self.use_curriculum:
+            return self.np_random.uniform(ranges[:, 0], ranges[:, 1]).astype(np.float32)
+
+        level = self.curriculum_level
+        vx_low, vx_high = ranges[0]
+        vx_high = vx_low + (vx_high - vx_low) * max(0.25, level)
+        vx = float(self.np_random.uniform(vx_low, vx_high))
+        vy = float(self.np_random.uniform(ranges[1, 0] * level, ranges[1, 1] * level))
+        yaw = float(self.np_random.uniform(ranges[2, 0] * level, ranges[2, 1] * level))
+        return np.array([vx, vy, yaw], dtype=np.float32)
 
     def _base_rotation(self) -> np.ndarray:
         quat_start = self.root_qposadr + 3
@@ -236,21 +300,20 @@ class SpotWalkEnv(gym.Env):
 
     def _get_obs(self) -> np.ndarray:
         projected_gravity = self._projected_gravity()
-        base_linear, base_angular = self._base_velocity_body()
-        joint_pos = self.data.qpos[self.leg_qpos_ids] - self.stand_leg_qpos
+        _, base_angular = self._base_velocity_body()
+        joint_pos = self.data.qpos[self.leg_qpos_ids] - self.nominal_leg_qpos
         joint_vel = self.data.qvel[self.leg_dof_ids]
-        contacts = self._foot_contacts()
+        command = self.command * np.array([2.0, 2.0, 0.25], dtype=np.float32)
 
         obs = np.concatenate(
             [
+                base_angular * 0.25,
                 projected_gravity,
-                base_linear,
-                base_angular,
-                self.command,
+                command,
                 joint_pos,
-                joint_vel,
+                joint_vel * 0.05,
                 self.last_action,
-                contacts,
+                self._foot_contacts(),
             ]
         )
         return obs.astype(np.float32)
@@ -258,54 +321,43 @@ class SpotWalkEnv(gym.Env):
     def _reward(self, action: np.ndarray) -> tuple[float, dict[str, float]]:
         base_linear, base_angular = self._base_velocity_body()
         velocity_error = np.array(
-            [
-                base_linear[0] - self.command[0],
-                base_linear[1] - self.command[1],
-                base_angular[2] - self.command[2],
-            ],
+            [base_linear[0] - self.command[0], base_linear[1] - self.command[1]],
             dtype=np.float64,
         )
-        tracking = float(np.exp(-np.dot(velocity_error, velocity_error) / 0.25))
+        lin_tracking = float(np.exp(-np.dot(velocity_error, velocity_error) / 0.25))
+        yaw_tracking = 0.5 * float(np.exp(-((base_angular[2] - self.command[2]) ** 2) / 0.25))
 
         projected_gravity = self._projected_gravity()
-        upright = float(np.clip(-projected_gravity[2], 0.0, 1.0))
-        height_error = abs(float(self.data.qpos[self.root_qposadr + 2]) - self.stand_height)
-        height = float(np.exp(-(height_error * height_error) / 0.09))
+        vertical_velocity = -2.0 * float(base_linear[2] ** 2)
+        height = -float((self.data.qpos[self.root_qposadr + 2] - self.stand_height) ** 2)
+        orientation = -0.5 * float(projected_gravity[0] ** 2 + projected_gravity[1] ** 2)
+        torque = -2e-4 * float(np.sum(np.square(self.data.actuator_force[self.leg_actuator_ids])))
+        smooth = -5e-3 * float(np.sum(np.square(action - self.last_action)))
+        contacts = self._foot_contacts()
+        contact = 0.15 * min(float(np.sum(contacts > 0.0)) / 2.0, 1.0)
+        unhealthy = -2.0 if self._is_unhealthy() else 0.0
 
-        action_rate = float(np.sum(np.square(action - self.last_action)))
-        action_size = float(np.sum(np.square(action)))
-        joint_speed = float(np.sum(np.square(self.data.qvel[self.leg_dof_ids])))
-        arm_error = float(np.sum(np.square(self.data.qpos[self.arm_qpos_ids] - self.stand_arm_qpos)))
-        unhealthy = 1.0 if self._is_unhealthy() else 0.0
-
-        reward = (
-            2.0 * tracking
-            + 0.5 * upright
-            + 0.25 * height
-            - 0.03 * action_rate
-            - 0.005 * action_size
-            - 0.0005 * joint_speed
-            - 0.01 * arm_error
-            - 2.0 * unhealthy
-        )
-
-        return float(reward), {
-            "reward_tracking": tracking,
-            "reward_upright": upright,
-            "reward_height": height,
-            "penalty_action_rate": action_rate,
-            "penalty_action_size": action_size,
-            "penalty_joint_speed": joint_speed,
-            "penalty_arm_error": arm_error,
+        components = {
+            "lin": lin_tracking,
+            "yaw": yaw_tracking,
+            "vertical_velocity": vertical_velocity,
+            "height": height,
+            "orientation": orientation,
+            "torque": torque,
+            "smooth": smooth,
+            "contact": contact,
+            "unhealthy": unhealthy,
         }
+        return float(sum(components.values())), components
 
     def _is_unhealthy(self) -> bool:
         projected_gravity = self._projected_gravity()
         base_height = float(self.data.qpos[self.root_qposadr + 2])
-        too_low = base_height < self.stand_height - 0.35
+        too_low = base_height < self.stand_height - 0.45
+        too_high = base_height > self.stand_height + 0.65
         tipped = projected_gravity[2] > -0.35
         bad_number = not np.isfinite(self.data.qpos).all() or not np.isfinite(self.data.qvel).all()
-        return bool(too_low or tipped or bad_number)
+        return bool(too_low or too_high or tipped or bad_number)
 
     def _get_info(self) -> dict[str, float]:
         base_linear, base_angular = self._base_velocity_body()
@@ -317,4 +369,5 @@ class SpotWalkEnv(gym.Env):
             "base_vy": float(base_linear[1]),
             "base_yaw_rate": float(base_angular[2]),
             "base_height": float(self.data.qpos[self.root_qposadr + 2]),
+            "curriculum_level": float(self.curriculum_level),
         }

@@ -246,18 +246,18 @@
     <exclude body1="body" body2="hr_uleg" />
   </contact>
   <actuator>
-    <position class="spot" name="fl_hx" joint="fl_hx" />
-    <position class="spot" name="fl_hy" joint="fl_hy" />
-    <position class="spot" name="fl_kn" joint="fl_kn" />
-    <position class="spot" name="fr_hx" joint="fr_hx" />
-    <position class="spot" name="fr_hy" joint="fr_hy" />
-    <position class="spot" name="fr_kn" joint="fr_kn" />
-    <position class="spot" name="hl_hx" joint="hl_hx" />
-    <position class="spot" name="hl_hy" joint="hl_hy" />
-    <position class="spot" name="hl_kn" joint="hl_kn" />
-    <position class="spot" name="hr_hx" joint="hr_hx" />
-    <position class="spot" name="hr_hy" joint="hr_hy" />
-    <position class="spot" name="hr_kn" joint="hr_kn" />
+    <general name="fl_hx" joint="fl_hx" gainprm="80" biasprm="0 -80 -4" ctrlrange="-0.785398 0.785398" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="fl_hy" joint="fl_hy" gainprm="80" biasprm="83.2 -80 -4" ctrlrange="-1.938845 1.25511" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="fl_kn" joint="fl_kn" gainprm="100" biasprm="-180 -100 -5" ctrlrange="-0.9929 1.545598" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="fr_hx" joint="fr_hx" gainprm="80" biasprm="0 -80 -4" ctrlrange="-0.785398 0.785398" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="fr_hy" joint="fr_hy" gainprm="80" biasprm="83.2 -80 -4" ctrlrange="-1.938845 1.20363" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="fr_kn" joint="fr_kn" gainprm="100" biasprm="-180 -100 -5" ctrlrange="-0.9929 1.544352" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hl_hx" joint="hl_hx" gainprm="80" biasprm="0 -80 -4" ctrlrange="-0.785398 0.785398" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hl_hy" joint="hl_hy" gainprm="80" biasprm="83.2 -80 -4" ctrlrange="-1.938845 1.25511" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hl_kn" joint="hl_kn" gainprm="100" biasprm="-180 -100 -5" ctrlrange="-0.9929 1.552933" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hr_hx" joint="hr_hx" gainprm="80" biasprm="0 -80 -4" ctrlrange="-0.785398 0.785398" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hr_hy" joint="hr_hy" gainprm="80" biasprm="83.2 -80 -4" ctrlrange="-1.938845 1.25511" forcerange="-80 80" gaintype="fixed" biastype="affine" />
+    <general name="hr_kn" joint="hr_kn" gainprm="100" biasprm="-180 -100 -5" ctrlrange="-0.9929 1.551718" forcerange="-80 80" gaintype="fixed" biastype="affine" />
     <position class="spot" name="arm_sh0" joint="arm_sh0" />
     <position class="spot" name="arm_sh1" joint="arm_sh1" />
     <position class="spot" name="arm_el0" joint="arm_el0" />
@@ -267,6 +267,6 @@
     <position class="spot" name="arm_f1x" joint="arm_f1x" />
   </actuator>
   <keyframe>
-    <key name="stand" qpos="5 -6 1.90 1 0 0 0 0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 -3.14 3.06 0 0 0 0" ctrl="0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 -3.14 3.06 0 0 0 0" />
+    <key name="stand" qpos="5 -6 1.90 1 0 0 0 0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 1.04 -1.8 0 -3.14 3.06 0 0 0 0" ctrl="0 0 0 0 0 0 0 0 0 0 0 0 0 -3.14 3.06 0 0 0 0" />
   </keyframe>
 </mujoco>
