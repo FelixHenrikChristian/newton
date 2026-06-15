@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 from pathlib import Path
 
 from stable_baselines3 import PPO
@@ -38,6 +39,123 @@ class RewardComponentCallback(BaseCallback):
                 self.logger.record(f"reward/{name}", value / self.count)
             self.sums.clear()
             self.count = 0
+        return True
+
+
+class DistanceEvalCallback(BaseCallback):
+    """Evaluate fixed-command forward progress and save the best checkpoint."""
+
+    def __init__(
+        self,
+        eval_env: VecNormalize,
+        save_dir: Path,
+        eval_freq: int,
+        eval_episodes: int,
+        early_stop_patience: int,
+        early_stop_min_timesteps: int,
+        early_stop_min_delta: float,
+        verbose: int = 0,
+    ) -> None:
+        super().__init__(verbose)
+        self.eval_env = eval_env
+        self.save_dir = save_dir
+        self.eval_freq = eval_freq
+        self.eval_episodes = eval_episodes
+        self.early_stop_patience = early_stop_patience
+        self.early_stop_min_timesteps = early_stop_min_timesteps
+        self.early_stop_min_delta = early_stop_min_delta
+        self.best_score = -float("inf")
+        self.last_eval_step = 0
+        self.no_improvement_evals = 0
+
+    def _sync_normalization(self) -> None:
+        if isinstance(self.training_env, VecNormalize):
+            self.eval_env.obs_rms = copy.deepcopy(self.training_env.obs_rms)
+            self.eval_env.ret_rms = copy.deepcopy(self.training_env.ret_rms)
+        self.eval_env.training = False
+        self.eval_env.norm_reward = False
+
+    def _evaluate_once(self) -> tuple[float, int]:
+        obs = self.eval_env.reset()
+        score = 0.0
+        steps = 0
+        max_steps = self.eval_env.venv.envs[0].unwrapped.max_steps
+        for _ in range(max_steps):
+            action, _ = self.model.predict(obs, deterministic=True)
+            obs, _, done, infos = self.eval_env.step(action)
+            info = infos[0]
+            score += max(float(info["base_vx"]), 0.0) * self.eval_env.venv.envs[0].unwrapped.dt
+            steps += 1
+            if done[0]:
+                if steps < max_steps:
+                    score -= 2.0
+                break
+        return score, steps
+
+    def _on_step(self) -> bool:
+        if self.eval_freq <= 0 or self.num_timesteps - self.last_eval_step < self.eval_freq:
+            return True
+
+        self.last_eval_step = self.num_timesteps
+        self._sync_normalization()
+
+        scores = []
+        lengths = []
+        for _ in range(self.eval_episodes):
+            score, length = self._evaluate_once()
+            scores.append(score)
+            lengths.append(length)
+
+        mean_score = float(sum(scores) / len(scores))
+        mean_length = float(sum(lengths) / len(lengths))
+        self.logger.record("eval/forward_score", mean_score)
+        self.logger.record("eval/episode_length", mean_length)
+
+        previous_best_score = self.best_score
+        new_best = mean_score > self.best_score
+        meaningful_improvement = mean_score > self.best_score + self.early_stop_min_delta
+        if new_best:
+            self.best_score = mean_score
+            self.save_dir.mkdir(parents=True, exist_ok=True)
+            self.model.save(self.save_dir / "best_model")
+            if isinstance(self.training_env, VecNormalize):
+                self.training_env.save(self.save_dir / "best_vecnormalize.pkl")
+            (self.save_dir / "best_score.txt").write_text(
+                f"num_timesteps={self.num_timesteps}\nforward_score={mean_score:.6f}\nepisode_length={mean_length:.2f}\n",
+                encoding="utf-8",
+            )
+
+        if meaningful_improvement or previous_best_score == -float("inf"):
+            self.no_improvement_evals = 0
+        else:
+            self.no_improvement_evals += 1
+
+        self.logger.record("eval/best_forward_score", self.best_score)
+        self.logger.record("eval/no_improvement_evals", self.no_improvement_evals)
+
+        should_stop = (
+            self.early_stop_patience > 0
+            and self.num_timesteps >= self.early_stop_min_timesteps
+            and self.no_improvement_evals >= self.early_stop_patience
+        )
+        if should_stop:
+            self.save_dir.mkdir(parents=True, exist_ok=True)
+            (self.save_dir / "early_stop.txt").write_text(
+                (
+                    f"num_timesteps={self.num_timesteps}\n"
+                    f"best_forward_score={self.best_score:.6f}\n"
+                    f"last_forward_score={mean_score:.6f}\n"
+                    f"no_improvement_evals={self.no_improvement_evals}\n"
+                ),
+                encoding="utf-8",
+            )
+            if self.verbose:
+                print(
+                    "Stopping early: fixed-command eval did not improve for "
+                    f"{self.no_improvement_evals} evaluations."
+                )
+            return False
+
         return True
 
 
@@ -109,6 +227,14 @@ def main() -> None:
     parser.add_argument("--command-vx", type=float, nargs=2, default=(0.25, 0.6), metavar=("MIN", "MAX"))
     parser.add_argument("--command-vy", type=float, nargs=2, default=(-0.2, 0.2), metavar=("MIN", "MAX"))
     parser.add_argument("--command-yaw", type=float, nargs=2, default=(-0.5, 0.5), metavar=("MIN", "MAX"))
+    parser.add_argument("--eval-freq", type=int, default=500_000)
+    parser.add_argument("--eval-episodes", type=int, default=3)
+    parser.add_argument("--eval-command-vx", type=float, default=0.5)
+    parser.add_argument("--early-stop-patience", type=int, default=8)
+    parser.add_argument("--early-stop-min-timesteps", type=int, default=5_000_000)
+    parser.add_argument("--early-stop-min-delta", type=float, default=0.05)
+    parser.add_argument("--no-eval", action="store_true")
+    parser.add_argument("--no-early-stop", action="store_true")
     parser.add_argument("--no-domain-randomization", action="store_true")
     parser.add_argument("--no-curriculum", action="store_true")
     args = parser.parse_args()
@@ -168,15 +294,61 @@ def main() -> None:
         save_vecnormalize=True,
     )
 
+    callbacks: list[BaseCallback] = [RewardComponentCallback(), checkpoint_callback]
+    eval_env = None
+    if not args.no_eval:
+        eval_command_range = (
+            (args.eval_command_vx, args.eval_command_vx),
+            (0.0, 0.0),
+            (0.0, 0.0),
+        )
+        eval_env = VecNormalize(
+            DummyVecEnv(
+                [
+                    make_env(
+                        xml_path,
+                        args.seed,
+                        10_000,
+                        args.reset_base_height,
+                        args.target_base_height,
+                        False,
+                        False,
+                        eval_command_range,
+                        args.action_scale,
+                        tuple(args.nominal_leg_ctrl),
+                        args.actuator_gain_scale,
+                        args.control_decimation,
+                    )
+                ]
+            ),
+            norm_obs=True,
+            norm_reward=False,
+            clip_obs=10.0,
+        )
+        eval_env.training = False
+        callbacks.append(
+            DistanceEvalCallback(
+                eval_env=eval_env,
+                save_dir=run_dir / "best_eval",
+                eval_freq=args.eval_freq,
+                eval_episodes=args.eval_episodes,
+                early_stop_patience=0 if args.no_early_stop else args.early_stop_patience,
+                early_stop_min_timesteps=args.early_stop_min_timesteps,
+                early_stop_min_delta=args.early_stop_min_delta,
+            )
+        )
+
     model.learn(
         total_timesteps=args.total_timesteps,
-        callback=[RewardComponentCallback(), checkpoint_callback],
+        callback=callbacks,
         progress_bar=True,
     )
 
     model.save(run_dir / "ppo_spot_go2_style_final")
     env.save(run_dir / "vecnormalize.pkl")
     env.close()
+    if eval_env is not None:
+        eval_env.close()
     print(f"Saved model and normalization stats to {run_dir}")
 
 

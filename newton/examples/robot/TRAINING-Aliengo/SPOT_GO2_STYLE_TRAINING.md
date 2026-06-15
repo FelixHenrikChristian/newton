@@ -48,6 +48,16 @@ python train_spot_go2_style_ppo.py --total-timesteps 2000000 --num-envs 8 --vec-
 
 训练输出目录是 `runs\spot_go2_style_2m_local\`。最终模型保存为 `ppo_spot_go2_style_final.zip`，VecNormalize 统计保存为 `vecnormalize.pkl`，中间模型保存在 `checkpoints\`。
 
+训练脚本还会定期用固定 `0.5 m/s` 前进命令做评估，并把评估分数最高的模型保存到：
+
+```text
+runs\spot_go2_style_2m_local\best_eval\best_model.zip
+runs\spot_go2_style_2m_local\best_eval\best_vecnormalize.pkl
+runs\spot_go2_style_2m_local\best_eval\best_score.txt
+```
+
+长时间训练时 final 不一定最好。如果后期策略退化，优先播放 `best_eval` 里的模型，或者播放中间 checkpoint。默认启用 early stop：达到最小训练步数后，如果连续多次固定速度评估没有刷新 best，就会提前停止，避免继续浪费时间。
+
 主要参数：
 
 - `--total-timesteps`：总训练步数。先用 `2000000` 看策略是否开始学到稳定步态。
@@ -55,6 +65,12 @@ python train_spot_go2_style_ppo.py --total-timesteps 2000000 --num-envs 8 --vec-
 - `--vec-env subproc`：多进程采样，正式训练通常比 `dummy` 快。
 - `--device cpu`：在本地 CPU 上训练。
 - `--run-name`：输出目录名。
+- `--eval-freq`：每隔多少 env steps 做一次固定速度评估，默认 `500000`。
+- `--early-stop-patience`：连续多少次评估没有明显提升就停止，默认 `8`。
+- `--early-stop-min-timesteps`：至少训练多少步后才允许 early stop，默认 `5000000`。
+- `--early-stop-min-delta`：评估分数至少提升多少才算刷新 best，默认 `0.05`。
+- `--no-early-stop`：保留 best eval，但不自动停止训练。
+- `--no-eval`：关闭 best eval 保存。
 
 ## TensorBoard
 
@@ -93,6 +109,20 @@ python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\ppo_sp
 ```
 
 播放脚本默认从模型所在目录加载 `vecnormalize.pkl`。如果统计文件不在同一目录，可以用 `--vecnormalize` 手动指定。
+
+播放 best eval 模型：
+
+```powershell
+python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\best_eval\best_model.zip --seconds 60 --command-vx 0.5
+```
+
+播放某个中间 checkpoint：
+
+```powershell
+python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\checkpoints\ppo_spot_go2_style_7000000_steps.zip --seconds 60 --command-vx 0.5
+```
+
+如果 checkpoint 目录里存在对应的 `ppo_spot_go2_style_vecnormalize_7000000_steps.pkl`，播放脚本会自动加载它。
 
 主要参数：
 

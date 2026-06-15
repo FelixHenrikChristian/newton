@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import time
 from pathlib import Path
 
@@ -10,6 +11,29 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from play_spot_policy import patch_sb3_zip_loader
 from spot_go2_style_env import SpotGo2StyleEnv
 from train_spot_go2_style_ppo import _resolve_scene_path
+
+
+def _resolve_vecnormalize_path(model_path: Path, vecnormalize_path: Path | None) -> Path | None:
+    if vecnormalize_path is not None:
+        return vecnormalize_path
+
+    run_vecnormalize = model_path.parent / "vecnormalize.pkl"
+    if run_vecnormalize.exists():
+        return run_vecnormalize
+
+    best_vecnormalize = model_path.parent / "best_vecnormalize.pkl"
+    if best_vecnormalize.exists():
+        return best_vecnormalize
+
+    match = re.match(r"(?P<prefix>.+)_(?P<steps>\d+)_steps\.zip$", model_path.name)
+    if match:
+        checkpoint_vecnormalize = (
+            model_path.parent / f"{match.group('prefix')}_vecnormalize_{match.group('steps')}_steps.pkl"
+        )
+        if checkpoint_vecnormalize.exists():
+            return checkpoint_vecnormalize
+
+    return None
 
 
 def main() -> None:
@@ -52,13 +76,13 @@ def main() -> None:
         render_camera=args.render_camera or None,
     )
     vec_env = DummyVecEnv([lambda: raw_env])
-    vecnormalize_path = args.vecnormalize or args.model.parent / "vecnormalize.pkl"
-    if vecnormalize_path.exists():
+    vecnormalize_path = _resolve_vecnormalize_path(args.model, args.vecnormalize)
+    if vecnormalize_path is not None and vecnormalize_path.exists():
         vec_env = VecNormalize.load(vecnormalize_path, vec_env)
         vec_env.training = False
         vec_env.norm_reward = False
     else:
-        print(f"Warning: VecNormalize stats not found at {vecnormalize_path}; replaying with raw observations.")
+        print(f"Warning: VecNormalize stats not found for {args.model}; replaying with raw observations.")
 
     model = PPO.load(args.model, env=vec_env)
     obs = vec_env.reset()
