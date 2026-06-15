@@ -29,8 +29,8 @@ import newton.examples
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCENE_PATH = SCRIPT_DIR / "spot_scene.xml"
-MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_style_20m" / "best_eval" / "best_model.zip"
-VECNORMALIZE_PATH = MODEL_PATH.parent / "best_vecnormalize.pkl"
+MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_style_20m" / "ppo_spot_go2_style_final.zip"
+VECNORMALIZE_PATH = MODEL_PATH.parent / "vecnormalize.pkl"
 
 LEG_JOINTS = (
     "fl_hx",
