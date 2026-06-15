@@ -1,0 +1,4 @@
+num_timesteps=8500000
+best_forward_score=11.011135
+last_forward_score=9.878022
+no_improvement_evals=8

@@ -63,7 +63,7 @@ asv/html
 MUJOCO_LOG.TXT
 imgui.ini
 newton/tests/outputs/
-newton/examples/robot/TRAINING-Aliengo/runs/
+newton/examples/robot/TRAINING-Aliengo/runs/**/checkpoints/
 
 # Viser recordings
 docs/_static/recordings/

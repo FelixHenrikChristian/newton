@@ -43,24 +43,24 @@ python train_spot_go2_style_ppo.py --total-timesteps 256 --num-envs 1 --n-steps 
 ## 本地训练
 
 ```powershell
-python train_spot_go2_style_ppo.py --total-timesteps 2000000 --num-envs 8 --vec-env subproc --device cpu --run-name spot_go2_style_2m_local
+python train_spot_go2_style_ppo.py --total-timesteps 20000000 --num-envs 8 --vec-env subproc --device cpu --run-name spot_go2_style_20m
 ```
 
-训练输出目录是 `runs\spot_go2_style_2m_local\`。最终模型保存为 `ppo_spot_go2_style_final.zip`，VecNormalize 统计保存为 `vecnormalize.pkl`，中间模型保存在 `checkpoints\`。
+训练输出目录是 `runs\spot_go2_style_20m\`。最终模型保存为 `ppo_spot_go2_style_final.zip`，VecNormalize 统计保存为 `vecnormalize.pkl`，中间模型保存在 `checkpoints\`。
 
 训练脚本还会定期用固定 `0.5 m/s` 前进命令做评估，并把评估分数最高的模型保存到：
 
 ```text
-runs\spot_go2_style_2m_local\best_eval\best_model.zip
-runs\spot_go2_style_2m_local\best_eval\best_vecnormalize.pkl
-runs\spot_go2_style_2m_local\best_eval\best_score.txt
+runs\spot_go2_style_20m\best_eval\best_model.zip
+runs\spot_go2_style_20m\best_eval\best_vecnormalize.pkl
+runs\spot_go2_style_20m\best_eval\best_score.txt
 ```
 
 长时间训练时 final 不一定最好。如果后期策略退化，优先播放 `best_eval` 里的模型，或者播放中间 checkpoint。默认启用 early stop：达到最小训练步数后，如果连续多次固定速度评估没有刷新 best，就会提前停止，避免继续浪费时间。
 
 主要参数：
 
-- `--total-timesteps`：总训练步数。先用 `2000000` 看策略是否开始学到稳定步态。
+- `--total-timesteps`：总训练步数。正式训练示例使用 `20000000`。
 - `--num-envs`：并行环境数量。CPU 不够时可以降到 `4`。
 - `--vec-env subproc`：多进程采样，正式训练通常比 `dummy` 快。
 - `--device cpu`：在本地 CPU 上训练。
@@ -75,7 +75,7 @@ runs\spot_go2_style_2m_local\best_eval\best_score.txt
 ## TensorBoard
 
 ```powershell
-tensorboard --logdir runs\spot_go2_style_2m_local\tensorboard
+tensorboard --logdir runs\spot_go2_style_20m\tensorboard
 ```
 
 启动后在浏览器打开 TensorBoard 输出的本地地址，通常是 `http://localhost:6006`。
@@ -105,7 +105,7 @@ python debug_spot_go2_style_training_viewer.py --total-timesteps 20000 --n-steps
 ## 播放训练结果
 
 ```powershell
-python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\ppo_spot_go2_style_final.zip --seconds 60 --command-vx 0.3
+python play_spot_go2_style_policy.py --model runs\spot_go2_style_20m\ppo_spot_go2_style_final.zip --seconds 60 --command-vx 0.3
 ```
 
 播放脚本默认从模型所在目录加载 `vecnormalize.pkl`。如果统计文件不在同一目录，可以用 `--vecnormalize` 手动指定。
@@ -113,13 +113,13 @@ python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\ppo_sp
 播放 best eval 模型：
 
 ```powershell
-python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\best_eval\best_model.zip --seconds 60 --command-vx 0.5
+python play_spot_go2_style_policy.py --model runs\spot_go2_style_20m\best_eval\best_model.zip --seconds 60 --command-vx 0.5
 ```
 
-播放某个中间 checkpoint：
+播放某个中间 checkpoint（如果训练输出目录还没有清理 checkpoints）：
 
 ```powershell
-python play_spot_go2_style_policy.py --model runs\spot_go2_style_2m_local\checkpoints\ppo_spot_go2_style_7000000_steps.zip --seconds 60 --command-vx 0.5
+python play_spot_go2_style_policy.py --model runs\spot_go2_style_20m\checkpoints\ppo_spot_go2_style_7000000_steps.zip --seconds 60 --command-vx 0.5
 ```
 
 如果 checkpoint 目录里存在对应的 `ppo_spot_go2_style_vecnormalize_7000000_steps.pkl`，播放脚本会自动加载它。

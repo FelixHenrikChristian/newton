@@ -1,0 +1,3 @@
+num_timesteps=4500000
+forward_score=11.011135
+episode_length=1000.00
