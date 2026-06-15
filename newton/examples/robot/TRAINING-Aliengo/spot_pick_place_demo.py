@@ -58,12 +58,12 @@ RESET_BASE_HEIGHT = 1.80
 
 STONE_LABEL = "pickup_stone"
 STONE_FORWARD_OFFSET = 0.55
-STONE_HEADING_OFFSET = 0.65
+STONE_HEADING_OFFSET = 0.0
 STONE_SIZE = np.array([0.06, 0.045, 0.035], dtype=np.float64)
-STONE_CLEARANCE = 0.01
+STONE_CLEARANCE = -0.035
 STONE_ALIGN_RADIUS = 1.2
 
-ARRIVAL_RADIUS = 0.45
+ARRIVAL_RADIUS = 0.15
 ARRIVAL_YAW_TOLERANCE = 0.35
 MAX_SECONDS = 60.0
 FORWARD_SPEED = 0.45
@@ -233,6 +233,8 @@ class SpotPickPlaceDemo:
         self.reset_leg_noise = np.random.default_rng(RESET_SEED).uniform(-0.05, 0.05, ACT_DIM).astype(np.float32)
         self.arm_qpos = stand_qpos[7 + ACT_DIM :].astype(np.float32)
         self.stone_pos = _stone_position()
+        self.stone_q = np.array((*self.stone_pos, 0.0, 0.0, 0.0, 1.0), dtype=np.float32)
+        self.pin_stone_until_grasp = True
 
         builder = newton.ModelBuilder()
         builder.add_mjcf(
@@ -370,7 +372,14 @@ class SpotPickPlaceDemo:
         state.joint_q[self.root_q_slice].assign((A_POINT[0], A_POINT[1], RESET_BASE_HEIGHT, *_yaw_to_xyzw(A_YAW)))
         state.joint_q[self.leg_q_slice].assign(self.nominal_leg_qpos + self.reset_leg_noise)
         state.joint_q[self.arm_q_slice].assign(self.arm_qpos)
-        state.joint_q[self.stone_q_slice].assign((*self.stone_pos, 0.0, 0.0, 0.0, 1.0))
+        state.joint_q[self.stone_q_slice].assign(self.stone_q)
+        newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+
+    def _pin_stone(self, state) -> None:
+        if not self.pin_stone_until_grasp:
+            return
+        state.joint_q[self.stone_q_slice].assign(self.stone_q)
+        state.joint_qd[self.stone_qd_slice].zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _write_stand_ctrl(self) -> None:
@@ -481,6 +490,7 @@ class SpotPickPlaceDemo:
                 self.viewer.apply_forces(self.state_0)
             self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
             self.state_0, self.state_1 = self.state_1, self.state_0
+            self._pin_stone(self.state_0)
         self.sim_time += self.frame_dt
         self.contacts_ready = True
 
