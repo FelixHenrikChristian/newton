@@ -106,7 +106,7 @@ def main() -> None:
     parser.add_argument("--action-scale", type=float, default=0.25)
     parser.add_argument("--nominal-leg-ctrl", type=float, nargs=3, default=(0.0, -0.1, 0.3), metavar=("HX", "HY", "KN"))
     parser.add_argument("--actuator-gain-scale", type=float, default=3.0)
-    parser.add_argument("--command-vx", type=float, nargs=2, default=(0.1, 0.6), metavar=("MIN", "MAX"))
+    parser.add_argument("--command-vx", type=float, nargs=2, default=(0.25, 0.6), metavar=("MIN", "MAX"))
     parser.add_argument("--command-vy", type=float, nargs=2, default=(-0.2, 0.2), metavar=("MIN", "MAX"))
     parser.add_argument("--command-yaw", type=float, nargs=2, default=(-0.5, 0.5), metavar=("MIN", "MAX"))
     parser.add_argument("--no-domain-randomization", action="store_true")

@@ -95,6 +95,7 @@
     <camera name="top_mount_view" pos="3.5 -8.2 3.0358" xyaxes="0.83 -0.56 0 0.36 0.54 0.76" fovy="40" />
     <body name="body" childclass="spot" pos="5 -6 1.90" quat="1 0 0 0">
       <light name="tracking" mode="trackcom" pos="0 0 2" />
+      <camera name="tracking_side_view" pos="0 -3.2 0.55" xyaxes="1 0 0 0 0.27 0.96" fovy="45" />
       <freejoint name="freejoint" />
       <inertial pos="0.0063944 -9.81216e-05 0.000911379" mass="32.86" diaginertia="0.13144 0.13144 0.13144" />
       <geom mesh="body_0" material="BlackAbs" class="visual" />

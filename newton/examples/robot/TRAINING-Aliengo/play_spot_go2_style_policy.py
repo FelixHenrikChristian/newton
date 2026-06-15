@@ -16,7 +16,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Replay a Spot Go2-style PPO policy.")
     parser.add_argument("--xml", type=Path, default=Path("spot_scene.xml"))
     parser.add_argument("--model", type=Path, default=Path("runs/spot_go2_style_walk/ppo_spot_go2_style_final.zip"))
-    parser.add_argument("--vecnormalize", type=Path, default=Path("runs/spot_go2_style_walk/vecnormalize.pkl"))
+    parser.add_argument("--vecnormalize", type=Path, default=None)
     parser.add_argument("--seconds", type=float, default=60.0)
     parser.add_argument("--reset-base-height", type=float, default=1.72)
     parser.add_argument("--target-base-height", type=float, default=1.68)
@@ -27,6 +27,7 @@ def main() -> None:
     parser.add_argument("--command-vx", type=float, default=0.3)
     parser.add_argument("--command-vy", type=float, default=0.0)
     parser.add_argument("--command-yaw", type=float, default=0.0)
+    parser.add_argument("--render-camera", type=str, default="tracking_side_view")
     args = parser.parse_args()
 
     patch_sb3_zip_loader()
@@ -48,12 +49,16 @@ def main() -> None:
         randomize_domain=False,
         use_curriculum=False,
         render_mode="human",
+        render_camera=args.render_camera or None,
     )
     vec_env = DummyVecEnv([lambda: raw_env])
-    if args.vecnormalize.exists():
-        vec_env = VecNormalize.load(args.vecnormalize, vec_env)
+    vecnormalize_path = args.vecnormalize or args.model.parent / "vecnormalize.pkl"
+    if vecnormalize_path.exists():
+        vec_env = VecNormalize.load(vecnormalize_path, vec_env)
         vec_env.training = False
         vec_env.norm_reward = False
+    else:
+        print(f"Warning: VecNormalize stats not found at {vecnormalize_path}; replaying with raw observations.")
 
     model = PPO.load(args.model, env=vec_env)
     obs = vec_env.reset()

@@ -63,7 +63,7 @@ class SpotGo2StyleEnv(gym.Env):
         control_decimation: int = 10,
         episode_seconds: float = 20.0,
         command_range: tuple[tuple[float, float], tuple[float, float], tuple[float, float]] = (
-            (0.1, 0.6),
+            (0.25, 0.6),
             (-0.2, 0.2),
             (-0.5, 0.5),
         ),
@@ -75,6 +75,7 @@ class SpotGo2StyleEnv(gym.Env):
         randomize_domain: bool = True,
         use_curriculum: bool = True,
         render_mode: str | None = None,
+        render_camera: str | None = "tracking_side_view",
     ) -> None:
         self.xml_path = Path(xml_path)
         self.model = mujoco.MjModel.from_xml_path(str(self.xml_path))
@@ -92,6 +93,7 @@ class SpotGo2StyleEnv(gym.Env):
         self.randomize_domain = randomize_domain
         self.use_curriculum = use_curriculum
         self.render_mode = render_mode
+        self.render_camera = render_camera
 
         self.root_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "freejoint")
         if self.root_joint_id < 0:
@@ -147,6 +149,11 @@ class SpotGo2StyleEnv(gym.Env):
         self.action_space = spaces.Box(-1.0, 1.0, shape=(ACT_DIM,), dtype=np.float32)
         self.observation_space = spaces.Box(-np.inf, np.inf, shape=(OBS_DIM,), dtype=np.float32)
         self.viewer = None
+        self.render_camera_id = (
+            -1
+            if self.render_camera is None
+            else mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_CAMERA, self.render_camera)
+        )
 
     def reset(
         self,
@@ -217,6 +224,9 @@ class SpotGo2StyleEnv(gym.Env):
             import mujoco.viewer
 
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+            if self.render_camera_id >= 0:
+                self.viewer.cam.type = mujoco.mjtCamera.mjCAMERA_FIXED
+                self.viewer.cam.fixedcamid = self.render_camera_id
         self.viewer.sync()
 
     def close(self) -> None:
@@ -324,27 +334,35 @@ class SpotGo2StyleEnv(gym.Env):
             [base_linear[0] - self.command[0], base_linear[1] - self.command[1]],
             dtype=np.float64,
         )
-        lin_tracking = float(np.exp(-np.dot(velocity_error, velocity_error) / 0.25))
+        lin_tracking = 2.0 * float(np.exp(-np.dot(velocity_error, velocity_error) / 0.1))
         yaw_tracking = 0.5 * float(np.exp(-((base_angular[2] - self.command[2]) ** 2) / 0.25))
 
         projected_gravity = self._projected_gravity()
-        vertical_velocity = -2.0 * float(base_linear[2] ** 2)
-        height = -float((self.data.qpos[self.root_qposadr + 2] - self.stand_height) ** 2)
-        orientation = -0.5 * float(projected_gravity[0] ** 2 + projected_gravity[1] ** 2)
-        torque = -2e-4 * float(np.sum(np.square(self.data.actuator_force[self.leg_actuator_ids])))
+        healthy = not self._is_unhealthy()
+        alive = 0.5 if healthy else 0.0
+        upright = 0.5 * float(np.clip(-projected_gravity[2], 0.0, 1.0))
+        vertical_velocity = -1.0 * float(base_linear[2] ** 2)
+        height_error = float(self.data.qpos[self.root_qposadr + 2] - self.stand_height)
+        height = 0.4 * float(np.exp(-(height_error * height_error) / 0.04))
+        orientation = -1.0 * float(projected_gravity[0] ** 2 + projected_gravity[1] ** 2)
+        torque = -5e-5 * float(np.sum(np.square(self.data.actuator_force[self.leg_actuator_ids])))
         smooth = -5e-3 * float(np.sum(np.square(action - self.last_action)))
+        action_size = -2e-2 * float(np.sum(np.square(action)))
         contacts = self._foot_contacts()
         contact = 0.15 * min(float(np.sum(contacts > 0.0)) / 2.0, 1.0)
-        unhealthy = -2.0 if self._is_unhealthy() else 0.0
+        unhealthy = -10.0 if not healthy else 0.0
 
         components = {
+            "alive": alive,
             "lin": lin_tracking,
             "yaw": yaw_tracking,
+            "upright": upright,
             "vertical_velocity": vertical_velocity,
             "height": height,
             "orientation": orientation,
             "torque": torque,
             "smooth": smooth,
+            "action_size": action_size,
             "contact": contact,
             "unhealthy": unhealthy,
         }
