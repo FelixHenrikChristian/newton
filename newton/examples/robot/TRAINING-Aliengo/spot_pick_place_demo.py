@@ -80,6 +80,7 @@ ARM_PREGRASP_SECONDS = 2.0
 ARM_DESCENT_SECONDS = 2.0
 GRIPPER_CLOSE_SECONDS = 1.0
 ARM_GRASP_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS + GRIPPER_CLOSE_SECONDS
+ARM_RETRACT_SECONDS = 2.5
 IK_ITERATIONS = 32
 IK_STEP_SIZE = 0.8
 IK_LAMBDA_INITIAL = 0.1
@@ -340,6 +341,8 @@ class SpotPickPlaceDemo:
         self.stone_attached = False
         self.stone_grasp_offset_pos = None
         self.stone_grasp_offset_quat = None
+        self.arm_retracted = False
+        self.arm_retract_start_q = None
         self.show_ik_targets = getattr(args, "show_ik_targets", False)
 
         builder = newton.ModelBuilder()
@@ -491,6 +494,8 @@ class SpotPickPlaceDemo:
         self.stone_attached = False
         self.stone_grasp_offset_pos = None
         self.stone_grasp_offset_quat = None
+        self.arm_retracted = False
+        self.arm_retract_start_q = None
         self._clear_arm_ik()
 
     def _clear_arm_ik(self) -> None:
@@ -530,8 +535,9 @@ class SpotPickPlaceDemo:
         self.stone_grasp_offset_quat = _quat_multiply(_quat_inverse(gripper_tf[3:7]), stone_tf[3:7])
         self.pin_stone_until_grasp = False
         self.stone_attached = True
+        self.phase_time = 0.0
         self._attach_stone_pose(state)
-        print(f"Attached stone to gripper; walking to C={np.round(C_POINT, 3).tolist()}")
+        print("Attached stone to gripper; retracting arm")
 
     def _attach_stone_pose(self, state) -> None:
         body_q = state.body_q.numpy()
@@ -548,6 +554,20 @@ class SpotPickPlaceDemo:
             self._attach_stone_pose(state)
         elif self.pin_stone_until_grasp:
             self._pin_stone_to_start(state)
+
+    def _arm_stowed_q(self) -> np.ndarray:
+        arm_q = self.arm_qpos.copy()
+        arm_q[-1] = GRIPPER_CLOSED
+        return np.clip(arm_q, self.arm_ctrl_low, self.arm_ctrl_high).astype(np.float32)
+
+    def _start_arm_retract(self) -> None:
+        self.phase_time = 0.0
+        self.current_ik_target = None
+        self.arm_retract_start_q = self.arm_q_cmd.copy()
+
+    def _arm_retract_q_at_time(self) -> np.ndarray:
+        alpha = _smoothstep(self.phase_time / max(ARM_RETRACT_SECONDS, 1.0e-6))
+        return ((1.0 - alpha) * self.arm_retract_start_q + alpha * self._arm_stowed_q()).astype(np.float32)
 
     def _write_stand_ctrl(self) -> None:
         self._write_ctrl(self.nominal_leg_ctrl, self.stand_ctrl[ACT_DIM:])
@@ -734,6 +754,9 @@ class SpotPickPlaceDemo:
         return self.ik_final_target.copy()
 
     def _gripper_target_at_time(self) -> float:
+        if self.stone_attached:
+            return GRIPPER_CLOSED
+
         close_time = self.phase_time - ARM_PREGRASP_SECONDS - ARM_DESCENT_SECONDS
         if close_time <= 0.0:
             return GRIPPER_OPEN
@@ -783,6 +806,21 @@ class SpotPickPlaceDemo:
         self.ik_error = float(np.linalg.norm(actual - self.current_ik_target))
         self.phase_time += self.frame_dt
 
+    def _apply_arm_retract(self) -> None:
+        if self.arm_retract_start_q is None:
+            self._start_arm_retract()
+
+        self.command.fill(0.0)
+        self.arm_q_cmd = self._arm_retract_q_at_time()
+        self._write_arm_ctrl(self.arm_q_cmd)
+        self.phase_time += self.frame_dt
+
+        if self.phase_time >= ARM_RETRACT_SECONDS:
+            self.arm_q_cmd = self._arm_stowed_q()
+            self._write_arm_ctrl(self.arm_q_cmd)
+            self.arm_retracted = True
+            print(f"Arm retracted; walking to C={np.round(C_POINT, 3).tolist()}")
+
     def _apply_policy(
         self,
         target_xy: np.ndarray,
@@ -818,6 +856,8 @@ class SpotPickPlaceDemo:
             self.reached_b = self._apply_policy(B_POINT, "B", self.stand_ctrl[ACT_DIM:], self.stone_pos[:2])
         elif not self.stone_attached:
             self._apply_arm_approach()
+        elif not self.arm_retracted:
+            self._apply_arm_retract()
         elif not self.reached_c and self.sim_time < MAX_SECONDS:
             self.reached_c = self._apply_policy(
                 C_POINT,
