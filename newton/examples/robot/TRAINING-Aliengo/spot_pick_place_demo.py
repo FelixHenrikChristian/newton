@@ -25,7 +25,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 import newton
 import newton.examples
-
+import newton.ik as ik
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCENE_PATH = SCRIPT_DIR / "spot_scene.xml"
@@ -46,6 +46,7 @@ LEG_JOINTS = (
     "hr_hy",
     "hr_kn",
 )
+ARM_JOINTS = ("arm_sh0", "arm_sh1", "arm_el0", "arm_el1", "arm_wr0", "arm_wr1", "arm_f1x")
 
 OBS_DIM = 49
 ACT_DIM = 12
@@ -62,6 +63,23 @@ STONE_HEADING_OFFSET = 0.0
 STONE_SIZE = np.array([0.06, 0.045, 0.035], dtype=np.float64)
 STONE_CLEARANCE = -0.035
 STONE_ALIGN_RADIUS = 1.2
+
+ARM_BASE_OFFSET = np.array([0.292, 0.0, 0.188], dtype=np.float32)
+ARM_EE_BODY = "arm_link_wr1"
+WR1_GRASP_OFFSET = wp.vec3(0.22, 0.0, -0.008)
+WR1_DOWN_AXIS_LENGTH = 0.12
+GRIPPER_OPEN = -1.4
+
+ARM_PREGRASP_HEIGHT = 0.30
+ARM_FINAL_CLEARANCE = 0.05
+ARM_PREGRASP_SECONDS = 2.0
+ARM_DESCENT_SECONDS = 2.0
+IK_ITERATIONS = 32
+IK_STEP_SIZE = 0.8
+IK_LAMBDA_INITIAL = 0.1
+IK_DOWN_AXIS_WEIGHT = 0.5
+IK_LIMIT_WEIGHT = 1.0
+MAX_ARM_JOINT_STEP = 0.05
 
 ARRIVAL_RADIUS = 0.15
 ARRIVAL_YAW_TOLERANCE = 0.35
@@ -143,6 +161,19 @@ def _wrap_angle(angle: float) -> float:
     return (angle + math.pi) % (2.0 * math.pi) - math.pi
 
 
+def _smoothstep(alpha: float) -> float:
+    alpha = min(1.0, max(0.0, alpha))
+    return alpha * alpha * (3.0 - 2.0 * alpha)
+
+
+def _format_vec(values) -> str:
+    return " ".join(f"{float(value):.9g}" for value in values)
+
+
+def _quat_xyzw_to_wxyz(quat: np.ndarray) -> tuple[float, float, float, float]:
+    return float(quat[3]), float(quat[0]), float(quat[1]), float(quat[2])
+
+
 def _yaw_to_xyzw(yaw: float) -> tuple[float, float, float, float]:
     return (0.0, 0.0, math.sin(0.5 * yaw), math.cos(0.5 * yaw))
 
@@ -215,6 +246,40 @@ def _stone_position() -> np.ndarray:
     return np.array([xy[0], xy[1], z], dtype=np.float64)
 
 
+def _build_spot_arm_ik_mjcf(base_tf: np.ndarray, limits: tuple[tuple[float, float], ...]) -> str:
+    pos = base_tf[:3]
+    quat = _quat_xyzw_to_wxyz(base_tf[3:7])
+    ranges = [_format_vec(limit) for limit in limits]
+    return f"""<mujoco model="spot_arm_ik_chain">
+  <compiler angle="radian" autolimits="true" />
+  <worldbody>
+    <body name="arm_link_sh0" pos="{_format_vec(pos)}" quat="{_format_vec(quat)}">
+      <joint name="arm_sh0" type="hinge" axis="0 0 1" range="{ranges[0]}" />
+      <body name="arm_link_sh1">
+        <joint name="arm_sh1" type="hinge" axis="0 1 0" range="{ranges[1]}" />
+        <body name="arm_link_hr0">
+          <body name="arm_link_el0" pos="0.3385 0 0">
+            <joint name="arm_el0" type="hinge" axis="0 1 0" range="{ranges[2]}" />
+            <body name="arm_link_el1" pos="0.4033 0 0.075">
+              <joint name="arm_el1" type="hinge" axis="1 0 0" range="{ranges[3]}" />
+              <body name="arm_link_wr0">
+                <joint name="arm_wr0" type="hinge" axis="0 1 0" range="{ranges[4]}" />
+                <body name="arm_link_wr1">
+                  <joint name="arm_wr1" type="hinge" axis="1 0 0" range="{ranges[5]}" />
+                  <body name="arm_link_fngr" pos="0.11745 0 0.01482">
+                    <joint name="arm_f1x" type="hinge" axis="0 1 0" range="{ranges[6]}" />
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>"""
+
+
 class SpotPickPlaceDemo:
     def __init__(self, viewer, args: argparse.Namespace):
         self.viewer = viewer
@@ -232,9 +297,11 @@ class SpotPickPlaceDemo:
         self.nominal_leg_qpos = (stand_qpos[7 : 7 + ACT_DIM] + self.nominal_leg_ctrl).astype(np.float32)
         self.reset_leg_noise = np.random.default_rng(RESET_SEED).uniform(-0.05, 0.05, ACT_DIM).astype(np.float32)
         self.arm_qpos = stand_qpos[7 + ACT_DIM :].astype(np.float32)
+        self.arm_q_cmd = self.arm_qpos.copy()
         self.stone_pos = _stone_position()
         self.stone_q = np.array((*self.stone_pos, 0.0, 0.0, 0.0, 1.0), dtype=np.float32)
         self.pin_stone_until_grasp = True
+        self.show_ik_targets = getattr(args, "show_ik_targets", False)
 
         builder = newton.ModelBuilder()
         builder.add_mjcf(
@@ -244,7 +311,9 @@ class SpotPickPlaceDemo:
             ctrl_direct=True,
         )
         stone_cfg = newton.ModelBuilder.ShapeConfig(density=1800.0, mu=1.5, mu_torsional=0.03, mu_rolling=0.01)
-        stone_body = builder.add_body(xform=wp.transform(wp.vec3(*self.stone_pos), wp.quat_identity()), label=STONE_LABEL)
+        stone_body = builder.add_body(
+            xform=wp.transform(wp.vec3(*self.stone_pos), wp.quat_identity()), label=STONE_LABEL
+        )
         builder.add_shape_ellipsoid(
             stone_body,
             rx=float(STONE_SIZE[0]),
@@ -276,19 +345,26 @@ class SpotPickPlaceDemo:
 
         self.root_q_slice, self.root_qd_slice = self._find_joint_slices(("freejoint",), q_width=7, qd_width=6)
         self.leg_q_slice, self.leg_qd_slice = self._find_joint_slices(LEG_JOINTS)
-        self.arm_q_slice, self.arm_qd_slice = self._find_joint_slices((), q_start=self.leg_q_slice.stop, qd_start=self.leg_qd_slice.stop)
+        self.arm_q_slice, self.arm_qd_slice = self._find_joint_slices(ARM_JOINTS)
         self.stone_q_slice, self.stone_qd_slice = self._find_joint_slices(
             (f"{STONE_LABEL}_free_joint",),
             q_width=7,
             qd_width=6,
         )
+        self.spot_body_index = self._find_body_index("body")
+        self.wr1_body_index = self._find_body_index(ARM_EE_BODY)
 
         ctrl_range = self.model.mujoco.actuator_ctrlrange.numpy().astype(np.float32)
         self.leg_ctrl_low = ctrl_range[:ACT_DIM, 0]
         self.leg_ctrl_high = ctrl_range[:ACT_DIM, 1]
+        self.arm_ctrl_low = ctrl_range[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT, 0]
+        self.arm_ctrl_high = ctrl_range[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT, 1]
+        self.arm_lower = self.model.joint_limit_lower.numpy()[self.arm_qd_slice].astype(np.float32)
+        self.arm_upper = self.model.joint_limit_upper.numpy()[self.arm_qd_slice].astype(np.float32)
+        self._clear_arm_ik()
 
         patch_sb3_zip_loader()
-        self.vecnormalize = VecNormalize.load(VECNORMALIZE_PATH, DummyVecEnv([lambda: _VecNormalizeEnv()]))
+        self.vecnormalize = VecNormalize.load(VECNORMALIZE_PATH, DummyVecEnv([_VecNormalizeEnv]))
         self.vecnormalize.training = False
         self.vecnormalize.norm_reward = False
         self.policy = PPO.load(MODEL_PATH, env=self.vecnormalize)
@@ -305,19 +381,14 @@ class SpotPickPlaceDemo:
         *,
         q_width: int | None = None,
         qd_width: int | None = None,
-        q_start: int | None = None,
-        qd_start: int | None = None,
     ) -> tuple[slice, slice]:
-        if not names:
-            q_end = self.stone_q_slice.start if hasattr(self, "stone_q_slice") else q_start + ARM_ACTUATOR_COUNT
-            qd_end = self.stone_qd_slice.start if hasattr(self, "stone_qd_slice") else qd_start + ARM_ACTUATOR_COUNT
-            return slice(q_start, q_end), slice(qd_start, qd_end)
-
         q_starts = self.model.joint_q_start.numpy()
         qd_starts = self.model.joint_qd_start.numpy()
         joint_indices = []
         for name in names:
-            matches = [i for i, label in enumerate(self.model.joint_label) if label == name or label.endswith(f"/{name}")]
+            matches = [
+                i for i, label in enumerate(self.model.joint_label) if label == name or label.endswith(f"/{name}")
+            ]
             if len(matches) != 1:
                 raise ValueError(f"Expected one imported joint named '{name}', found {len(matches)}.")
             joint_indices.append(matches[0])
@@ -333,6 +404,16 @@ class SpotPickPlaceDemo:
                 matches.append(geom_id)
         if len(matches) != 1:
             raise ValueError(f"Expected one MuJoCo geom containing '{token}', found {len(matches)}.")
+        return matches[0]
+
+    def _find_body_index(self, name: str) -> int:
+        return self._find_body_index_in_labels(self.model.body_label, name)
+
+    @staticmethod
+    def _find_body_index_in_labels(labels, name: str) -> int:
+        matches = [i for i, label in enumerate(labels) if label == name or label.endswith(f"/{name}")]
+        if len(matches) != 1:
+            raise ValueError(f"Expected one body named '{name}', found {len(matches)}.")
         return matches[0]
 
     def _configure_mj_collision_filters(self) -> None:
@@ -361,9 +442,24 @@ class SpotPickPlaceDemo:
         self._write_reset_state(self.state_1)
         self._write_stand_ctrl()
         self.sim_time = 0.0
+        self.phase_time = 0.0
         self.last_action.fill(0.0)
         self.reached_b = False
         self.contacts_ready = False
+        self._clear_arm_ik()
+
+    def _clear_arm_ik(self) -> None:
+        self.phase_time = 0.0
+        self.arm_q_cmd = self.arm_qpos.copy()
+        self.ik_model = None
+        self.ik_solver = None
+        self.ik_joint_q = None
+        self.ik_wr1_body_index = None
+        self.ik_start_target = None
+        self.ik_pregrasp_target = None
+        self.ik_final_target = None
+        self.current_ik_target = None
+        self.ik_error = math.inf
 
     def _write_reset_state(self, state) -> None:
         state.joint_q.zero_()
@@ -385,6 +481,11 @@ class SpotPickPlaceDemo:
     def _write_stand_ctrl(self) -> None:
         self.control.mujoco.ctrl[:ACT_DIM].assign(self.nominal_leg_ctrl)
         self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(self.stand_ctrl[ACT_DIM:])
+
+    def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
+        self.control.mujoco.ctrl[:ACT_DIM].assign(self.nominal_leg_ctrl)
+        arm_ctrl = np.clip(arm_q, self.arm_ctrl_low, self.arm_ctrl_high)
+        self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(arm_ctrl)
 
     def _base_xy(self) -> np.ndarray:
         return self.state_0.joint_q.numpy()[self.root_q_slice.start : self.root_q_slice.start + 2].copy()
@@ -462,6 +563,136 @@ class SpotPickPlaceDemo:
                 contacts[foot_to_index[geom1]] = 1.0
         return contacts
 
+    def _arm_base_transform(self) -> np.ndarray:
+        spot_tf = wp.transform(*self.state_0.body_q.numpy()[self.spot_body_index])
+        base_pos = np.asarray(wp.transform_point(spot_tf, wp.vec3(*ARM_BASE_OFFSET)), dtype=np.float32)
+        base_rot = np.asarray(wp.transform_get_rotation(spot_tf), dtype=np.float32)
+        return np.concatenate((base_pos, base_rot)).astype(np.float32)
+
+    @staticmethod
+    def _link_point_position(body_q: np.ndarray, body_index: int, link_offset: wp.vec3) -> np.ndarray:
+        point = wp.transform_point(wp.transform(*body_q[body_index]), link_offset)
+        return np.asarray(point, dtype=np.float32)
+
+    @staticmethod
+    def _down_axis_target(target: np.ndarray) -> np.ndarray:
+        return target + np.array([0.0, 0.0, -WR1_DOWN_AXIS_LENGTH], dtype=np.float32)
+
+    def _arm_joint_limits(self) -> tuple[tuple[float, float], ...]:
+        return tuple((float(lo), float(hi)) for lo, hi in zip(self.arm_lower, self.arm_upper, strict=True))
+
+    def _stone_approach_target(self) -> np.ndarray:
+        stone_top_z = float(self.stone_pos[2] + STONE_SIZE[2])
+        return np.array(
+            [self.stone_pos[0], self.stone_pos[1], stone_top_z + ARM_FINAL_CLEARANCE],
+            dtype=np.float32,
+        )
+
+    def _start_arm_approach(self) -> None:
+        self.phase_time = 0.0
+        self.arm_q_cmd = self.state_0.joint_q.numpy()[self.arm_q_slice].astype(np.float32)
+
+        ik_builder = newton.ModelBuilder()
+        ik_builder.add_mjcf(
+            _build_spot_arm_ik_mjcf(self._arm_base_transform(), self._arm_joint_limits()),
+            up_axis="Z",
+            enable_self_collisions=False,
+        )
+        self.ik_model = ik_builder.finalize()
+        self.ik_wr1_body_index = self._find_body_index_in_labels(self.ik_model.body_label, ARM_EE_BODY)
+        self.ik_joint_q = wp.array(self.arm_q_cmd.reshape(1, -1), dtype=wp.float32)
+
+        body_q = self.state_0.body_q.numpy()
+        self.ik_start_target = self._link_point_position(body_q, self.wr1_body_index, WR1_GRASP_OFFSET)
+        self.ik_final_target = self._stone_approach_target()
+        self.ik_pregrasp_target = self.ik_final_target + np.array([0.0, 0.0, ARM_PREGRASP_HEIGHT], dtype=np.float32)
+        self.current_ik_target = self.ik_start_target.copy()
+
+        self.ik_pos_obj = ik.IKObjectivePosition(
+            link_index=self.ik_wr1_body_index,
+            link_offset=WR1_GRASP_OFFSET,
+            target_positions=wp.array([wp.vec3(*self.current_ik_target)], dtype=wp.vec3),
+            weight=1.0,
+        )
+        self.ik_down_obj = ik.IKObjectivePosition(
+            link_index=self.ik_wr1_body_index,
+            link_offset=WR1_GRASP_OFFSET + wp.vec3(WR1_DOWN_AXIS_LENGTH, 0.0, 0.0),
+            target_positions=wp.array([wp.vec3(*self._down_axis_target(self.current_ik_target))], dtype=wp.vec3),
+            weight=IK_DOWN_AXIS_WEIGHT,
+        )
+        self.ik_limit_obj = ik.IKObjectiveJointLimit(
+            joint_limit_lower=self.ik_model.joint_limit_lower,
+            joint_limit_upper=self.ik_model.joint_limit_upper,
+            weight=IK_LIMIT_WEIGHT,
+        )
+        self.ik_solver = ik.IKSolver(
+            model=self.ik_model,
+            n_problems=1,
+            objectives=[self.ik_pos_obj, self.ik_down_obj, self.ik_limit_obj],
+            lambda_initial=IK_LAMBDA_INITIAL,
+            jacobian_mode=ik.IKJacobianType.ANALYTIC,
+        )
+
+        print(
+            "Start arm IK approach: "
+            f"pregrasp={np.round(self.ik_pregrasp_target, 3).tolist()}, "
+            f"final={np.round(self.ik_final_target, 3).tolist()}"
+        )
+
+    def _arm_target_at_time(self) -> np.ndarray:
+        if self.phase_time < ARM_PREGRASP_SECONDS:
+            alpha = _smoothstep(self.phase_time / max(ARM_PREGRASP_SECONDS, 1.0e-6))
+            return (1.0 - alpha) * self.ik_start_target + alpha * self.ik_pregrasp_target
+
+        descent_time = self.phase_time - ARM_PREGRASP_SECONDS
+        if descent_time < ARM_DESCENT_SECONDS:
+            alpha = _smoothstep(descent_time / max(ARM_DESCENT_SECONDS, 1.0e-6))
+            return (1.0 - alpha) * self.ik_pregrasp_target + alpha * self.ik_final_target
+
+        return self.ik_final_target.copy()
+
+    def _limit_arm_joint_step(self, candidate_q: np.ndarray) -> np.ndarray:
+        candidate_q = np.clip(candidate_q, self.arm_lower, self.arm_upper)
+        if MAX_ARM_JOINT_STEP <= 0.0:
+            return candidate_q
+
+        delta = candidate_q - self.arm_q_cmd
+        step = float(np.max(np.abs(delta)))
+        if step <= MAX_ARM_JOINT_STEP:
+            return candidate_q.astype(np.float32)
+
+        limited_q = self.arm_q_cmd + delta * (MAX_ARM_JOINT_STEP / step)
+        return np.clip(limited_q, self.arm_lower, self.arm_upper).astype(np.float32)
+
+    def _solve_arm_ik(self, target: np.ndarray) -> np.ndarray:
+        self.ik_pos_obj.set_target_position(0, wp.vec3(*target))
+        self.ik_down_obj.set_target_position(0, wp.vec3(*self._down_axis_target(target)))
+        self.ik_solver.step(
+            self.ik_joint_q,
+            self.ik_joint_q,
+            iterations=IK_ITERATIONS,
+            step_size=IK_STEP_SIZE,
+        )
+        candidate_q = self.ik_joint_q.numpy()[0].astype(np.float32)
+        candidate_q[-1] = GRIPPER_OPEN
+        arm_q = self._limit_arm_joint_step(candidate_q)
+        self.ik_joint_q.assign(arm_q.reshape(1, -1))
+        return arm_q
+
+    def _apply_arm_approach(self) -> None:
+        if self.ik_solver is None:
+            self._start_arm_approach()
+
+        self.command.fill(0.0)
+        self.current_ik_target = self._arm_target_at_time()
+        self.arm_q_cmd = self._solve_arm_ik(self.current_ik_target)
+        self._write_arm_ctrl(self.arm_q_cmd)
+
+        body_q = self.state_0.body_q.numpy()
+        actual = self._link_point_position(body_q, self.wr1_body_index, WR1_GRASP_OFFSET)
+        self.ik_error = float(np.linalg.norm(actual - self.current_ik_target))
+        self.phase_time += self.frame_dt
+
     def _apply_policy(self) -> None:
         self.command, distance, yaw_error = self._command_to_target()
         if distance <= ARRIVAL_RADIUS and yaw_error <= ARRIVAL_YAW_TOLERANCE:
@@ -474,7 +705,9 @@ class SpotPickPlaceDemo:
 
         action, _ = self.policy.predict(self._observation(), deterministic=True)
         self.last_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
-        leg_ctrl = np.clip(self.nominal_leg_ctrl + self.last_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high)
+        leg_ctrl = np.clip(
+            self.nominal_leg_ctrl + self.last_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high
+        )
         self.control.mujoco.ctrl[:ACT_DIM].assign(leg_ctrl)
         self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(self.stand_ctrl[ACT_DIM:])
 
@@ -482,7 +715,7 @@ class SpotPickPlaceDemo:
         if not self.reached_b and self.sim_time < MAX_SECONDS:
             self._apply_policy()
         else:
-            self._write_stand_ctrl()
+            self._apply_arm_approach()
 
         for _ in range(CONTROL_DECIMATION):
             self.state_0.clear_forces()
@@ -497,13 +730,29 @@ class SpotPickPlaceDemo:
     def render(self) -> None:
         self.viewer.begin_frame(self.sim_time)
         self.viewer.log_state(self.state_0)
+        if self.show_ik_targets and self.current_ik_target is not None and hasattr(self.viewer, "log_gizmo"):
+            self.viewer.log_gizmo(
+                "target_wr1_grasp_point",
+                wp.transform(wp.vec3(*self.current_ik_target), wp.quat_identity()),
+            )
         self.viewer.end_frame()
+
+    def test_final(self) -> None:
+        body_q = self.state_0.body_q.numpy()
+        if not np.isfinite(body_q).all():
+            raise ValueError("Body transforms became non-finite.")
+        if self.ik_solver is not None and self.phase_time > 0.5:
+            if self.arm_q_cmd[-1] > -0.5:
+                raise ValueError(f"Gripper did not open during approach: q={self.arm_q_cmd[-1]:.3f}")
+            if self.ik_error > 0.45:
+                raise ValueError(f"Arm IK target error is too high: {self.ik_error:.3f} m")
 
 
 def create_parser() -> argparse.ArgumentParser:
     parser = newton.examples.create_parser()
     parser.description = "Run the Spot A-to-B pickup setup through Newton with SolverMuJoCo."
     parser.set_defaults(num_frames=100000, viewer="gl")
+    parser.add_argument("--show-ik-targets", action="store_true", help="Draw the current WR1 IK target when supported.")
     return parser
 
 
