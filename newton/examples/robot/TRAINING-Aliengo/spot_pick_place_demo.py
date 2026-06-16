@@ -54,6 +54,8 @@ ARM_ACTUATOR_COUNT = 7
 
 A_POINT = np.array([5.0, -6.0], dtype=np.float64)
 B_POINT = np.array([9.0, -3.5], dtype=np.float64)
+C_DISTANCE_FROM_B = 2.5
+C_POINT = B_POINT + (B_POINT - A_POINT) / np.linalg.norm(B_POINT - A_POINT) * C_DISTANCE_FROM_B
 A_YAW = 0.0
 RESET_BASE_HEIGHT = 1.80
 
@@ -77,6 +79,7 @@ ARM_GRASP_CLEARANCE = 0.06
 ARM_PREGRASP_SECONDS = 2.0
 ARM_DESCENT_SECONDS = 2.0
 GRIPPER_CLOSE_SECONDS = 1.0
+ARM_GRASP_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS + GRIPPER_CLOSE_SECONDS
 IK_ITERATIONS = 32
 IK_STEP_SIZE = 0.8
 IK_LAMBDA_INITIAL = 0.1
@@ -86,6 +89,7 @@ MAX_ARM_JOINT_STEP = 0.05
 
 ARRIVAL_RADIUS = 0.15
 ARRIVAL_YAW_TOLERANCE = 0.35
+C_ARRIVAL_RADIUS = 0.45
 MAX_SECONDS = 60.0
 FORWARD_SPEED = 0.45
 MIN_FORWARD_SPEED = 0.25
@@ -193,6 +197,34 @@ def _xyzw_to_matrix(quat: np.ndarray) -> np.ndarray:
     )
 
 
+def _quat_normalize(quat: np.ndarray) -> np.ndarray:
+    norm = float(np.linalg.norm(quat))
+    if norm < 1.0e-8:
+        return np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32)
+    return (quat / norm).astype(np.float32)
+
+
+def _quat_inverse(quat: np.ndarray) -> np.ndarray:
+    q = _quat_normalize(quat)
+    return np.array([-q[0], -q[1], -q[2], q[3]], dtype=np.float32)
+
+
+def _quat_multiply(lhs: np.ndarray, rhs: np.ndarray) -> np.ndarray:
+    ax, ay, az, aw = lhs
+    bx, by, bz, bw = rhs
+    return _quat_normalize(
+        np.array(
+            [
+                aw * bx + ax * bw + ay * bz - az * by,
+                aw * by - ax * bz + ay * bw + az * bx,
+                aw * bz + ax * by - ay * bx + az * bw,
+                aw * bw - ax * bx - ay * by - az * bz,
+            ],
+            dtype=np.float32,
+        )
+    )
+
+
 def _approach_yaw() -> float:
     direction = B_POINT - A_POINT
     if float(np.linalg.norm(direction)) < 1e-6:
@@ -292,6 +324,7 @@ class SpotPickPlaceDemo:
         self.last_action = np.zeros(ACT_DIM, dtype=np.float32)
         self.command = np.zeros(3, dtype=np.float32)
         self.reached_b = False
+        self.reached_c = False
         self.contacts_ready = False
 
         stand_qpos, stand_ctrl = _scene_keyframe()
@@ -304,6 +337,9 @@ class SpotPickPlaceDemo:
         self.stone_pos = _stone_position()
         self.stone_q = np.array((*self.stone_pos, 0.0, 0.0, 0.0, 1.0), dtype=np.float32)
         self.pin_stone_until_grasp = True
+        self.stone_attached = False
+        self.stone_grasp_offset_pos = None
+        self.stone_grasp_offset_quat = None
         self.show_ik_targets = getattr(args, "show_ik_targets", False)
 
         builder = newton.ModelBuilder()
@@ -356,6 +392,7 @@ class SpotPickPlaceDemo:
         )
         self.spot_body_index = self._find_body_index("body")
         self.wr1_body_index = self._find_body_index(ARM_EE_BODY)
+        self.stone_body_index = self._find_body_index(STONE_LABEL)
 
         ctrl_range = self.model.mujoco.actuator_ctrlrange.numpy().astype(np.float32)
         self.leg_ctrl_low = ctrl_range[:ACT_DIM, 0]
@@ -448,7 +485,12 @@ class SpotPickPlaceDemo:
         self.phase_time = 0.0
         self.last_action.fill(0.0)
         self.reached_b = False
+        self.reached_c = False
         self.contacts_ready = False
+        self.pin_stone_until_grasp = True
+        self.stone_attached = False
+        self.stone_grasp_offset_pos = None
+        self.stone_grasp_offset_quat = None
         self._clear_arm_ik()
 
     def _clear_arm_ik(self) -> None:
@@ -474,21 +516,49 @@ class SpotPickPlaceDemo:
         state.joint_q[self.stone_q_slice].assign(self.stone_q)
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
-    def _pin_stone(self, state) -> None:
-        if not self.pin_stone_until_grasp:
-            return
+    def _pin_stone_to_start(self, state) -> None:
         state.joint_q[self.stone_q_slice].assign(self.stone_q)
         state.joint_qd[self.stone_qd_slice].zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
-    def _write_stand_ctrl(self) -> None:
-        self.control.mujoco.ctrl[:ACT_DIM].assign(self.nominal_leg_ctrl)
-        self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(self.stand_ctrl[ACT_DIM:])
+    def _attach_stone_to_gripper(self, state) -> None:
+        body_q = state.body_q.numpy()
+        gripper_tf = body_q[self.wr1_body_index]
+        stone_tf = body_q[self.stone_body_index]
+        gripper_rot = _xyzw_to_matrix(gripper_tf[3:7])
+        self.stone_grasp_offset_pos = (gripper_rot.T @ (stone_tf[:3] - gripper_tf[:3])).astype(np.float32)
+        self.stone_grasp_offset_quat = _quat_multiply(_quat_inverse(gripper_tf[3:7]), stone_tf[3:7])
+        self.pin_stone_until_grasp = False
+        self.stone_attached = True
+        self._attach_stone_pose(state)
+        print(f"Attached stone to gripper; walking to C={np.round(C_POINT, 3).tolist()}")
 
-    def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
-        self.control.mujoco.ctrl[:ACT_DIM].assign(self.nominal_leg_ctrl)
+    def _attach_stone_pose(self, state) -> None:
+        body_q = state.body_q.numpy()
+        gripper_tf = body_q[self.wr1_body_index]
+        gripper_rot = _xyzw_to_matrix(gripper_tf[3:7])
+        stone_pos = gripper_tf[:3] + gripper_rot @ self.stone_grasp_offset_pos
+        stone_quat = _quat_multiply(gripper_tf[3:7], self.stone_grasp_offset_quat)
+        state.joint_q[self.stone_q_slice].assign((*stone_pos, *stone_quat))
+        state.joint_qd[self.stone_qd_slice].zero_()
+        newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+
+    def _update_stone_constraint(self, state) -> None:
+        if self.stone_attached:
+            self._attach_stone_pose(state)
+        elif self.pin_stone_until_grasp:
+            self._pin_stone_to_start(state)
+
+    def _write_stand_ctrl(self) -> None:
+        self._write_ctrl(self.nominal_leg_ctrl, self.stand_ctrl[ACT_DIM:])
+
+    def _write_ctrl(self, leg_ctrl: np.ndarray, arm_q: np.ndarray) -> None:
+        self.control.mujoco.ctrl[:ACT_DIM].assign(leg_ctrl)
         arm_ctrl = np.clip(arm_q, self.arm_ctrl_low, self.arm_ctrl_high)
         self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(arm_ctrl)
+
+    def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
+        self._write_ctrl(self.nominal_leg_ctrl, arm_q)
 
     def _base_xy(self) -> np.ndarray:
         return self.state_0.joint_q.numpy()[self.root_q_slice.start : self.root_q_slice.start + 2].copy()
@@ -508,14 +578,20 @@ class SpotPickPlaceDemo:
         angular = rotation.T @ qd[self.root_qd_slice.start + 3 : self.root_qd_slice.start + 6]
         return linear, angular
 
-    def _command_to_target(self) -> tuple[np.ndarray, float, float]:
+    def _command_to_target(
+        self,
+        target_xy: np.ndarray,
+        face_xy: np.ndarray | None = None,
+        min_forward_speed: float = MIN_FORWARD_SPEED,
+        arrival_radius: float = ARRIVAL_RADIUS,
+    ) -> tuple[np.ndarray, float, float]:
         base_xy = self._base_xy()
-        delta = B_POINT - base_xy
+        delta = target_xy - base_xy
         distance = float(np.linalg.norm(delta))
-        near_target = distance <= ARRIVAL_RADIUS
+        near_target = distance <= arrival_radius
 
-        if distance <= STONE_ALIGN_RADIUS:
-            face_delta = self.stone_pos[:2] - base_xy
+        if face_xy is not None and distance <= STONE_ALIGN_RADIUS:
+            face_delta = face_xy - base_xy
             target_yaw = float(math.atan2(face_delta[1], face_delta[0]))
         elif distance > 1e-6:
             target_yaw = float(math.atan2(delta[1], delta[0]))
@@ -523,9 +599,9 @@ class SpotPickPlaceDemo:
             target_yaw = self._base_yaw()
 
         heading_error = _wrap_angle(target_yaw - self._base_yaw())
-        forward = 0.0 if near_target else float(np.clip(distance * 0.5, MIN_FORWARD_SPEED, FORWARD_SPEED))
+        forward = 0.0 if near_target else float(np.clip(distance * 0.5, min_forward_speed, FORWARD_SPEED))
         if not near_target and abs(heading_error) > 0.9:
-            forward = MIN_FORWARD_SPEED
+            forward = min_forward_speed
 
         command = np.array(
             [forward, 0.0, np.clip(YAW_GAIN * heading_error, -MAX_YAW_RATE, MAX_YAW_RATE)],
@@ -707,29 +783,53 @@ class SpotPickPlaceDemo:
         self.ik_error = float(np.linalg.norm(actual - self.current_ik_target))
         self.phase_time += self.frame_dt
 
-    def _apply_policy(self) -> None:
-        self.command, distance, yaw_error = self._command_to_target()
-        if distance <= ARRIVAL_RADIUS and yaw_error <= ARRIVAL_YAW_TOLERANCE:
-            if not self.reached_b:
-                print(f"Reached B: position={self._base_xy().round(3).tolist()}, target={B_POINT.tolist()}")
-            self.reached_b = True
+    def _apply_policy(
+        self,
+        target_xy: np.ndarray,
+        target_label: str,
+        arm_q: np.ndarray,
+        face_xy: np.ndarray | None = None,
+        min_forward_speed: float = MIN_FORWARD_SPEED,
+        arrival_radius: float = ARRIVAL_RADIUS,
+        require_yaw: bool = True,
+    ) -> bool:
+        self.command, distance, yaw_error = self._command_to_target(
+            target_xy,
+            face_xy,
+            min_forward_speed,
+            arrival_radius,
+        )
+        if distance <= arrival_radius and (not require_yaw or yaw_error <= ARRIVAL_YAW_TOLERANCE):
+            print(f"Reached {target_label}: position={self._base_xy().round(3).tolist()}, target={target_xy.tolist()}")
             self.command.fill(0.0)
-            self._write_stand_ctrl()
-            return
+            self._write_arm_ctrl(arm_q)
+            return True
 
         action, _ = self.policy.predict(self._observation(), deterministic=True)
         self.last_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
         leg_ctrl = np.clip(
             self.nominal_leg_ctrl + self.last_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high
         )
-        self.control.mujoco.ctrl[:ACT_DIM].assign(leg_ctrl)
-        self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(self.stand_ctrl[ACT_DIM:])
+        self._write_ctrl(leg_ctrl, arm_q)
+        return False
 
     def step(self) -> None:
         if not self.reached_b and self.sim_time < MAX_SECONDS:
-            self._apply_policy()
-        else:
+            self.reached_b = self._apply_policy(B_POINT, "B", self.stand_ctrl[ACT_DIM:], self.stone_pos[:2])
+        elif not self.stone_attached:
             self._apply_arm_approach()
+        elif not self.reached_c and self.sim_time < MAX_SECONDS:
+            self.reached_c = self._apply_policy(
+                C_POINT,
+                "C",
+                self.arm_q_cmd,
+                min_forward_speed=0.08,
+                arrival_radius=C_ARRIVAL_RADIUS,
+                require_yaw=False,
+            )
+        else:
+            self.command.fill(0.0)
+            self._write_arm_ctrl(self.arm_q_cmd)
 
         for _ in range(CONTROL_DECIMATION):
             self.state_0.clear_forces()
@@ -737,7 +837,9 @@ class SpotPickPlaceDemo:
                 self.viewer.apply_forces(self.state_0)
             self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
             self.state_0, self.state_1 = self.state_1, self.state_0
-            self._pin_stone(self.state_0)
+            if not self.stone_attached and self.ik_solver is not None and self.phase_time >= ARM_GRASP_SECONDS:
+                self._attach_stone_to_gripper(self.state_0)
+            self._update_stone_constraint(self.state_0)
         self.sim_time += self.frame_dt
         self.contacts_ready = True
 
