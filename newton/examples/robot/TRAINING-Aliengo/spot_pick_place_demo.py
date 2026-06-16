@@ -66,18 +66,21 @@ STONE_ALIGN_RADIUS = 1.2
 
 ARM_BASE_OFFSET = np.array([0.292, 0.0, 0.188], dtype=np.float32)
 ARM_EE_BODY = "arm_link_wr1"
-WR1_GRASP_OFFSET = wp.vec3(0.22, 0.0, -0.008)
+GRIPPER_TRACK_OFFSET = wp.vec3(0.207, 0.0, 0.038)
 WR1_DOWN_AXIS_LENGTH = 0.12
 GRIPPER_OPEN = -1.4
+GRIPPER_CLOSED = -0.85
 
 ARM_PREGRASP_HEIGHT = 0.30
-ARM_FINAL_CLEARANCE = 0.05
+ARM_GRASP_TARGET_OFFSET = np.array([0.01, 0.05, 0.0], dtype=np.float32)
+ARM_GRASP_CLEARANCE = 0.06
 ARM_PREGRASP_SECONDS = 2.0
 ARM_DESCENT_SECONDS = 2.0
+GRIPPER_CLOSE_SECONDS = 1.0
 IK_ITERATIONS = 32
 IK_STEP_SIZE = 0.8
 IK_LAMBDA_INITIAL = 0.1
-IK_DOWN_AXIS_WEIGHT = 0.5
+IK_DOWN_AXIS_WEIGHT = 0.25
 IK_LIMIT_WEIGHT = 1.0
 MAX_ARM_JOINT_STEP = 0.05
 
@@ -583,9 +586,12 @@ class SpotPickPlaceDemo:
 
     def _stone_approach_target(self) -> np.ndarray:
         stone_top_z = float(self.stone_pos[2] + STONE_SIZE[2])
-        return np.array(
-            [self.stone_pos[0], self.stone_pos[1], stone_top_z + ARM_FINAL_CLEARANCE],
-            dtype=np.float32,
+        return (
+            np.array(
+                [self.stone_pos[0], self.stone_pos[1], stone_top_z + ARM_GRASP_CLEARANCE],
+                dtype=np.float32,
+            )
+            + ARM_GRASP_TARGET_OFFSET
         )
 
     def _start_arm_approach(self) -> None:
@@ -603,20 +609,20 @@ class SpotPickPlaceDemo:
         self.ik_joint_q = wp.array(self.arm_q_cmd.reshape(1, -1), dtype=wp.float32)
 
         body_q = self.state_0.body_q.numpy()
-        self.ik_start_target = self._link_point_position(body_q, self.wr1_body_index, WR1_GRASP_OFFSET)
+        self.ik_start_target = self._link_point_position(body_q, self.wr1_body_index, GRIPPER_TRACK_OFFSET)
         self.ik_final_target = self._stone_approach_target()
         self.ik_pregrasp_target = self.ik_final_target + np.array([0.0, 0.0, ARM_PREGRASP_HEIGHT], dtype=np.float32)
         self.current_ik_target = self.ik_start_target.copy()
 
         self.ik_pos_obj = ik.IKObjectivePosition(
             link_index=self.ik_wr1_body_index,
-            link_offset=WR1_GRASP_OFFSET,
+            link_offset=GRIPPER_TRACK_OFFSET,
             target_positions=wp.array([wp.vec3(*self.current_ik_target)], dtype=wp.vec3),
             weight=1.0,
         )
         self.ik_down_obj = ik.IKObjectivePosition(
             link_index=self.ik_wr1_body_index,
-            link_offset=WR1_GRASP_OFFSET + wp.vec3(WR1_DOWN_AXIS_LENGTH, 0.0, 0.0),
+            link_offset=GRIPPER_TRACK_OFFSET + wp.vec3(WR1_DOWN_AXIS_LENGTH, 0.0, 0.0),
             target_positions=wp.array([wp.vec3(*self._down_axis_target(self.current_ik_target))], dtype=wp.vec3),
             weight=IK_DOWN_AXIS_WEIGHT,
         )
@@ -651,6 +657,14 @@ class SpotPickPlaceDemo:
 
         return self.ik_final_target.copy()
 
+    def _gripper_target_at_time(self) -> float:
+        close_time = self.phase_time - ARM_PREGRASP_SECONDS - ARM_DESCENT_SECONDS
+        if close_time <= 0.0:
+            return GRIPPER_OPEN
+
+        alpha = _smoothstep(close_time / max(GRIPPER_CLOSE_SECONDS, 1.0e-6))
+        return float((1.0 - alpha) * GRIPPER_OPEN + alpha * GRIPPER_CLOSED)
+
     def _limit_arm_joint_step(self, candidate_q: np.ndarray) -> np.ndarray:
         candidate_q = np.clip(candidate_q, self.arm_lower, self.arm_upper)
         if MAX_ARM_JOINT_STEP <= 0.0:
@@ -674,7 +688,7 @@ class SpotPickPlaceDemo:
             step_size=IK_STEP_SIZE,
         )
         candidate_q = self.ik_joint_q.numpy()[0].astype(np.float32)
-        candidate_q[-1] = GRIPPER_OPEN
+        candidate_q[-1] = self._gripper_target_at_time()
         arm_q = self._limit_arm_joint_step(candidate_q)
         self.ik_joint_q.assign(arm_q.reshape(1, -1))
         return arm_q
@@ -689,7 +703,7 @@ class SpotPickPlaceDemo:
         self._write_arm_ctrl(self.arm_q_cmd)
 
         body_q = self.state_0.body_q.numpy()
-        actual = self._link_point_position(body_q, self.wr1_body_index, WR1_GRASP_OFFSET)
+        actual = self._link_point_position(body_q, self.wr1_body_index, GRIPPER_TRACK_OFFSET)
         self.ik_error = float(np.linalg.norm(actual - self.current_ik_target))
         self.phase_time += self.frame_dt
 
@@ -742,8 +756,8 @@ class SpotPickPlaceDemo:
         if not np.isfinite(body_q).all():
             raise ValueError("Body transforms became non-finite.")
         if self.ik_solver is not None and self.phase_time > 0.5:
-            if self.arm_q_cmd[-1] > -0.5:
-                raise ValueError(f"Gripper did not open during approach: q={self.arm_q_cmd[-1]:.3f}")
+            if not (GRIPPER_OPEN - 0.1 <= self.arm_q_cmd[-1] <= GRIPPER_CLOSED + 0.1):
+                raise ValueError(f"Gripper target is out of range: q={self.arm_q_cmd[-1]:.3f}")
             if self.ik_error > 0.45:
                 raise ValueError(f"Arm IK target error is too high: {self.ik_error:.3f} m")
 
