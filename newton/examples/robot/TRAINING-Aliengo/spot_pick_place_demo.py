@@ -409,7 +409,7 @@ class SpotPickPlaceDemo:
             enable_self_collisions=True,
             ctrl_direct=True,
         )
-        stone_cfg = newton.ModelBuilder.ShapeConfig(density=1800.0, mu=1.5, mu_torsional=0.03, mu_rolling=0.01)
+        stone_cfg = newton.ModelBuilder.ShapeConfig(density=1800.0, mu=1.5, mu_torsional=0.08, mu_rolling=0.08)
         stone_body = builder.add_body(
             xform=wp.transform(wp.vec3(*self.stone_pos), wp.quat_identity()), label=STONE_LABEL
         )
@@ -589,6 +589,8 @@ class SpotPickPlaceDemo:
         self.solver.mj_model.geom_conaffinity[self.terrain_geom_id] = 6
         self.solver.mj_model.geom_contype[self.stone_geom_id] = 4
         self.solver.mj_model.geom_conaffinity[self.stone_geom_id] = 3
+        self.solver.mj_model.geom_condim[self.stone_geom_id] = 6
+        self.solver.mj_model.geom_priority[self.stone_geom_id] = 2
 
     def _apply_training_actuator_scale(self) -> None:
         gain = self.model.mujoco.actuator_gainprm.numpy()
