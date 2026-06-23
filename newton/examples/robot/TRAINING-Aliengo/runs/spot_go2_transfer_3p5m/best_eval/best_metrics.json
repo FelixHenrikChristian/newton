@@ -1,0 +1,82 @@
+{
+  "num_timesteps": 750000,
+  "score": -5.581491949461871,
+  "commands": {
+    "forward_empty": {
+      "no_fall": true,
+      "steps": 400,
+      "vx_mae": 0.053430114005630226,
+      "yaw_mae": 0.05862785593953685,
+      "duty": [
+        0.5350000262260437,
+        0.4724999964237213,
+        0.5299999713897705,
+        0.4375
+      ],
+      "exact_diagonal_fraction": 0.8425,
+      "all_four_fraction": 0.0,
+      "flight_fraction": 0.005,
+      "action_saturation": 0.7179166666666665,
+      "mean_tilt_deg": 10.431560905817753,
+      "max_tilt_deg": 14.417926659296066,
+      "clearance_mae": 0.061576185727554036
+    },
+    "forward_payload": {
+      "no_fall": true,
+      "steps": 400,
+      "vx_mae": 0.04913085682230548,
+      "yaw_mae": 0.05993457701281883,
+      "duty": [
+        0.5149999856948853,
+        0.48249998688697815,
+        0.5425000190734863,
+        0.4300000071525574
+      ],
+      "exact_diagonal_fraction": 0.88,
+      "all_four_fraction": 0.0025,
+      "flight_fraction": 0.0,
+      "action_saturation": 0.7277083333333333,
+      "mean_tilt_deg": 10.456651136099921,
+      "max_tilt_deg": 14.468927000261255,
+      "clearance_mae": 0.06276822974731004
+    },
+    "turn_payload": {
+      "no_fall": true,
+      "steps": 400,
+      "vx_mae": 0.08866704391658846,
+      "yaw_mae": 0.17756139733317597,
+      "duty": [
+        0.45750001072883606,
+        0.5550000071525574,
+        0.6100000143051147,
+        0.42750000953674316
+      ],
+      "exact_diagonal_fraction": 0.835,
+      "all_four_fraction": 0.0125,
+      "flight_fraction": 0.0,
+      "action_saturation": 0.7104166666666666,
+      "mean_tilt_deg": 10.063553596226757,
+      "max_tilt_deg": 14.99723126459551,
+      "clearance_mae": 0.04908405004311035
+    },
+    "lateral_empty": {
+      "no_fall": true,
+      "steps": 400,
+      "vx_mae": 0.07532427763236513,
+      "yaw_mae": 0.07025516874563091,
+      "duty": [
+        0.5049999952316284,
+        0.5,
+        0.5975000262260437,
+        0.3799999952316284
+      ],
+      "exact_diagonal_fraction": 0.815,
+      "all_four_fraction": 0.0025,
+      "flight_fraction": 0.0,
+      "action_saturation": 0.724375,
+      "mean_tilt_deg": 9.742769758148881,
+      "max_tilt_deg": 14.440011410595393,
+      "clearance_mae": 0.06364591035896004
+    }
+  }
+}

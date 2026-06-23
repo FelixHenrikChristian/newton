@@ -29,8 +29,8 @@ import newton.ik as ik
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCENE_PATH = SCRIPT_DIR / "spot_scene.xml"
-MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_style_20m" / "ppo_spot_go2_style_final.zip"
-VECNORMALIZE_PATH = MODEL_PATH.parent / "vecnormalize.pkl"
+MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_transfer_3p5m" / "best_eval" / "best_model.zip"
+VECNORMALIZE_PATH = MODEL_PATH.parent / "best_vecnormalize.pkl"
 
 LEG_JOINTS = (
     "fl_hx",
@@ -48,9 +48,15 @@ LEG_JOINTS = (
 )
 ARM_JOINTS = ("arm_sh0", "arm_sh1", "arm_el0", "arm_el1", "arm_wr0", "arm_wr1", "arm_f1x")
 
-OBS_DIM = 49
+OBS_DIM = 54
 ACT_DIM = 12
 ARM_ACTUATOR_COUNT = 7
+
+# The full scene keeps Newton's imported local leg order (FL, FR, HL, HR), but
+# the transfer policy was trained with the original Go2 order (FR, FL, HR, HL).
+POLICY_FROM_LOCAL = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8], dtype=np.int32)
+LOCAL_FROM_POLICY = np.argsort(POLICY_FROM_LOCAL)
+POLICY_CONTACT_FROM_LOCAL = np.array([1, 0, 3, 2], dtype=np.int32)
 
 A_POINT = np.array([5.0, -6.0], dtype=np.float64)
 B_POINT = np.array([9.0, -3.5], dtype=np.float64)
@@ -91,15 +97,39 @@ IK_LIMIT_WEIGHT = 1.0
 MAX_ARM_JOINT_STEP = 0.05
 
 ARRIVAL_RADIUS = 0.15
+B_HANDOFF_RADIUS = 0.28
 ARRIVAL_YAW_TOLERANCE = 0.35
 C_ARRIVAL_RADIUS = 0.45
 MAX_SECONDS = 60.0
 FORWARD_SPEED = 0.45
-MIN_FORWARD_SPEED = 0.25
-MAX_YAW_RATE = 0.5
+MIN_FORWARD_SPEED = 0.15
+MAX_YAW_RATE = 0.3
 YAW_GAIN = 1.4
 
-ACTION_SCALE = 0.25
+ACTION_SCALE = np.array((0.125, 0.55, 0.55) * 4, dtype=np.float32)
+GAIT_CYCLE_SECONDS = 0.5
+B_ALIGN_SECONDS = 1.0
+B_GRASP_ROOT_Q = np.array(
+    [9.076134, -3.625636, 1.593325, -0.032121, 0.035750, 0.373366, 0.926438],
+    dtype=np.float32,
+)
+B_GRASP_LEG_Q = np.array(
+    [
+        0.199358,
+        0.920764,
+        -1.580373,
+        -0.240435,
+        1.055332,
+        -1.414194,
+        0.260501,
+        1.234142,
+        -1.347853,
+        -0.230513,
+        1.164893,
+        -1.437398,
+    ],
+    dtype=np.float32,
+)
 CONTROL_DECIMATION = 10
 FPS = 50
 RESET_SEED = 1
@@ -325,9 +355,15 @@ class SpotPickPlaceDemo:
         self.sim_dt = self.frame_dt / CONTROL_DECIMATION
         self.sim_time = 0.0
         self.last_action = np.zeros(ACT_DIM, dtype=np.float32)
+        self.policy_step_count = 0
         self.command = np.zeros(3, dtype=np.float32)
         self.reached_b = False
         self.reached_c = False
+        self.b_aligned = False
+        self.b_align_time = 0.0
+        self.b_align_start_root_q = None
+        self.b_align_start_leg_q = None
+        self.b_align_target_root_q = None
         self.contacts_ready = False
 
         stand_qpos, stand_ctrl = _scene_keyframe()
@@ -416,15 +452,19 @@ class SpotPickPlaceDemo:
         self._clear_arm_ik()
 
         patch_sb3_zip_loader()
-        self.vecnormalize = VecNormalize.load(VECNORMALIZE_PATH, DummyVecEnv([_VecNormalizeEnv]))
+        model_path = args.locomotion_model.resolve()
+        vecnormalize_path = args.locomotion_vecnormalize.resolve()
+        self.vecnormalize = VecNormalize.load(vecnormalize_path, DummyVecEnv([_VecNormalizeEnv]))
         self.vecnormalize.training = False
         self.vecnormalize.norm_reward = False
-        self.policy = PPO.load(MODEL_PATH, env=self.vecnormalize)
+        self.policy = PPO.load(model_path, env=self.vecnormalize)
 
         if self.viewer is not None:
             self.viewer.set_model(self.model)
 
         self.reset()
+        print(f"Loaded locomotion policy: {model_path}")
+        print(f"Loaded VecNormalize stats: {vecnormalize_path}")
         print(f"Stone position: {self.stone_pos.round(3).tolist()}")
 
     def _find_joint_slices(
@@ -496,8 +536,14 @@ class SpotPickPlaceDemo:
         self.sim_time = 0.0
         self.phase_time = 0.0
         self.last_action.fill(0.0)
+        self.policy_step_count = 0
         self.reached_b = False
         self.reached_c = False
+        self.b_aligned = False
+        self.b_align_time = 0.0
+        self.b_align_start_root_q = None
+        self.b_align_start_leg_q = None
+        self.b_align_target_root_q = None
         self.contacts_ready = False
         self.pin_stone_until_grasp = True
         self.stone_attached = False
@@ -621,6 +667,8 @@ class SpotPickPlaceDemo:
         self.control.mujoco.ctrl[ACT_DIM : ACT_DIM + ARM_ACTUATOR_COUNT].assign(arm_ctrl)
 
     def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
+        self.last_action.fill(0.0)
+        self.policy_step_count = 0
         self._write_ctrl(self.nominal_leg_ctrl, arm_q)
 
     def _base_xy(self) -> np.ndarray:
@@ -640,6 +688,18 @@ class SpotPickPlaceDemo:
         linear = rotation.T @ qd[self.root_qd_slice.start : self.root_qd_slice.start + 3]
         angular = rotation.T @ qd[self.root_qd_slice.start + 3 : self.root_qd_slice.start + 6]
         return linear, angular
+
+    def _gait_clock(self) -> np.ndarray:
+        phase = (self.policy_step_count * self.frame_dt / GAIT_CYCLE_SECONDS) % 1.0
+        angle = 2.0 * math.pi * phase
+        return np.array([math.sin(angle), math.cos(angle)], dtype=np.float32)
+
+    def _base_tilt_degrees(self) -> float:
+        projected_gravity = self._base_rotation().T @ np.array([0.0, 0.0, -1.0], dtype=np.float64)
+        return float(np.degrees(np.arccos(np.clip(-projected_gravity[2], -1.0, 1.0))))
+
+    def _grasp_base_root_q(self) -> np.ndarray:
+        return B_GRASP_ROOT_Q.copy()
 
     def _command_to_target(
         self,
@@ -674,18 +734,21 @@ class SpotPickPlaceDemo:
 
     def _observation(self) -> np.ndarray:
         projected_gravity = self._base_rotation().T @ np.array([0.0, 0.0, -1.0], dtype=np.float64)
-        _, base_angular = self._base_velocity_body()
+        base_linear, base_angular = self._base_velocity_body()
         joint_q = self.state_0.joint_q.numpy()[self.leg_q_slice]
         joint_qd = self.state_0.joint_qd.numpy()[self.leg_qd_slice]
+        joint_pos = joint_q - self.nominal_leg_qpos
         obs = np.concatenate(
             [
-                base_angular * 0.25,
                 projected_gravity,
-                self.command * np.array([2.0, 2.0, 0.25], dtype=np.float32),
-                joint_q - self.nominal_leg_qpos,
-                joint_qd * 0.05,
+                base_linear,
+                base_angular,
+                self.command,
+                self._gait_clock(),
+                joint_pos[POLICY_FROM_LOCAL],
+                joint_qd[POLICY_FROM_LOCAL],
                 self.last_action,
-                self._foot_contacts(),
+                self._foot_contacts()[POLICY_CONTACT_FROM_LOCAL],
             ]
         ).astype(np.float32)
         return self.vecnormalize.normalize_obs(obs[np.newaxis, :])
@@ -927,6 +990,58 @@ class SpotPickPlaceDemo:
             self.arm_final_retracted = True
             print("Arm returned to initial pose")
 
+    def _apply_b_alignment(self) -> bool:
+        if self.b_align_start_root_q is None:
+            self.b_align_start_root_q = self.state_0.joint_q.numpy()[self.root_q_slice].astype(np.float32)
+            self.b_align_start_leg_q = self.state_0.joint_q.numpy()[self.leg_q_slice].astype(np.float32)
+            self.b_align_target_root_q = self._grasp_base_root_q()
+            print(
+                f"Aligning B grasp pose: "
+                f"from={self.b_align_start_root_q[:3].round(3).tolist()}, "
+                f"to={self.b_align_target_root_q[:3].round(3).tolist()}"
+            )
+
+        self.command.fill(0.0)
+        self._write_arm_ctrl(self.stand_ctrl[ACT_DIM:])
+
+        self.b_align_time = min(B_ALIGN_SECONDS, self.b_align_time + self.frame_dt)
+        alpha = _smoothstep(self.b_align_time / max(B_ALIGN_SECONDS, 1.0e-6))
+
+        start_root_q = self.b_align_start_root_q
+        target_root_q = self.b_align_target_root_q
+        root_q = target_root_q.copy()
+        root_q[:3] = ((1.0 - alpha) * start_root_q[:3] + alpha * target_root_q[:3]).astype(np.float32)
+
+        start_quat = start_root_q[3:]
+        target_quat = target_root_q[3:]
+        if float(np.dot(start_quat, target_quat)) < 0.0:
+            target_quat = -target_quat
+        root_q[3:] = _quat_normalize((1.0 - alpha) * start_quat + alpha * target_quat)
+
+        leg_q = ((1.0 - alpha) * self.b_align_start_leg_q + alpha * B_GRASP_LEG_Q).astype(np.float32)
+        self.state_0.joint_q[self.root_q_slice].assign(root_q)
+        self.state_0.joint_q[self.leg_q_slice].assign(leg_q)
+        self.state_0.joint_qd[self.root_qd_slice].zero_()
+        self.state_0.joint_qd[self.leg_qd_slice].zero_()
+        self.state_0.body_qd.zero_()
+        self._pin_stone_to_start(self.state_0)
+
+        if self.b_align_time < B_ALIGN_SECONDS:
+            return False
+
+        self.state_0.joint_q[self.root_q_slice].assign(target_root_q)
+        self.state_0.joint_q[self.leg_q_slice].assign(B_GRASP_LEG_Q)
+        self.state_0.joint_qd[self.root_qd_slice].zero_()
+        self.state_0.joint_qd[self.leg_qd_slice].zero_()
+        self.state_0.body_qd.zero_()
+        self._pin_stone_to_start(self.state_0)
+        print(
+            f"Aligned B grasp pose: "
+            f"position={self._base_xy().round(3).tolist()}, "
+            f"yaw={self._base_yaw():.3f}, tilt={self._base_tilt_degrees():.1f} deg"
+        )
+        return True
+
     def _apply_policy(
         self,
         target_xy: np.ndarray,
@@ -950,16 +1065,25 @@ class SpotPickPlaceDemo:
             return True
 
         action, _ = self.policy.predict(self._observation(), deterministic=True)
-        self.last_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
-        leg_ctrl = np.clip(
-            self.nominal_leg_ctrl + self.last_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high
-        )
+        policy_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
+        self.last_action = policy_action
+        local_action = policy_action[LOCAL_FROM_POLICY]
+        leg_ctrl = np.clip(self.nominal_leg_ctrl + local_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high)
         self._write_ctrl(leg_ctrl, arm_q)
+        self.policy_step_count += 1
         return False
 
     def step(self) -> None:
         if not self.reached_b and self.sim_time < MAX_SECONDS:
-            self.reached_b = self._apply_policy(B_POINT, "B", self.stand_ctrl[ACT_DIM:], self.stone_pos[:2])
+            self.reached_b = self._apply_policy(
+                B_POINT,
+                "B",
+                self.stand_ctrl[ACT_DIM:],
+                self.stone_pos[:2],
+                arrival_radius=B_HANDOFF_RADIUS,
+            )
+        elif self.reached_b and not self.b_aligned:
+            self.b_aligned = self._apply_b_alignment()
         elif not self.stone_attached and not self.stone_released:
             self._apply_arm_approach()
         elif not self.arm_retracted:
@@ -969,7 +1093,7 @@ class SpotPickPlaceDemo:
                 C_POINT,
                 "C",
                 self.arm_q_cmd,
-                min_forward_speed=0.08,
+                min_forward_speed=MIN_FORWARD_SPEED,
                 arrival_radius=C_ARRIVAL_RADIUS,
                 require_yaw=False,
             )
@@ -1024,6 +1148,15 @@ def create_parser() -> argparse.ArgumentParser:
     parser.description = "Run the Spot A-to-B pickup setup through Newton with SolverMuJoCo."
     parser.set_defaults(num_frames=100000, viewer="gl")
     parser.add_argument("--show-ik-targets", action="store_true", help="Draw the current WR1 IK target when supported.")
+    parser.add_argument(
+        "--locomotion-model", type=Path, default=MODEL_PATH, help="Path to the 54-D locomotion PPO zip."
+    )
+    parser.add_argument(
+        "--locomotion-vecnormalize",
+        type=Path,
+        default=VECNORMALIZE_PATH,
+        help="Path to the VecNormalize statistics for the locomotion policy.",
+    )
     return parser
 
 
