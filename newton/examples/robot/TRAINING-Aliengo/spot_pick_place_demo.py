@@ -66,6 +66,7 @@ RESET_BASE_HEIGHT = 1.80
 
 STONE_LABEL = "pickup_stone"
 STONE_FORWARD_OFFSET = 0.55
+STONE_RELEASE_FORWARD_OFFSET = 0.75
 STONE_HEADING_OFFSET = 0.0
 STONE_SIZE = np.array([0.06, 0.045, 0.035], dtype=np.float64)
 STONE_CLEARANCE = -0.035
@@ -87,7 +88,7 @@ GRIPPER_CLOSE_SECONDS = 1.0
 ARM_GRASP_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS + GRIPPER_CLOSE_SECONDS
 ARM_RETRACT_SECONDS = 2.5
 ARM_PLACE_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS
-ARM_RELEASE_CLEARANCE = 0.20
+ARM_RELEASE_CLEARANCE = 0.33
 GRIPPER_RELEASE_SECONDS = 1.5
 IK_ITERATIONS = 32
 IK_STEP_SIZE = 0.8
@@ -105,6 +106,11 @@ FORWARD_SPEED = 0.45
 MIN_FORWARD_SPEED = 0.15
 MAX_YAW_RATE = 0.3
 YAW_GAIN = 1.4
+C_RELEASE_BOX_LABEL = "c_release_box"
+C_RELEASE_BOX_INNER_HALF_EXTENTS = np.array([0.24, 0.22], dtype=np.float64)
+C_RELEASE_BOX_WALL_THICKNESS = 0.04
+C_RELEASE_BOX_WALL_HEIGHT = 0.10
+C_RELEASE_BOX_WALL_DEPTH = 0.04
 
 ACTION_SCALE = np.array((0.125, 0.55, 0.55) * 4, dtype=np.float32)
 GAIT_CYCLE_SECONDS = 0.5
@@ -271,6 +277,12 @@ def _stone_xy() -> np.ndarray:
     return B_POINT + forward * STONE_FORWARD_OFFSET
 
 
+def _c_release_box_center() -> np.ndarray:
+    yaw = _approach_yaw()
+    forward = np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float64)
+    return C_POINT + forward * max(STONE_RELEASE_FORWARD_OFFSET - C_ARRIVAL_RADIUS, 0.0)
+
+
 def _scene_keyframe() -> tuple[np.ndarray, np.ndarray]:
     root = ET.parse(SCENE_PATH).getroot()
     key = root.find(".//key[@name='stand']")
@@ -410,6 +422,7 @@ class SpotPickPlaceDemo:
             color=wp.vec3(0.18, 0.17, 0.15),
             label=STONE_LABEL,
         )
+        self.release_box_shape_indices = self._add_c_release_box(builder)
 
         self.model = builder.finalize()
         self._apply_training_actuator_scale()
@@ -507,6 +520,64 @@ class SpotPickPlaceDemo:
         if len(matches) != 1:
             raise ValueError(f"Expected one body named '{name}', found {len(matches)}.")
         return matches[0]
+
+    @staticmethod
+    def _add_c_release_box(builder: newton.ModelBuilder) -> list[int]:
+        center = _c_release_box_center()
+        inner_hx, inner_hy = C_RELEASE_BOX_INNER_HALF_EXTENTS
+        thickness = C_RELEASE_BOX_WALL_THICKNESS
+        half_thickness = thickness * 0.5
+        half_height = (C_RELEASE_BOX_WALL_HEIGHT + C_RELEASE_BOX_WALL_DEPTH) * 0.5
+        wall_z = _terrain_height_at(center) + (C_RELEASE_BOX_WALL_HEIGHT - C_RELEASE_BOX_WALL_DEPTH) * 0.5
+        wall_cfg = newton.ModelBuilder.ShapeConfig(
+            density=0.0,
+            mu=1.5,
+            mu_torsional=0.03,
+            mu_rolling=0.01,
+        )
+        wall_color = wp.vec3(0.34, 0.30, 0.22)
+        wall_specs = (
+            (
+                "east",
+                np.array([center[0] + inner_hx + half_thickness, center[1]], dtype=np.float64),
+                half_thickness,
+                inner_hy + thickness,
+            ),
+            (
+                "west",
+                np.array([center[0] - inner_hx - half_thickness, center[1]], dtype=np.float64),
+                half_thickness,
+                inner_hy + thickness,
+            ),
+            (
+                "north",
+                np.array([center[0], center[1] + inner_hy + half_thickness], dtype=np.float64),
+                inner_hx,
+                half_thickness,
+            ),
+            (
+                "south",
+                np.array([center[0], center[1] - inner_hy - half_thickness], dtype=np.float64),
+                inner_hx,
+                half_thickness,
+            ),
+        )
+
+        shape_indices = []
+        for suffix, xy, hx, hy in wall_specs:
+            shape_indices.append(
+                builder.add_shape_box(
+                    body=-1,
+                    xform=wp.transform(wp.vec3(float(xy[0]), float(xy[1]), float(wall_z)), wp.quat_identity()),
+                    hx=float(hx),
+                    hy=float(hy),
+                    hz=float(half_height),
+                    cfg=wall_cfg,
+                    color=wall_color,
+                    label=f"{C_RELEASE_BOX_LABEL}_{suffix}",
+                )
+            )
+        return shape_indices
 
     def _configure_mj_collision_filters(self) -> None:
         robot_mask = np.ones(self.solver.mj_model.ngeom, dtype=bool)
@@ -798,7 +869,9 @@ class SpotPickPlaceDemo:
 
     def _stone_release_target(self) -> np.ndarray:
         yaw = self._base_yaw()
-        place_xy = self._base_xy() + np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float64) * STONE_FORWARD_OFFSET
+        place_xy = (
+            self._base_xy() + np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float64) * STONE_RELEASE_FORWARD_OFFSET
+        )
         place_z = _terrain_height_at(place_xy) + STONE_SIZE[2] + ARM_RELEASE_CLEARANCE
         return np.array([place_xy[0], place_xy[1], place_z], dtype=np.float32)
 
