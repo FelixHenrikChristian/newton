@@ -177,6 +177,12 @@ def make_env(
     payload_mass: float,
     payload_probability: float,
     randomize_spawn: bool,
+    randomize_yaw: bool,
+    spawn_center: tuple[float, float],
+    spawn_half_extents: tuple[float, float],
+    max_spawn_slope_deg: float,
+    spawn_yaw_range: tuple[float, float],
+    reset_height_offset: float,
 ):
     def _init():
         env = SpotGo2TransferEnv(
@@ -186,6 +192,12 @@ def make_env(
             payload_mass=payload_mass,
             payload_probability=payload_probability,
             randomize_spawn=randomize_spawn,
+            randomize_yaw=randomize_yaw,
+            spawn_center=spawn_center,
+            spawn_half_extents=spawn_half_extents,
+            max_spawn_slope_deg=max_spawn_slope_deg,
+            spawn_yaw_range=spawn_yaw_range,
+            reset_height_offset=reset_height_offset,
         )
         env = Monitor(env)
         env.reset(seed=seed + rank)
@@ -211,6 +223,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--payload-mass", type=float, default=0.72)
     parser.add_argument("--payload-probability", type=float, default=0.5)
     parser.add_argument("--fixed-spawn", action="store_true")
+    parser.add_argument("--fixed-yaw", action="store_true")
+    parser.add_argument("--spawn-center", type=float, nargs=2, default=(9.0, -3.5), metavar=("X", "Y"))
+    parser.add_argument("--spawn-half-extents", type=float, nargs=2, default=(5.0, 4.0), metavar=("X", "Y"))
+    parser.add_argument("--max-spawn-slope-deg", type=float, default=12.0)
+    parser.add_argument("--spawn-yaw-range", type=float, nargs=2, default=(-np.pi, np.pi), metavar=("MIN", "MAX"))
+    parser.add_argument("--reset-height-offset", type=float, default=0.10)
     parser.add_argument("--init-from", type=Path, default=DEFAULT_GO2_MODEL)
     parser.add_argument("--init-vecnormalize", type=Path, default=DEFAULT_GO2_VECNORMALIZE)
     parser.add_argument("--from-scratch", action="store_true")
@@ -227,6 +245,9 @@ def main() -> None:
     run_dir = SCRIPT_DIR / "runs" / args.run_name
     checkpoint_dir = run_dir / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    spawn_center = tuple(args.spawn_center)
+    spawn_half_extents = tuple(args.spawn_half_extents)
+    spawn_yaw_range = tuple(args.spawn_yaw_range)
 
     env_fns = [
         make_env(
@@ -238,6 +259,12 @@ def main() -> None:
             args.payload_mass,
             args.payload_probability,
             not args.fixed_spawn,
+            not args.fixed_yaw,
+            spawn_center,
+            spawn_half_extents,
+            args.max_spawn_slope_deg,
+            spawn_yaw_range,
+            args.reset_height_offset,
         )
         for rank in range(args.num_envs)
     ]
@@ -290,6 +317,8 @@ def main() -> None:
         xml_path=xml_path,
         gravity_z=args.gravity_z,
         randomize_spawn=False,
+        randomize_yaw=False,
+        reset_height_offset=args.reset_height_offset,
         payload_mass=args.payload_mass,
         payload_probability=args.payload_probability,
     )

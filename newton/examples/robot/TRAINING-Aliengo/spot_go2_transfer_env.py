@@ -72,6 +72,7 @@ class SpotGo2TransferEnv(gym.Env):
         trot_reward_weight: float = 0.35,
         same_side_contact_penalty_weight: float = 0.25,
         reset_clearance: float = 0.54,
+        reset_height_offset: float = 0.0,
         target_clearance: float = 0.50,
         min_base_clearance: float = 0.24,
         nominal_leg_ctrl: tuple[float, float, float] = (0.0, -0.1, 0.3),
@@ -81,6 +82,8 @@ class SpotGo2TransferEnv(gym.Env):
         spawn_half_extents: tuple[float, float] = (5.0, 4.0),
         max_spawn_slope_deg: float = 12.0,
         randomize_spawn: bool = True,
+        randomize_yaw: bool = False,
+        spawn_yaw_range: tuple[float, float] = (-np.pi, np.pi),
         arm_pose_noise: float = 0.0,
         payload_mass: float = 0.72,
         payload_probability: float = 0.5,
@@ -101,6 +104,7 @@ class SpotGo2TransferEnv(gym.Env):
         self.trot_reward_weight = float(trot_reward_weight)
         self.same_side_contact_penalty_weight = float(same_side_contact_penalty_weight)
         self.reset_clearance = float(reset_clearance)
+        self.reset_height_offset = float(reset_height_offset)
         self.target_clearance = float(target_clearance)
         self.min_base_clearance = float(min_base_clearance)
         self.nominal_leg_ctrl = np.array(nominal_leg_ctrl * 4, dtype=np.float32)
@@ -110,6 +114,8 @@ class SpotGo2TransferEnv(gym.Env):
         self.spawn_half_extents = np.asarray(spawn_half_extents, dtype=np.float64)
         self.max_spawn_slope_deg = float(max_spawn_slope_deg)
         self.randomize_spawn = bool(randomize_spawn)
+        self.randomize_yaw = bool(randomize_yaw)
+        self.spawn_yaw_range = np.asarray(spawn_yaw_range, dtype=np.float64)
         self.arm_pose_noise = float(arm_pose_noise)
         self.payload_mass = float(payload_mass)
         self.payload_probability = float(payload_probability)
@@ -193,7 +199,19 @@ class SpotGo2TransferEnv(gym.Env):
         self.data.qpos[self.root_qposadr : self.root_qposadr + 3] = (
             spawn_x,
             spawn_y,
-            ground_z + self.reset_clearance,
+            ground_z + self.reset_clearance + self.reset_height_offset,
+        )
+        if options and "yaw" in options:
+            yaw = float(options["yaw"])
+        elif self.randomize_yaw:
+            yaw = float(self.np_random.uniform(self.spawn_yaw_range[0], self.spawn_yaw_range[1]))
+        else:
+            yaw = 0.0
+        self.data.qpos[self.root_qposadr + 3 : self.root_qposadr + 7] = (
+            np.cos(0.5 * yaw),
+            0.0,
+            0.0,
+            np.sin(0.5 * yaw),
         )
         joint_noise = self.np_random.uniform(-0.03, 0.03, size=ACT_DIM)
         self.data.qpos[self.leg_qpos_ids] = self.nominal_leg_qpos + joint_noise

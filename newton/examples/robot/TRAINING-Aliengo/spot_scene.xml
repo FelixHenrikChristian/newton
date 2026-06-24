@@ -171,7 +171,7 @@
           <body name="hr_lleg" pos="0.025 0 -0.32">
             <inertial pos="0.00225794 4.6076e-05 -0.180082" quat="1 0 0 1" mass="0.35" diaginertia="0.00405032 0.00399902 0.00014934" />
             <joint name="hr_kn" axis="0 1 0" range="-2.7929 -0.248282" />
-            <geom material="BlackAbs" mesh="rear_left_lower_leg" class="visual" />
+            <geom material="BlackAbs" mesh="rear_right_lower_leg" class="visual" />
             <geom mesh="right_lower_leg_collision" class="collision" />
             <geom name="HR" class="foot" />
           </body>
