@@ -66,7 +66,7 @@ RESET_BASE_HEIGHT = 1.80
 
 STONE_LABEL = "pickup_stone"
 STONE_FORWARD_OFFSET = 0.55
-STONE_RELEASE_FORWARD_OFFSET = 0.75
+STONE_RELEASE_FORWARD_OFFSET = 0.665
 STONE_HEADING_OFFSET = 0.0
 STONE_SIZE = np.array([0.06, 0.045, 0.035], dtype=np.float64)
 STONE_CLEARANCE = -0.035
@@ -88,7 +88,7 @@ GRIPPER_CLOSE_SECONDS = 1.0
 ARM_GRASP_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS + GRIPPER_CLOSE_SECONDS
 ARM_RETRACT_SECONDS = 2.5
 ARM_PLACE_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS
-ARM_RELEASE_CLEARANCE = 0.33
+ARM_RELEASE_CLEARANCE = 0.18
 GRIPPER_RELEASE_SECONDS = 1.5
 IK_ITERATIONS = 32
 IK_STEP_SIZE = 0.8
@@ -107,17 +107,20 @@ MIN_FORWARD_SPEED = 0.15
 MAX_YAW_RATE = 0.3
 YAW_GAIN = 1.4
 C_ROVER_LABEL = "c_lunar_rover"
-C_ROVER_CARGO_INNER_HALF_EXTENTS = np.array([0.30, 0.24], dtype=np.float64)
-C_ROVER_CARGO_WALL_THICKNESS = 0.045
-C_ROVER_CARGO_WALL_HEIGHT = 0.26
+C_ROVER_FORWARD_OFFSET = 0.30
+C_ROVER_RIGHT_OFFSET = 0.35
+YUTU_ROVER_LABEL = "c_yutu_rover_visual"
+YUTU_ROVER_OBJ_PATH = SCRIPT_DIR / "yutu_assets" / "yutu_rover.obj"
+YUTU_ROVER_SCALE = 0.018
+YUTU_ROVER_YAW_OFFSET = 0.5 * math.pi
+YUTU_ROVER_POSITION_OFFSET = np.array([0.24, 0.0], dtype=np.float64)
+
+# Cargo dimensions measured from yutu_rover.obj in mesh-local coordinates.
+C_ROVER_CARGO_INNER_HALF_EXTENTS = YUTU_ROVER_SCALE * np.array([14.185952, 20.141729], dtype=np.float64)
+C_ROVER_CARGO_WALL_THICKNESS = YUTU_ROVER_SCALE * np.array([0.465115, 0.393704], dtype=np.float64)
 C_ROVER_CARGO_FLOOR_THICKNESS = 0.035
-C_ROVER_CARGO_FLOOR_CLEARANCE = 0.13
-C_ROVER_CHASSIS_HALF_EXTENTS = np.array([0.72, 0.39, 0.06], dtype=np.float64)
-C_ROVER_CHASSIS_CENTER_OFFSET = np.array([0.24, 0.0], dtype=np.float64)
-C_ROVER_WHEEL_RADIUS = 0.135
-C_ROVER_WHEEL_HALF_WIDTH = 0.045
-C_ROVER_WHEEL_X_OFFSETS = (-0.38, 0.03, 0.44)
-C_ROVER_WHEEL_Y_OFFSET = 0.43
+C_ROVER_CARGO_FLOOR_TOP_LOCAL_Z = YUTU_ROVER_SCALE * 22.980131
+C_ROVER_CARGO_WALL_TOP_LOCAL_Z = YUTU_ROVER_SCALE * 25.540527
 
 ACTION_SCALE = np.array((0.125, 0.55, 0.55) * 4, dtype=np.float32)
 GAIT_CYCLE_SECONDS = 0.5
@@ -287,7 +290,16 @@ def _stone_xy() -> np.ndarray:
 def _c_release_box_center() -> np.ndarray:
     yaw = _approach_yaw()
     forward = np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float64)
-    return C_POINT + forward * max(STONE_RELEASE_FORWARD_OFFSET - C_ARRIVAL_RADIUS, 0.0)
+    right = np.array([forward[1], -forward[0]], dtype=np.float64)
+    return C_POINT + forward * C_ROVER_FORWARD_OFFSET + right * C_ROVER_RIGHT_OFFSET
+
+
+def _c_rover_cargo_floor_top_z() -> float:
+    return _terrain_height_at(_c_release_box_center()) + C_ROVER_CARGO_FLOOR_TOP_LOCAL_Z
+
+
+def _c_rover_cargo_wall_top_z() -> float:
+    return _terrain_height_at(_c_release_box_center()) + C_ROVER_CARGO_WALL_TOP_LOCAL_Z
 
 
 def _scene_keyframe() -> tuple[np.ndarray, np.ndarray]:
@@ -445,6 +457,10 @@ class SpotPickPlaceDemo:
         self.foot_geom_ids = np.array([self._find_mj_geom_id(name) for name in ("FL", "FR", "HL", "HR")])
         self.stone_geom_id = self._find_mj_geom_id(STONE_LABEL)
         self.c_rover_geom_ids = np.array(self._find_mj_geom_ids(C_ROVER_LABEL), dtype=np.int32)
+        try:
+            self.yutu_rover_geom_ids = np.array(self._find_mj_geom_ids(YUTU_ROVER_LABEL), dtype=np.int32)
+        except ValueError:
+            self.yutu_rover_geom_ids = np.array([], dtype=np.int32)
         self._configure_mj_collision_filters()
 
         self.state_0 = self.model.state()
@@ -538,16 +554,11 @@ class SpotPickPlaceDemo:
     @staticmethod
     def _add_c_rover(builder: newton.ModelBuilder) -> list[int]:
         cargo_center = _c_release_box_center()
-        yaw = _approach_yaw()
+        yaw = _approach_yaw() + YUTU_ROVER_YAW_OFFSET
         ground_z = _terrain_height_at(cargo_center)
         cos_yaw = math.cos(yaw)
         sin_yaw = math.sin(yaw)
         yaw_quat = np.array(_yaw_to_xyzw(yaw), dtype=np.float32)
-        wheel_local_quat = np.array(
-            [math.sin(-0.25 * math.pi), 0.0, 0.0, math.cos(-0.25 * math.pi)],
-            dtype=np.float32,
-        )
-        wheel_quat = _quat_multiply(yaw_quat, wheel_local_quat)
 
         def local_xy(offset: tuple[float, float] | np.ndarray) -> np.ndarray:
             ox, oy = float(offset[0]), float(offset[1])
@@ -560,11 +571,20 @@ class SpotPickPlaceDemo:
             xy = local_xy(offset)
             return wp.transform(wp.vec3(float(xy[0]), float(xy[1]), float(z)), to_wp_quat(quat))
 
-        rover_cfg = newton.ModelBuilder.ShapeConfig(
+        cargo_collision_cfg = newton.ModelBuilder.ShapeConfig(
             density=0.0,
             mu=1.5,
             mu_torsional=0.03,
             mu_rolling=0.01,
+            has_particle_collision=False,
+            is_visible=False,
+        )
+        rover_visual_cfg = newton.ModelBuilder.ShapeConfig(
+            density=0.0,
+            collision_group=0,
+            has_shape_collision=False,
+            has_particle_collision=False,
+            is_visible=True,
         )
         shape_indices = []
 
@@ -584,93 +604,93 @@ class SpotPickPlaceDemo:
                     hx=float(hx),
                     hy=float(hy),
                     hz=float(hz),
-                    cfg=rover_cfg,
+                    cfg=cargo_collision_cfg,
                     color=color,
                     label=f"{C_ROVER_LABEL}_{suffix}",
                 )
             )
 
-        chassis_color = wp.vec3(0.17, 0.17, 0.15)
         cargo_color = wp.vec3(0.42, 0.34, 0.20)
-        cabin_color = wp.vec3(0.55, 0.52, 0.44)
-        wheel_color = wp.vec3(0.04, 0.04, 0.04)
-        rail_color = wp.vec3(0.27, 0.27, 0.24)
 
-        chassis_z = ground_z + C_ROVER_WHEEL_RADIUS + C_ROVER_CHASSIS_HALF_EXTENTS[2] * 0.45
-        add_box(
-            "chassis",
-            C_ROVER_CHASSIS_CENTER_OFFSET,
-            chassis_z,
-            C_ROVER_CHASSIS_HALF_EXTENTS[0],
-            C_ROVER_CHASSIS_HALF_EXTENTS[1],
-            C_ROVER_CHASSIS_HALF_EXTENTS[2],
-            chassis_color,
-        )
-
-        floor_center_z = ground_z + C_ROVER_CARGO_FLOOR_CLEARANCE + 0.5 * C_ROVER_CARGO_FLOOR_THICKNESS
-        floor_top_z = floor_center_z + 0.5 * C_ROVER_CARGO_FLOOR_THICKNESS
-        wall_center_z = floor_top_z + 0.5 * C_ROVER_CARGO_WALL_HEIGHT
+        floor_top_z = _c_rover_cargo_floor_top_z()
+        floor_center_z = floor_top_z - 0.5 * C_ROVER_CARGO_FLOOR_THICKNESS
+        wall_height = _c_rover_cargo_wall_top_z() - floor_top_z
+        wall_center_z = floor_top_z + 0.5 * wall_height
         inner_hx, inner_hy = C_ROVER_CARGO_INNER_HALF_EXTENTS
-        thickness = C_ROVER_CARGO_WALL_THICKNESS
-        half_thickness = 0.5 * thickness
+        thickness_x, thickness_y = C_ROVER_CARGO_WALL_THICKNESS
+        half_thickness_x = 0.5 * thickness_x
+        half_thickness_y = 0.5 * thickness_y
+        cargo_offset = YUTU_ROVER_POSITION_OFFSET
 
         add_box(
             "cargo_floor",
-            (0.0, 0.0),
+            cargo_offset,
             floor_center_z,
-            inner_hx + thickness,
-            inner_hy + thickness,
+            inner_hx + thickness_x,
+            inner_hy + thickness_y,
             0.5 * C_ROVER_CARGO_FLOOR_THICKNESS,
             cargo_color,
         )
         cargo_wall_specs = (
-            ("cargo_front", (inner_hx + half_thickness, 0.0), half_thickness, inner_hy + thickness),
-            ("cargo_rear", (-inner_hx - half_thickness, 0.0), half_thickness, inner_hy + thickness),
-            ("cargo_left", (0.0, inner_hy + half_thickness), inner_hx, half_thickness),
-            ("cargo_right", (0.0, -inner_hy - half_thickness), inner_hx, half_thickness),
+            (
+                "cargo_front",
+                cargo_offset + np.array([inner_hx + half_thickness_x, 0.0]),
+                half_thickness_x,
+                inner_hy + thickness_y,
+            ),
+            (
+                "cargo_rear",
+                cargo_offset + np.array([-inner_hx - half_thickness_x, 0.0]),
+                half_thickness_x,
+                inner_hy + thickness_y,
+            ),
+            (
+                "cargo_left",
+                cargo_offset + np.array([0.0, inner_hy + half_thickness_y]),
+                inner_hx,
+                half_thickness_y,
+            ),
+            (
+                "cargo_right",
+                cargo_offset + np.array([0.0, -inner_hy - half_thickness_y]),
+                inner_hx,
+                half_thickness_y,
+            ),
         )
         for suffix, offset, hx, hy in cargo_wall_specs:
-            add_box(suffix, offset, wall_center_z, hx, hy, 0.5 * C_ROVER_CARGO_WALL_HEIGHT, cargo_color)
+            add_box(suffix, offset, wall_center_z, hx, hy, 0.5 * wall_height, cargo_color)
 
-        add_box("front_equipment_box", (0.62, 0.0), floor_top_z + 0.11, 0.20, 0.28, 0.11, cabin_color)
-        add_box("front_roof", (0.62, 0.0), floor_top_z + 0.245, 0.23, 0.31, 0.025, rail_color)
-        add_box("rear_loading_lip", (-0.38, 0.0), floor_top_z + 0.035, 0.06, 0.36, 0.035, rail_color)
-
-        wheel_center_z = ground_z + C_ROVER_WHEEL_RADIUS
-        for axle_index, x_offset in enumerate(C_ROVER_WHEEL_X_OFFSETS):
-            add_box(f"axle_{axle_index}", (x_offset, 0.0), wheel_center_z, 0.035, 0.42, 0.025, rail_color)
-            for side_name, y_offset in (("left", C_ROVER_WHEEL_Y_OFFSET), ("right", -C_ROVER_WHEEL_Y_OFFSET)):
-                shape_indices.append(
-                    builder.add_shape_cylinder(
-                        body=-1,
-                        xform=make_xform((x_offset, y_offset), wheel_center_z, wheel_quat),
-                        radius=C_ROVER_WHEEL_RADIUS,
-                        half_height=C_ROVER_WHEEL_HALF_WIDTH,
-                        cfg=rover_cfg,
-                        color=wheel_color,
-                        label=f"{C_ROVER_LABEL}_wheel_{side_name}_{axle_index}",
-                    )
-                )
-
-        mast_center_z = floor_top_z + 0.33
+        yutu_mesh = newton.Mesh.create_from_file(
+            str(YUTU_ROVER_OBJ_PATH),
+            method="trimesh",
+            compute_inertia=False,
+            is_solid=False,
+            color=wp.vec3(0.58, 0.56, 0.49),
+        )
         shape_indices.append(
-            builder.add_shape_cylinder(
+            builder.add_shape_mesh(
                 body=-1,
-                xform=make_xform((0.62, 0.26), mast_center_z),
-                radius=0.012,
-                half_height=0.24,
-                cfg=rover_cfg,
-                color=rail_color,
-                label=f"{C_ROVER_LABEL}_antenna_mast",
+                xform=make_xform(YUTU_ROVER_POSITION_OFFSET, ground_z),
+                mesh=yutu_mesh,
+                scale=wp.vec3(YUTU_ROVER_SCALE, YUTU_ROVER_SCALE, YUTU_ROVER_SCALE),
+                cfg=rover_visual_cfg,
+                color=wp.vec3(0.58, 0.56, 0.49),
+                label=YUTU_ROVER_LABEL,
             )
         )
-        add_box("antenna_panel", (0.62, 0.26), floor_top_z + 0.58, 0.055, 0.012, 0.045, rail_color)
 
         return shape_indices
 
     def _configure_mj_collision_filters(self) -> None:
         robot_mask = np.ones(self.solver.mj_model.ngeom, dtype=bool)
-        robot_mask[[self.terrain_geom_id, self.stone_geom_id, *self.c_rover_geom_ids.tolist()]] = False
+        robot_mask[
+            [
+                self.terrain_geom_id,
+                self.stone_geom_id,
+                *self.c_rover_geom_ids.tolist(),
+                *self.yutu_rover_geom_ids.tolist(),
+            ]
+        ] = False
 
         self.solver.mj_model.geom_contype[robot_mask] = 2
         self.solver.mj_model.geom_conaffinity[robot_mask] = 5
@@ -684,6 +704,9 @@ class SpotPickPlaceDemo:
         self.solver.mj_model.geom_conaffinity[self.c_rover_geom_ids] = 4
         self.solver.mj_model.geom_condim[self.c_rover_geom_ids] = 6
         self.solver.mj_model.geom_priority[self.c_rover_geom_ids] = 2
+        if self.yutu_rover_geom_ids.size:
+            self.solver.mj_model.geom_contype[self.yutu_rover_geom_ids] = 0
+            self.solver.mj_model.geom_conaffinity[self.yutu_rover_geom_ids] = 0
 
     def _apply_training_actuator_scale(self) -> None:
         gain = self.model.mujoco.actuator_gainprm.numpy()
@@ -967,7 +990,7 @@ class SpotPickPlaceDemo:
         place_xy = (
             self._base_xy() + np.array([math.cos(yaw), math.sin(yaw)], dtype=np.float64) * STONE_RELEASE_FORWARD_OFFSET
         )
-        place_z = _terrain_height_at(place_xy) + STONE_SIZE[2] + ARM_RELEASE_CLEARANCE
+        place_z = _c_rover_cargo_wall_top_z() + STONE_SIZE[2] + ARM_RELEASE_CLEARANCE
         return np.array([place_xy[0], place_xy[1], place_z], dtype=np.float32)
 
     def _start_arm_ik_motion(self, final_target: np.ndarray, label: str) -> None:
