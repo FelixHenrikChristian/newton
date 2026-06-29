@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -14,9 +16,9 @@ import newton
 from ..core.types import override
 
 try:
-    from pxr import Gf, Sdf, Usd, UsdGeom, Vt
+    from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, Vt
 except ImportError:
-    Gf = Sdf = Usd = UsdGeom = Vt = None
+    Gf = Sdf = Usd = UsdGeom = UsdShade = Vt = None
 
 from .viewer import ViewerBase
 
@@ -137,6 +139,10 @@ class ViewerUSD(ViewerBase):
 
         # Track meshes and instancers
         self._meshes = {}  # mesh_name -> prototype_path
+        self._mesh_textures = {}  # mesh_name -> texture asset path
+        self._materials = {}  # appearance tuple -> UsdShade.Material
+        self._instance_appearances = {}  # instance path -> material parameters
+        self._texture_assets = {}  # source texture -> authored asset path
         self._instancers = {}  # instancer_name -> UsdGeomPointInstancer
         self._points = {}  # point_name -> UsdGeomPoints
 
@@ -203,6 +209,94 @@ class ViewerUSD(ViewerBase):
         else:
             return "/root/" + name
 
+    def _prepare_texture_asset(self, texture: np.ndarray | str | os.PathLike[str] | None) -> str | None:
+        """Return a USD asset path for a source texture, writing array textures beside the stage."""
+        if texture is None:
+            return None
+
+        if isinstance(texture, str | os.PathLike):
+            source = os.fspath(texture)
+            cache_key = ("path", source)
+            if cache_key in self._texture_assets:
+                return self._texture_assets[cache_key]
+
+            if "://" in source:
+                asset_path = source
+            else:
+                source = os.path.abspath(source)
+                try:
+                    asset_path = os.path.relpath(source, os.path.dirname(self.output_path))
+                except ValueError:
+                    asset_path = source
+                asset_path = asset_path.replace("\\", "/")
+
+            self._texture_assets[cache_key] = asset_path
+            return asset_path
+
+        texture_array = np.ascontiguousarray(np.asarray(texture))
+        digest = hashlib.sha256(texture_array.view(np.uint8)).hexdigest()
+        cache_key = ("array", texture_array.shape, texture_array.dtype.str, digest)
+        if cache_key in self._texture_assets:
+            return self._texture_assets[cache_key]
+
+        from PIL import Image  # noqa: PLC0415
+
+        from ..utils.texture import normalize_texture  # noqa: PLC0415
+
+        image = normalize_texture(texture_array, require_channels=True)
+        texture_dir = Path(self.output_path).with_suffix("").with_name(f"{Path(self.output_path).stem}_textures")
+        texture_dir.mkdir(parents=True, exist_ok=True)
+        texture_path = texture_dir / f"texture_{digest[:16]}.png"
+        Image.fromarray(image).save(texture_path)
+        asset_path = os.path.relpath(texture_path, os.path.dirname(self.output_path)).replace("\\", "/")
+        self._texture_assets[cache_key] = asset_path
+        return asset_path
+
+    def _get_or_create_material(
+        self,
+        color: np.ndarray,
+        roughness: float,
+        metallic: float,
+        texture_asset: str | None,
+    ):
+        """Create or reuse a USD Preview Surface material for a rendered shape."""
+        color_key = tuple(round(float(component), 6) for component in color[:3])
+        key = (color_key, round(roughness, 6), round(metallic, 6), texture_asset)
+        if key in self._materials:
+            return self._materials[key]
+
+        material_path = f"/root/materials/material_{len(self._materials)}"
+        self._ensure_scopes_for_path(self.stage, material_path)
+        material = UsdShade.Material.Define(self.stage, material_path)
+        shader = UsdShade.Shader.Define(self.stage, f"{material_path}/PreviewSurface")
+        shader.CreateIdAttr("UsdPreviewSurface")
+        shader.CreateOutput("surface", Sdf.ValueTypeNames.Token)
+        diffuse = shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f)
+        diffuse.Set(Gf.Vec3f(*color_key))
+        shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(float(roughness))
+        shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(float(metallic))
+
+        if texture_asset is not None:
+            primvar_reader = UsdShade.Shader.Define(self.stage, f"{material_path}/PrimvarReader_st")
+            primvar_reader.CreateIdAttr("UsdPrimvarReader_float2")
+            primvar_reader.CreateInput("varname", Sdf.ValueTypeNames.Token).Set("st")
+            primvar_reader.CreateOutput("result", Sdf.ValueTypeNames.Float2)
+
+            texture_shader = UsdShade.Shader.Define(self.stage, f"{material_path}/AlbedoTexture")
+            texture_shader.CreateIdAttr("UsdUVTexture")
+            texture_shader.CreateOutput("rgb", Sdf.ValueTypeNames.Float3)
+            texture_shader.CreateInput("file", Sdf.ValueTypeNames.Asset).Set(Sdf.AssetPath(texture_asset))
+            texture_shader.CreateInput("sourceColorSpace", Sdf.ValueTypeNames.Token).Set("sRGB")
+            texture_shader.CreateInput("scale", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(*color_key, 1.0))
+            texture_shader.CreateInput("st", Sdf.ValueTypeNames.Float2).ConnectToSource(
+                primvar_reader.ConnectableAPI(), "result"
+            )
+            diffuse.ConnectToSource(texture_shader.ConnectableAPI(), "rgb")
+
+        material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+        self._materials[key] = material
+        return material
+
     @override
     def log_mesh(
         self,
@@ -255,10 +349,18 @@ class ViewerUSD(ViewerBase):
             mesh_prim.GetNormalsAttr().Set(normals_np, self._frame_index)
             mesh_prim.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
 
-        # Set UVs if provided (simplified for now)
+        # USD Preview Surface uses the conventional `st` primvar for texture coordinates.
         if uvs is not None:
-            # TODO: Implement UV support for USD meshes
-            pass
+            uvs_np = uvs.numpy().astype(np.float32)
+            interpolation = UsdGeom.Tokens.vertex
+            if len(uvs_np) != len(points_np) and len(uvs_np) == len(indices_np):
+                interpolation = UsdGeom.Tokens.faceVarying
+            st = UsdGeom.PrimvarsAPI(mesh_prim).CreatePrimvar(
+                "st", Sdf.ValueTypeNames.TexCoord2fArray, interpolation
+            )
+            st.Set(uvs_np)
+
+        self._mesh_textures[name] = self._prepare_texture_asset(texture)
 
         # how to hide the prototype mesh but not the instances in USD?
         mesh_prim.GetVisibilityAttr().Set("inherited" if not hidden else "invisible", self._frame_index)
@@ -308,6 +410,9 @@ class ViewerUSD(ViewerBase):
         if colors is not None:
             colors = colors.numpy()
 
+        if materials is not None:
+            materials = materials.numpy()
+
         for i in range(len(xforms)):
             instance_path = self._get_path(name) + f"/instance_{i}"
             instance = self.stage.GetPrimAtPath(instance_path)
@@ -328,8 +433,26 @@ class ViewerUSD(ViewerBase):
 
             # update color
             if colors is not None:
-                displayColor = UsdGeom.PrimvarsAPI(instance).GetPrimvar("displayColor")
+                primvars = UsdGeom.PrimvarsAPI(instance)
+                displayColor = primvars.GetPrimvar("displayColor")
+                if not displayColor:
+                    displayColor = primvars.CreatePrimvar(
+                        "displayColor", Sdf.ValueTypeNames.Color3fArray, UsdGeom.Tokens.constant
+                    )
                 displayColor.Set(colors[i], self._frame_index)
+
+            if colors is not None or materials is not None:
+                color = colors[i] if colors is not None else np.array([0.5, 0.5, 0.5], dtype=np.float32)
+                if materials is not None:
+                    self._instance_appearances[instance_path] = materials[i]
+                appearance = self._instance_appearances.get(
+                    instance_path, np.array([0.5, 0.0, 0.0, 0.0], dtype=np.float32)
+                )
+                roughness = float(np.clip(appearance[0], 0.0, 1.0))
+                metallic = float(np.clip(appearance[1], 0.0, 1.0))
+                texture_asset = self._mesh_textures.get(mesh) if appearance[3] > 0.0 else None
+                material = self._get_or_create_material(color, roughness, metallic, texture_asset)
+                UsdShade.MaterialBindingAPI.Apply(instance).Bind(material)
 
     # log a set of instances as a point instancer, faster but less flexible
     def log_instances_point_instancer(

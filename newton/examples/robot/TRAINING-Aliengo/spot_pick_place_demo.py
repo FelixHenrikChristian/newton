@@ -1314,7 +1314,7 @@ class SpotPickPlaceDemo:
 def create_parser() -> argparse.ArgumentParser:
     parser = newton.examples.create_parser()
     parser.description = "Run the Spot A-to-B pickup setup through Newton with SolverMuJoCo."
-    parser.set_defaults(num_frames=100000, viewer="gl")
+    parser.set_defaults(num_frames=100000, viewer="gl", usd_fps=FPS)
     parser.add_argument("--show-ik-targets", action="store_true", help="Draw the current WR1 IK target when supported.")
     parser.add_argument(
         "--locomotion-model", type=Path, default=MODEL_PATH, help="Path to the 54-D locomotion PPO zip."
