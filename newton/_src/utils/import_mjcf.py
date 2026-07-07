@@ -634,8 +634,24 @@ def parse_mjcf(
                 # We'll add the explicit mass to the body separately
                 geom_density = 0.0
 
+            material_name = geom_attrib.get("material")
+            material_info = material_assets.get(material_name, {})
+            rgba = geom_attrib.get("rgba", material_info.get("rgba"))
+            material_color = None
+            is_fully_transparent = False
+            if rgba is not None:
+                rgba_values = np.fromstring(rgba, sep=" ", dtype=np.float32)
+                if len(rgba_values) >= 3:
+                    material_color = (
+                        float(rgba_values[0]),
+                        float(rgba_values[1]),
+                        float(rgba_values[2]),
+                    )
+                if len(rgba_values) >= 4:
+                    is_fully_transparent = float(rgba_values[3]) <= 0.0
+
             shape_cfg = builder.default_shape_cfg.copy()
-            shape_cfg.is_visible = visible
+            shape_cfg.is_visible = visible and not is_fully_transparent
             shape_cfg.has_shape_collision = not just_visual
             shape_cfg.has_particle_collision = not just_visual
             shape_cfg.density = geom_density
@@ -700,19 +716,6 @@ def parse_mjcf(
                 "cfg": shape_cfg,
                 "custom_attributes": custom_attributes,
             }
-
-            material_name = geom_attrib.get("material")
-            material_info = material_assets.get(material_name, {})
-            rgba = geom_attrib.get("rgba", material_info.get("rgba"))
-            material_color = None
-            if rgba is not None:
-                rgba_values = np.fromstring(rgba, sep=" ", dtype=np.float32)
-                if len(rgba_values) >= 3:
-                    material_color = (
-                        float(rgba_values[0]),
-                        float(rgba_values[1]),
-                        float(rgba_values[2]),
-                    )
 
             texture = None
             texture_name = material_info.get("texture")

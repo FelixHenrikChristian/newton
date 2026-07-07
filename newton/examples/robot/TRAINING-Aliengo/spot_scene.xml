@@ -191,7 +191,7 @@
           <geom mesh="arm_link_sh1_1" material="BlackAbs" class="visual" />
           <body name="arm_link_hr0">
             <inertial pos="0.17047 -0.0019251 4.48389e-05" quat="0 1 0 1" mass="1e-06" diaginertia="1.16111e-08 1.14871e-08 6.31263e-10" />
-            <geom class="collision" mesh="arm_link_hr0_coll" />
+            <geom name="arm_link_hr0_collision" class="collision" mesh="arm_link_hr0_coll" rgba="0 0 0 0" />
             <body name="arm_link_el0" pos="0.3385 0 0">
               <inertial pos="0.0553741 0.000236034 0.048272" quat="1 1 1 1" mass="0.725" diaginertia="0.00200479 0.00197228 0.000821537" />
               <joint name="arm_el0" axis="0 1 0" range="0 3.14159" />
