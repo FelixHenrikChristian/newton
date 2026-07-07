@@ -5,32 +5,32 @@ import math
 
 import numpy as np
 import spot_pick_place_demo as base
+import spot_pick_place_demo_robust_layout as layout
 import warp as wp
 
 import newton
 import newton.examples
 import newton.ik as ik
 
-# 原 demo 计算出的默认石子世界坐标, 用来得到默认的相对 B 点偏移.
-ORIGINAL_STONE_XY = base._stone_xy()
-
 # 原 demo 强制切到 B 抓取姿态时的机身位置和 yaw.
-# robust 版本不强制切姿态, 但保留这个高度和倾斜作为 IK 根姿态参考.
 ORIGINAL_BASE_XY = base.B_GRASP_ROOT_Q[:2].astype(np.float64)
 ORIGINAL_BASE_YAW = math.atan2(
     2.0 * (base.B_GRASP_ROOT_Q[6] * base.B_GRASP_ROOT_Q[5] + base.B_GRASP_ROOT_Q[3] * base.B_GRASP_ROOT_Q[4]),
     1.0 - 2.0 * (base.B_GRASP_ROOT_Q[4] * base.B_GRASP_ROOT_Q[4] + base.B_GRASP_ROOT_Q[5] * base.B_GRASP_ROOT_Q[5]),
 )
 
-# 路径点. A/B/C 直接写死, A_YAW 由 A->B 方向计算.
+# 路径只保留 A/C. B_POINT 仅用于同步 base 中仍按 A->B 计算朝向的辅助函数.
 A_POINT = np.array([5.0, -6.0], dtype=np.float64)
-B_POINT = np.array([9.0, -3.5], dtype=np.float64)
 C_POINT = np.array([13.0, -1.0], dtype=np.float64)
-A_YAW = float(math.atan2(B_POINT[1] - A_POINT[1], B_POINT[0] - A_POINT[0]))
+B_POINT = C_POINT.copy()
+A_YAW = layout.route_yaw(A_POINT, C_POINT)
+C_STAND_POINT = layout.default_c_stand_point(A_POINT, C_POINT)
 
-# --stone-x 和 --stone-y 是相对 B 点的世界坐标偏移.
-# 默认 offset 来自原 demo 的默认石子位置, 所以不传参数时行为保持一致.
-ORIGINAL_STONE_OFFSET_XY = ORIGINAL_STONE_XY - base.B_POINT
+DEFAULT_STONE_XY = layout.build_c_side_stone_layout(A_POINT, C_POINT, count=1, side=layout.DEFAULT_STONE_SIDE)[0]
+DEFAULT_STONE_OFFSET_XY = DEFAULT_STONE_XY - C_POINT
+
+# 原 demo 计算出的默认石子世界坐标, 用来保留已有参数的含义参考.
+ORIGINAL_STONE_XY = base._stone_xy()
 
 # mover 指尖所在 body 名称. stator 使用 base.ARM_EE_BODY.
 FINGER_BODY = "arm_link_fngr"
@@ -53,20 +53,26 @@ GRASP_ARRIVAL_RADIUS = 0.14
 GRASP_HEIGHT_FRACTION = 0.45
 
 # stator 下放点相对石子长轴端点向外留出的距离 [m].
-GRASP_SIDE_CLEARANCE = 0.02
+GRASP_SIDE_CLEARANCE = 0.01
 
 # IK 目标比实际接触点略高, 给下放和碰撞留余量 [m].
-GRASP_IK_VERTICAL_BIAS = 0.078
+GRASP_IK_VERTICAL_BIAS = 0.055
 
 # 吸附前的视觉接触误差阈值 [m]. stator 更严格, mover 略宽松.
-STATOR_ATTACH_TOLERANCE = 0.018
-MOVER_ATTACH_TOLERANCE = 0.04
+STATOR_ATTACH_TOLERANCE = 0.055
+MOVER_ATTACH_TOLERANCE = 0.065
+STATOR_VISUAL_CLOSE_TOLERANCE = 0.015
+MOVER_VISUAL_CLOSE_TOLERANCE = 0.02
 
 # 视觉闭合目标. 吸附后会记录实际夹爪 q, 搬运和下放期间保持该 q.
 GRIPPER_CLOSED_VISUAL = -0.5
 
 # 石子生成后先自由稳定的时间 [s].
 STONE_SETTLE_SECONDS = 1.0
+
+# 直走 A->C 时给 locomotion policy 的内部小段目标半径 [m].
+C_ROUTE_WAYPOINT_RADIUS = 0.45
+C_ROUTE_STAND_RADIUS = 0.16
 
 
 def _sync_route_globals() -> None:
@@ -153,8 +159,12 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
     def __init__(self, viewer, args: argparse.Namespace):
         """初始化 robust demo, 并在原 demo 构建前覆盖路径和石子配置."""
 
-        self.robust_stone_yaw = math.radians(float(args.stone_yaw_deg))
+        self.robust_stone_base_yaw = math.radians(float(args.stone_yaw_deg))
+        self.robust_stone_yaw_jitter = math.radians(float(args.stone_yaw_jitter_deg))
         self.robust_stone_size = np.array([args.stone_rx, args.stone_ry, args.stone_rz], dtype=np.float64)
+        self.robust_stone_count = int(args.stone_count)
+        self.robust_stone_row_side = int(args.stone_row_side)
+        self.robust_stone_spacing = float(args.stone_spacing)
         self.robust_ik_rotation_weight = float(args.ik_rotation_weight)
         self.robust_grasp_arrival_radius = float(args.grasp_arrival_radius)
         self.robust_grasp_height_fraction = float(args.grasp_height_fraction)
@@ -163,17 +173,32 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         self.robust_gripper_closed = GRIPPER_CLOSED_VISUAL
         self.robust_stator_side = float(args.stator_side)
 
-        self.robust_stone_offset_xy = np.array([args.stone_x, args.stone_y], dtype=np.float64)
-        self.robust_stone_xy = B_POINT + self.robust_stone_offset_xy
-        self.robust_base_xy = B_POINT.copy()
+        self.robust_stone_xy_list = layout.build_c_side_stone_layout(
+            A_POINT,
+            C_POINT,
+            count=self.robust_stone_count,
+            side=self.robust_stone_row_side,
+            spacing=self.robust_stone_spacing,
+        )
+        self.robust_stone_yaws = layout.build_c_side_stone_yaws(
+            self.robust_stone_count,
+            base_yaw=self.robust_stone_base_yaw,
+            yaw_jitter=self.robust_stone_yaw_jitter,
+        )
+        requested_first_xy = C_POINT + np.array([args.stone_x, args.stone_y], dtype=np.float64)
+        self.robust_stone_xy_list += requested_first_xy - self.robust_stone_xy_list[0]
+        self.robust_stone_xy = self.robust_stone_xy_list[0].copy()
+        self.robust_stone_yaw = float(self.robust_stone_yaws[0])
+        self.robust_stone_offset_xy = self.robust_stone_xy - C_POINT
+        self.robust_base_xy = C_STAND_POINT.copy()
         self.robust_base_yaw = A_YAW
+        self.c_route_targets = layout.build_route_targets(A_POINT, C_STAND_POINT)
         self.robust_base_clearance = float(base.B_GRASP_ROOT_Q[2] - base._terrain_height_at(ORIGINAL_BASE_XY))
         self.robust_root_q = self._compute_root_q()
 
         self._patch_base_demo_globals(float(args.stone_clearance))
         super().__init__(viewer, args)
 
-        self.stone_q = np.array((*self.stone_pos, *base._yaw_to_xyzw(self.robust_stone_yaw)), dtype=np.float32)
         self.fngr_body_index = self._find_body_index(FINGER_BODY)
         self.stator_mj_body_id = self._find_mj_body_id(base.ARM_EE_BODY)
         self.mover_mj_body_id = self._find_mj_body_id(FINGER_BODY)
@@ -189,9 +214,9 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         self.reset()
         print(
             "Robust grasp setup: "
-            f"stone_offset_xy={np.round(self.robust_stone_offset_xy, 3).tolist()}, "
-            f"stone_xy={np.round(self.robust_stone_xy, 3).tolist()}, "
-            f"stone_yaw={self.robust_stone_yaw:.3f}, "
+            f"stone_count={self.robust_stone_count}, "
+            f"stone_xy={np.round(self.robust_stone_xy_list, 3).tolist()}, "
+            f"stone_yaws={np.round(self.robust_stone_yaws, 3).tolist()}, "
             f"base_xy={np.round(self.robust_base_xy, 3).tolist()}, "
             f"base_yaw={self.robust_base_yaw:.3f}"
         )
@@ -206,26 +231,57 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         return root_q.astype(np.float32)
 
     def _patch_base_demo_globals(self, stone_clearance: float) -> None:
-        """覆盖原 demo 的全局路径点和石子生成函数."""
+        """覆盖原 demo 的全局路径点和石子尺寸."""
 
+        self.robust_stone_clearance = stone_clearance
         base.STONE_SIZE = self.robust_stone_size.copy()
         _sync_route_globals()
 
-        stone_pos = np.array(
-            [
-                self.robust_stone_xy[0],
-                self.robust_stone_xy[1],
-                base._terrain_height_at(self.robust_stone_xy) + self.robust_stone_size[2] + stone_clearance,
-            ],
-            dtype=np.float64,
-        )
+    def _configure_mj_collision_filters(self) -> None:
+        """Keep robust stone-stone collisions enabled for natural rover stacking."""
 
-        def _robust_stone_position() -> np.ndarray:
-            """返回 robust 版本计算出的石子初始坐标."""
+        super()._configure_mj_collision_filters()
+        stone_contype, stone_conaffinity = layout.stone_collision_masks()
+        self.solver.mj_model.geom_contype[self.stone_geom_ids] = stone_contype
+        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = stone_conaffinity
+        self.solver.mj_model.geom_friction[self.stone_geom_ids] = np.array(layout.stone_contact_friction())
 
-            return stone_pos.copy()
+    def _stone_specs(self) -> tuple[base.StoneSpec, ...]:
+        """返回 C 点附近待逐个抓取的石子配置."""
 
-        base._stone_position = _robust_stone_position
+        specs = []
+        for stone_index, stone_xy in enumerate(self.robust_stone_xy_list):
+            stone_quat = np.array(base._yaw_to_xyzw(float(self.robust_stone_yaws[stone_index])), dtype=np.float32)
+            stone_pos = np.array(
+                [
+                    stone_xy[0],
+                    stone_xy[1],
+                    layout.initial_stone_center_z(
+                        base._terrain_height_at(stone_xy),
+                        self.robust_stone_size[2],
+                        self.robust_stone_clearance,
+                    ),
+                ],
+                dtype=np.float64,
+            )
+            label = base.STONE_LABEL if self.robust_stone_count == 1 else f"{base.STONE_LABEL}_{stone_index}"
+            specs.append(
+                base.StoneSpec(
+                    label=label,
+                    pos=stone_pos,
+                    quat=stone_quat.copy(),
+                    size=self.robust_stone_size.copy(),
+                )
+            )
+        return tuple(specs)
+
+    def _set_current_stone(self, stone_index: int) -> None:
+        """切换 robust 抓取逻辑当前操作的石子."""
+
+        super()._set_current_stone(stone_index)
+        self.robust_stone_xy = self.stone_pos[:2].astype(np.float64)
+        self.robust_stone_yaw = float(self.robust_stone_yaws[stone_index])
+        self.robust_stone_offset_xy = self.robust_stone_xy - C_POINT
 
     def _clear_arm_ik(self) -> None:
         """清空原 demo 的 IK 状态和 robust 额外 IK 目标."""
@@ -357,12 +413,12 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         body_q = self.state_0.body_q.numpy()
         self.ik_start_target = self._link_point_position(body_q, self.wr1_body_index, self.ik_link_offset)
         self.ik_final_target = final_target
-        self.ik_pregrasp_target = self.ik_final_target + np.array([0.0, 0.0, base.ARM_PREGRASP_HEIGHT], dtype=np.float32)
+        self.ik_pregrasp_target = self.ik_final_target + np.array(
+            [0.0, 0.0, base.ARM_PREGRASP_HEIGHT], dtype=np.float32
+        )
         self.current_ik_target = self.ik_start_target.copy()
         self.ik_axis_yaw = self.robust_stone_yaw if approach_motion else self._base_yaw()
-        self.ik_final_rotation = self._wr1_rotation_target(
-            self.ik_axis_yaw
-        )
+        self.ik_final_rotation = self._wr1_rotation_target(self.ik_axis_yaw)
 
         self.ik_pos_obj = ik.IKObjectivePosition(
             link_index=self.ik_wr1_body_index,
@@ -408,6 +464,9 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         """重置 demo 状态, 并恢复 robust 抓取相关标志."""
 
         super().reset()
+        self.robust_stone_xy_list = np.array([stone_q[:2] for stone_q in self.initial_stone_qs], dtype=np.float64)
+        self.robust_stone_xy = self.stone_pos[:2].astype(np.float64)
+        self.robust_stone_offset_xy = self.robust_stone_xy - C_POINT
         self.grasp_stator_error = math.inf
         self.grasp_mover_error = math.inf
         self.grasp_stator_contact = False
@@ -417,7 +476,108 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
         self.stone_grip_slide_active = False
         self.pin_stone_until_grasp = False
         self.grasp_hold_gripper_q = None
+        self.all_stones_done = False
+        self.c_route_target_index = 0
         self.next_grasp_status_time = 0.0
+
+    def _reset_current_stone_cycle(self) -> None:
+        """重置当前石子的抓取和投放阶段标志."""
+
+        self.grasp_stator_error = math.inf
+        self.grasp_mover_error = math.inf
+        self.grasp_stator_contact = False
+        self.grasp_mover_contact = False
+        self.stone_grip_slide_active = False
+        self.pin_stone_until_grasp = True
+        self.stone_attached = False
+        self.stone_released = False
+        self.stone_grasp_offset_pos = None
+        self.stone_grasp_offset_quat = None
+        self.grasp_hold_gripper_q = None
+        self.arm_retracted = False
+        self.arm_retract_start_q = None
+        self.arm_release_started = False
+        self.arm_release_lowered = False
+        self.release_open_start_q = None
+        self.arm_release_opened = False
+        self.arm_final_retracted = False
+        self.arm_final_retract_start_q = None
+        self.next_grasp_status_time = 0.0
+        self._clear_arm_ik()
+
+    def _advance_to_next_stone(self) -> None:
+        """当前石子投放完成后切换到下一个石子."""
+
+        next_index = self.current_stone_index + 1
+        if next_index >= len(self.stone_specs):
+            self.all_stones_done = True
+            print(f"All {len(self.stone_specs)} stones released into the rover")
+            return
+
+        self._set_current_stone(next_index)
+        self._reset_current_stone_cycle()
+        print(
+            "Advancing to next stone: "
+            f"index={self.current_stone_index + 1}/{len(self.stone_specs)}, "
+            f"pos={np.round(self.stone_pos, 3).tolist()}"
+        )
+
+    def _apply_c_route_policy(self) -> None:
+        """沿 A->C 直线内部目标推进到 C 附近."""
+
+        route_index = min(self.c_route_target_index, len(self.c_route_targets) - 1)
+        target_xy = self.c_route_targets[route_index]
+        final_target = route_index == len(self.c_route_targets) - 1
+        if final_target:
+            stand_distance = float(np.linalg.norm(self._base_xy() - C_STAND_POINT))
+            if stand_distance <= C_ROUTE_STAND_RADIUS:
+                print(
+                    "Reached C grasp stand: "
+                    f"position={self._base_xy().round(3).tolist()}, "
+                    f"target={np.round(C_STAND_POINT, 3).tolist()}, "
+                    f"command_target={target_xy.tolist()}"
+                )
+                self.command.fill(0.0)
+                self._write_arm_ctrl(self.stand_ctrl[base.ACT_DIM :])
+                self.c_route_target_index += 1
+                self.reached_c = True
+                return
+
+            self.command, _, _ = self._command_to_target(
+                target_xy,
+                None,
+                base.MIN_FORWARD_SPEED,
+                0.0,
+            )
+            action, _ = self.policy.predict(self._observation(), deterministic=True)
+            policy_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
+            self.last_action = policy_action
+            local_action = policy_action[base.LOCAL_FROM_POLICY]
+            leg_ctrl = np.clip(
+                self.nominal_leg_ctrl + local_action * base.ACTION_SCALE,
+                self.leg_ctrl_low,
+                self.leg_ctrl_high,
+            )
+            self._write_ctrl(leg_ctrl, self.stand_ctrl[base.ACT_DIM :])
+            self.policy_step_count += 1
+            return
+
+        arrival_radius = C_ROUTE_WAYPOINT_RADIUS
+        target_label = f"C route {route_index + 1}/{len(self.c_route_targets)}"
+        reached = self._apply_policy(
+            target_xy,
+            target_label,
+            self.stand_ctrl[base.ACT_DIM :],
+            face_xy=self.stone_pos[:2] if final_target else None,
+            arrival_radius=arrival_radius,
+            require_yaw=False,
+        )
+        if not reached:
+            return
+
+        self.c_route_target_index += 1
+        if final_target:
+            self.reached_c = True
 
     def _grasp_hold_q(self) -> float:
         """返回吸附瞬间记录的夹爪开合量."""
@@ -468,6 +628,35 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
             arm_q[-1] = self._grasp_hold_q()
         return arm_q
 
+    def _apply_arm_retract(self) -> None:
+        """抓起石子后收臂, Spot 保持在 C 点附近准备投放."""
+
+        if self.arm_retract_start_q is None:
+            self._start_arm_retract()
+
+        self.command.fill(0.0)
+        self.arm_q_cmd = self._arm_retract_q_at_time()
+        self._write_arm_ctrl(self.arm_q_cmd)
+        self.phase_time += self.frame_dt
+
+        if self.phase_time >= base.ARM_RETRACT_SECONDS:
+            self.arm_q_cmd = self._arm_stowed_q()
+            self._write_arm_ctrl(self.arm_q_cmd)
+            self.arm_retracted = True
+            print(f"Arm retracted with stone {self.current_stone_index + 1}; ready to place into rover")
+
+    def _stone_release_target(self) -> np.ndarray:
+        """把石子下放到月球车货斗内."""
+
+        place_xy = layout.stone_release_xy(
+            C_POINT,
+            A_YAW,
+            stone_index=self.current_stone_index,
+            stone_count=len(self.stone_specs),
+        )
+        place_z = layout.release_stone_center_z(base._terrain_height_at(place_xy), self.robust_stone_size[2])
+        return np.array([place_xy[0], place_xy[1], place_z], dtype=np.float32)
+
     def _attach_stone_to_gripper(self, state) -> None:
         """把石子吸附到夹爪, 并记录当前夹爪开合量."""
 
@@ -495,10 +684,27 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
     def _update_stone_constraint(self, state) -> None:
         """根据当前阶段更新石子约束状态."""
 
+        if not self.stone_settled:
+            for stone_index, stone_q_slice in enumerate(self.stone_q_slices):
+                stone_q = state.joint_q.numpy()[stone_q_slice].copy()
+                planned_q = self.stone_qs[stone_index]
+                stone_q[:2] = planned_q[:2]
+                stone_q[3:7] = planned_q[3:7]
+                state.joint_q[stone_q_slice].assign(stone_q)
+                stone_qd = state.joint_qd.numpy()[self.stone_qd_slices[stone_index]].copy()
+                stone_qd[:2] = 0.0
+                stone_qd[3:] = 0.0
+                state.joint_qd[self.stone_qd_slices[stone_index]].assign(stone_qd)
+            newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+            return
+
+        needs_fk = False
         if self.stone_attached:
             self._attach_stone_pose(state)
         elif self.pin_stone_until_grasp:
-            self._pin_stone_to_start(state)
+            state.joint_q[self.stone_q_slice].assign(self.stone_q)
+            state.joint_qd[self.stone_qd_slice].zero_()
+            needs_fk = True
         elif self.stone_grip_slide_active and not self.stone_released:
             stone_q = state.joint_q.numpy()[self.stone_q_slice].copy()
             stone_q[2] = self.stone_q[2]
@@ -507,44 +713,49 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
             stone_qd = state.joint_qd.numpy()[self.stone_qd_slice].copy()
             stone_qd[2:] = 0.0
             state.joint_qd[self.stone_qd_slice].assign(stone_qd)
-            newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
-        elif not self.stone_settled:
-            stone_q = state.joint_q.numpy()[self.stone_q_slice].copy()
-            stone_q[3:7] = self.stone_q[3:7]
-            state.joint_q[self.stone_q_slice].assign(stone_q)
-            stone_qd = state.joint_qd.numpy()[self.stone_qd_slice].copy()
-            stone_qd[3:] = 0.0
-            state.joint_qd[self.stone_qd_slice].assign(stone_qd)
+            needs_fk = True
+
+        for stone_index in range(len(self.stone_specs)):
+            if stone_index == self.current_stone_index or self.stone_released_flags[stone_index]:
+                continue
+            state.joint_q[self.stone_q_slices[stone_index]].assign(self.stone_qs[stone_index])
+            state.joint_qd[self.stone_qd_slices[stone_index]].zero_()
+            needs_fk = True
+
+        if needs_fk:
             newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _finish_stone_settle(self) -> None:
         """结束石子自由稳定阶段, 记录真实落点并固定到抓取前."""
 
-        settled_q = self.state_0.joint_q.numpy()[self.stone_q_slice].copy().astype(np.float32)
-        settled_q[3:7] = self.stone_q[3:7]
-        self.stone_q = settled_q
-        self.stone_pos = self.state_0.body_q.numpy()[self.stone_body_index, :3].copy().astype(np.float32)
-        self.robust_stone_xy = self.stone_pos[:2].astype(np.float64)
-        self.robust_stone_offset_xy = self.robust_stone_xy - B_POINT
+        for stone_index in range(len(self.stone_qs)):
+            settled_q = self.stone_qs[stone_index].copy().astype(np.float32)
+            stone_xy = settled_q[:2].astype(np.float64)
+            settled_q[2] = np.float32(
+                layout.settled_stone_center_z(base._terrain_height_at(stone_xy), self.robust_stone_size[2])
+            )
+            self.stone_qs[stone_index] = settled_q
+            self.robust_stone_xy_list[stone_index] = stone_xy
+
+        self._set_current_stone(0)
         _sync_route_globals()
         self.pin_stone_until_grasp = True
         self.stone_settled = True
         for state in (self.state_0, self.state_1):
-            state.joint_q[self.stone_q_slice].assign(self.stone_q)
-            state.joint_qd[self.stone_qd_slice].zero_()
+            for stone_index, stone_q in enumerate(self.stone_qs):
+                state.joint_q[self.stone_q_slices[stone_index]].assign(stone_q)
+                state.joint_qd[self.stone_qd_slices[stone_index]].zero_()
             newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
         print(
-            "Stone settled: "
-            f"pos={np.round(self.stone_pos, 3).tolist()}, "
-            f"stone_offset_xy={np.round(self.robust_stone_offset_xy, 3).tolist()}, "
+            "Stones settled: "
+            f"positions={np.round([q[:3] for q in self.stone_qs], 3).tolist()}, "
             f"a={np.round(A_POINT, 3).tolist()}, "
-            f"b={np.round(B_POINT, 3).tolist()}, "
             f"c={np.round(C_POINT, 3).tolist()}, "
             f"a_yaw={A_YAW:.3f}"
         )
 
     def _apply_arm_approach(self) -> None:
-        """执行 B 点抓取动作, 包括移动到目标, 下放和闭合夹爪."""
+        """执行 C 点附近当前石子的抓取动作, 包括移动到目标, 下放和闭合夹爪."""
 
         if self.ik_solver is None:
             self._start_arm_approach()
@@ -591,12 +802,13 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
             )
             self.next_grasp_status_time = self.sim_time + 1.0
 
-        contact_ready = (
-            self.grasp_stator_error <= self.robust_stator_attach_tolerance
-            and self.grasp_mover_error <= self.robust_mover_attach_tolerance
-            and self.grasp_stator_contact
-            and self.grasp_mover_contact
+        stator_ready = self.grasp_stator_error <= self.robust_stator_attach_tolerance and (
+            self.grasp_stator_contact or self.grasp_stator_error <= STATOR_VISUAL_CLOSE_TOLERANCE
         )
+        mover_ready = self.grasp_mover_error <= self.robust_mover_attach_tolerance and (
+            self.grasp_mover_contact or self.grasp_mover_error <= MOVER_VISUAL_CLOSE_TOLERANCE
+        )
+        contact_ready = stator_ready and mover_ready
         if contact_ready:
             print(
                 "Jaw contact ready: "
@@ -634,41 +846,32 @@ class RobustSpotPickPlaceDemo(base.SpotPickPlaceDemo):
 
         if not self.stone_settled:
             self.command.fill(0.0)
-            self._write_arm_ctrl(self.stand_ctrl[base.ACT_DIM:])
-        elif not self.reached_b and self.sim_time < base.MAX_SECONDS:
-            self.reached_b = self._apply_policy(
-                B_POINT,
-                "B grasp stand",
-                self.stand_ctrl[base.ACT_DIM:],
-                face_xy=None,
-                arrival_radius=self.robust_grasp_arrival_radius,
-                require_yaw=False,
-            )
-        elif self.reached_b and not self.b_aligned:
+            self._write_arm_ctrl(self.stand_ctrl[base.ACT_DIM :])
+        elif not self.reached_c:
+            self._apply_c_route_policy()
+        elif self.reached_c and not self.b_aligned:
             self.command.fill(0.0)
-            self._write_arm_ctrl(self.stand_ctrl[base.ACT_DIM:])
+            self._write_arm_ctrl(self.stand_ctrl[base.ACT_DIM :])
             self.b_aligned = True
             print(
-                "Standing at B without forced pose: "
-                f"position={self._base_xy().round(3).tolist()}, yaw={self._base_yaw():.3f}"
+                "Standing at C grasp stand without forced pose: "
+                f"position={self._base_xy().round(3).tolist()}, "
+                f"target={np.round(C_STAND_POINT, 3).tolist()}, "
+                f"yaw={self._base_yaw():.3f}"
             )
+        elif self.all_stones_done:
+            self.command.fill(0.0)
+            self._write_arm_ctrl(self.arm_q_cmd)
         elif not self.stone_attached and not self.stone_released:
             self._apply_arm_approach()
         elif not self.arm_retracted:
             self._apply_arm_retract()
-        elif not self.reached_c and self.sim_time < base.MAX_SECONDS:
-            self.reached_c = self._apply_policy(
-                C_POINT,
-                "C",
-                self.arm_q_cmd,
-                min_forward_speed=base.MIN_FORWARD_SPEED,
-                arrival_radius=base.C_ARRIVAL_RADIUS,
-                require_yaw=False,
-            )
         elif not self.arm_release_opened:
             self._apply_arm_release()
         elif not self.arm_final_retracted:
             self._apply_final_arm_retract()
+        elif not self.all_stones_done:
+            self._advance_to_next_stone()
         else:
             self.command.fill(0.0)
             self._write_arm_ctrl(self.arm_q_cmd)
@@ -725,24 +928,44 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stone-x",
         type=float,
-        default=float(ORIGINAL_STONE_OFFSET_XY[0]),
-        help="Stone world-frame x offset from B.",
+        default=float(DEFAULT_STONE_OFFSET_XY[0]),
+        help="First stone world-frame x offset from C. The default cluster shifts with this stone.",
     )
     parser.add_argument(
         "--stone-y",
         type=float,
-        default=float(ORIGINAL_STONE_OFFSET_XY[1]),
-        help="Stone world-frame y offset from B.",
+        default=float(DEFAULT_STONE_OFFSET_XY[1]),
+        help="First stone world-frame y offset from C. The default cluster shifts with this stone.",
     )
-    parser.add_argument("--stone-yaw-deg", type=float, default=0.0, help="Stone long-axis yaw in degrees.")
+    parser.add_argument("--stone-count", type=int, default=layout.DEFAULT_STONE_COUNT, help="Number of stones near C.")
+    parser.add_argument(
+        "--stone-row-side",
+        type=int,
+        choices=(-1, 1),
+        default=layout.DEFAULT_STONE_SIDE,
+        help="Which side of the rover row receives the C-side stones.",
+    )
+    parser.add_argument(
+        "--stone-spacing",
+        type=float,
+        default=layout.DEFAULT_STONE_SPACING,
+        help="Minimum center distance between randomized stones in the C-stand front-side cluster.",
+    )
+    parser.add_argument("--stone-yaw-deg", type=float, default=0.0, help="Base stone long-axis yaw in degrees.")
+    parser.add_argument(
+        "--stone-yaw-jitter-deg",
+        type=float,
+        default=math.degrees(layout.DEFAULT_STONE_YAW_JITTER),
+        help="Deterministic per-stone yaw jitter range in degrees around --stone-yaw-deg.",
+    )
     parser.add_argument("--stone-rx", type=float, default=float(base.STONE_SIZE[0]), help="Stone ellipsoid x radius.")
     parser.add_argument("--stone-ry", type=float, default=float(base.STONE_SIZE[1]), help="Stone ellipsoid y radius.")
     parser.add_argument("--stone-rz", type=float, default=float(base.STONE_SIZE[2]), help="Stone ellipsoid z radius.")
     parser.add_argument(
         "--stone-clearance",
         type=float,
-        default=0.025,
-        help="Initial vertical offset added to terrain height plus stone rz before settling.",
+        default=layout.DEFAULT_STONE_DROP_HEIGHT,
+        help="Initial drop height added above terrain height plus stone rz before settling.",
     )
     parser.add_argument(
         "--grasp-arrival-radius",

@@ -8,6 +8,7 @@ import pathlib
 import warnings
 import xml.etree.ElementTree as ET
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -112,12 +113,23 @@ C_ROVER_CARGO_WALL_THICKNESS = 0.045
 C_ROVER_CARGO_WALL_HEIGHT = 0.26
 C_ROVER_CARGO_FLOOR_THICKNESS = 0.035
 C_ROVER_CARGO_FLOOR_CLEARANCE = 0.13
-C_ROVER_CHASSIS_HALF_EXTENTS = np.array([0.72, 0.39, 0.06], dtype=np.float64)
+C_ROVER_CHASSIS_HALF_EXTENTS = np.array([0.62, 0.39, 0.06], dtype=np.float64)
 C_ROVER_CHASSIS_CENTER_OFFSET = np.array([0.24, 0.0], dtype=np.float64)
 C_ROVER_WHEEL_RADIUS = 0.135
 C_ROVER_WHEEL_HALF_WIDTH = 0.045
-C_ROVER_WHEEL_X_OFFSETS = (-0.38, 0.03, 0.44)
+C_ROVER_WHEEL_X_OFFSETS = (-0.17, 0.24, 0.65)
 C_ROVER_WHEEL_Y_OFFSET = 0.43
+
+
+@dataclass(frozen=True)
+class StoneSpec:
+    """Dynamic pickup stone configuration."""
+
+    label: str
+    pos: np.ndarray
+    quat: np.ndarray
+    size: np.ndarray
+
 
 ACTION_SCALE = np.array((0.125, 0.55, 0.55) * 4, dtype=np.float32)
 GAIT_CYCLE_SECONDS = 0.5
@@ -392,8 +404,15 @@ class SpotPickPlaceDemo:
         self.reset_leg_noise = np.random.default_rng(RESET_SEED).uniform(-0.05, 0.05, ACT_DIM).astype(np.float32)
         self.arm_qpos = stand_qpos[7 + ACT_DIM :].astype(np.float32)
         self.arm_q_cmd = self.arm_qpos.copy()
-        self.stone_pos = _stone_position()
-        self.stone_q = np.array((*self.stone_pos, 0.0, 0.0, 0.0, 1.0), dtype=np.float32)
+        self.stone_specs = tuple(self._stone_specs())
+        if not self.stone_specs:
+            raise ValueError("Expected at least one pickup stone.")
+        self.current_stone_index = 0
+        self.stone_qs = [np.array((*spec.pos, *spec.quat), dtype=np.float32) for spec in self.stone_specs]
+        self.initial_stone_qs = [stone_q.copy() for stone_q in self.stone_qs]
+        self.stone_released_flags = [False] * len(self.stone_specs)
+        self.stone_pos = self.stone_qs[0][:3].copy()
+        self.stone_q = self.stone_qs[0].copy()
         self.pin_stone_until_grasp = True
         self.stone_attached = False
         self.stone_grasp_offset_pos = None
@@ -417,18 +436,17 @@ class SpotPickPlaceDemo:
             ctrl_direct=True,
         )
         stone_cfg = newton.ModelBuilder.ShapeConfig(density=1800.0, mu=1.5, mu_torsional=0.08, mu_rolling=0.08)
-        stone_body = builder.add_body(
-            xform=wp.transform(wp.vec3(*self.stone_pos), wp.quat_identity()), label=STONE_LABEL
-        )
-        builder.add_shape_ellipsoid(
-            stone_body,
-            rx=float(STONE_SIZE[0]),
-            ry=float(STONE_SIZE[1]),
-            rz=float(STONE_SIZE[2]),
-            cfg=stone_cfg,
-            color=wp.vec3(0.18, 0.17, 0.15),
-            label=STONE_LABEL,
-        )
+        for spec in self.stone_specs:
+            stone_body = builder.add_body(xform=wp.transform(wp.vec3(*spec.pos), wp.quat(*spec.quat)), label=spec.label)
+            builder.add_shape_ellipsoid(
+                stone_body,
+                rx=float(spec.size[0]),
+                ry=float(spec.size[1]),
+                rz=float(spec.size[2]),
+                cfg=stone_cfg,
+                color=wp.vec3(0.18, 0.17, 0.15),
+                label=spec.label,
+            )
         self.c_rover_shape_indices = self._add_c_rover(builder)
 
         self.model = builder.finalize()
@@ -443,7 +461,8 @@ class SpotPickPlaceDemo:
         self.mujoco, _ = newton.solvers.SolverMuJoCo.import_mujoco()
         self.terrain_geom_id = self._find_mj_geom_id("lunar_terrain")
         self.foot_geom_ids = np.array([self._find_mj_geom_id(name) for name in ("FL", "FR", "HL", "HR")])
-        self.stone_geom_id = self._find_mj_geom_id(STONE_LABEL)
+        self.stone_geom_ids = np.array([self._find_mj_geom_id(spec.label) for spec in self.stone_specs], dtype=np.int32)
+        self.stone_geom_id = int(self.stone_geom_ids[self.current_stone_index])
         self.c_rover_geom_ids = np.array(self._find_mj_geom_ids(C_ROVER_LABEL), dtype=np.int32)
         self._configure_mj_collision_filters()
 
@@ -454,14 +473,24 @@ class SpotPickPlaceDemo:
         self.root_q_slice, self.root_qd_slice = self._find_joint_slices(("freejoint",), q_width=7, qd_width=6)
         self.leg_q_slice, self.leg_qd_slice = self._find_joint_slices(LEG_JOINTS)
         self.arm_q_slice, self.arm_qd_slice = self._find_joint_slices(ARM_JOINTS)
-        self.stone_q_slice, self.stone_qd_slice = self._find_joint_slices(
-            (f"{STONE_LABEL}_free_joint",),
-            q_width=7,
-            qd_width=6,
-        )
+        self.stone_q_slices = []
+        self.stone_qd_slices = []
+        for spec in self.stone_specs:
+            stone_q_slice, stone_qd_slice = self._find_joint_slices(
+                (f"{spec.label}_free_joint",),
+                q_width=7,
+                qd_width=6,
+            )
+            self.stone_q_slices.append(stone_q_slice)
+            self.stone_qd_slices.append(stone_qd_slice)
+        self.stone_q_slice = self.stone_q_slices[self.current_stone_index]
+        self.stone_qd_slice = self.stone_qd_slices[self.current_stone_index]
         self.spot_body_index = self._find_body_index("body")
         self.wr1_body_index = self._find_body_index(ARM_EE_BODY)
-        self.stone_body_index = self._find_body_index(STONE_LABEL)
+        self.stone_body_indices = np.array(
+            [self._find_body_index(spec.label) for spec in self.stone_specs], dtype=np.int32
+        )
+        self.stone_body_index = int(self.stone_body_indices[self.current_stone_index])
 
         ctrl_range = self.model.mujoco.actuator_ctrlrange.numpy().astype(np.float32)
         self.leg_ctrl_low = ctrl_range[:ACT_DIM, 0]
@@ -487,6 +516,30 @@ class SpotPickPlaceDemo:
         print(f"Loaded locomotion policy: {model_path}")
         print(f"Loaded VecNormalize stats: {vecnormalize_path}")
         print(f"Stone position: {self.stone_pos.round(3).tolist()}")
+
+    def _stone_specs(self) -> tuple[StoneSpec, ...]:
+        stone_pos = _stone_position()
+        return (
+            StoneSpec(
+                label=STONE_LABEL,
+                pos=stone_pos,
+                quat=np.array((0.0, 0.0, 0.0, 1.0), dtype=np.float32),
+                size=STONE_SIZE.copy(),
+            ),
+        )
+
+    def _set_current_stone(self, stone_index: int) -> None:
+        if not 0 <= stone_index < len(self.stone_specs):
+            raise IndexError(f"Stone index out of range: {stone_index}")
+
+        self.current_stone_index = stone_index
+        self.stone_q = self.stone_qs[stone_index].copy()
+        self.stone_pos = self.stone_q[:3].copy()
+        self.stone_q_slice = self.stone_q_slices[stone_index]
+        self.stone_qd_slice = self.stone_qd_slices[stone_index]
+        self.stone_body_index = int(self.stone_body_indices[stone_index])
+        self.stone_geom_id = int(self.stone_geom_ids[stone_index])
+        self.stone_released = self.stone_released_flags[stone_index]
 
     def _find_joint_slices(
         self,
@@ -634,8 +687,6 @@ class SpotPickPlaceDemo:
 
         add_box("front_equipment_box", (0.62, 0.0), floor_top_z + 0.11, 0.20, 0.28, 0.11, cabin_color)
         add_box("front_roof", (0.62, 0.0), floor_top_z + 0.245, 0.23, 0.31, 0.025, rail_color)
-        add_box("rear_loading_lip", (-0.38, 0.0), floor_top_z + 0.035, 0.06, 0.36, 0.035, rail_color)
-
         wheel_center_z = ground_z + C_ROVER_WHEEL_RADIUS
         for axle_index, x_offset in enumerate(C_ROVER_WHEEL_X_OFFSETS):
             add_box(f"axle_{axle_index}", (x_offset, 0.0), wheel_center_z, 0.035, 0.42, 0.025, rail_color)
@@ -670,16 +721,23 @@ class SpotPickPlaceDemo:
 
     def _configure_mj_collision_filters(self) -> None:
         robot_mask = np.ones(self.solver.mj_model.ngeom, dtype=bool)
-        robot_mask[[self.terrain_geom_id, self.stone_geom_id, *self.c_rover_geom_ids.tolist()]] = False
+        non_robot_geom_ids = np.concatenate(
+            (
+                np.array([self.terrain_geom_id], dtype=np.int32),
+                self.stone_geom_ids,
+                self.c_rover_geom_ids,
+            )
+        )
+        robot_mask[non_robot_geom_ids] = False
 
         self.solver.mj_model.geom_contype[robot_mask] = 2
         self.solver.mj_model.geom_conaffinity[robot_mask] = 5
         self.solver.mj_model.geom_contype[self.terrain_geom_id] = 1
         self.solver.mj_model.geom_conaffinity[self.terrain_geom_id] = 6
-        self.solver.mj_model.geom_contype[self.stone_geom_id] = 4
-        self.solver.mj_model.geom_conaffinity[self.stone_geom_id] = 3
-        self.solver.mj_model.geom_condim[self.stone_geom_id] = 6
-        self.solver.mj_model.geom_priority[self.stone_geom_id] = 2
+        self.solver.mj_model.geom_contype[self.stone_geom_ids] = 4
+        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = 3
+        self.solver.mj_model.geom_condim[self.stone_geom_ids] = 6
+        self.solver.mj_model.geom_priority[self.stone_geom_ids] = 2
         self.solver.mj_model.geom_contype[self.c_rover_geom_ids] = 0
         self.solver.mj_model.geom_conaffinity[self.c_rover_geom_ids] = 4
         self.solver.mj_model.geom_condim[self.c_rover_geom_ids] = 6
@@ -711,6 +769,9 @@ class SpotPickPlaceDemo:
         self.b_align_start_leg_q = None
         self.b_align_target_root_q = None
         self.contacts_ready = False
+        self.stone_qs = [stone_q.copy() for stone_q in self.initial_stone_qs]
+        self.stone_released_flags = [False] * len(self.stone_specs)
+        self._set_current_stone(0)
         self.pin_stone_until_grasp = True
         self.stone_attached = False
         self.stone_grasp_offset_pos = None
@@ -746,13 +807,17 @@ class SpotPickPlaceDemo:
         state.joint_q[self.root_q_slice].assign((A_POINT[0], A_POINT[1], RESET_BASE_HEIGHT, *_yaw_to_xyzw(A_YAW)))
         state.joint_q[self.leg_q_slice].assign(self.nominal_leg_qpos + self.reset_leg_noise)
         state.joint_q[self.arm_q_slice].assign(self.arm_qpos)
-        state.joint_q[self.stone_q_slice].assign(self.stone_q)
+        for stone_q_slice, stone_q in zip(self.stone_q_slices, self.stone_qs, strict=True):
+            state.joint_q[stone_q_slice].assign(stone_q)
+        newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+
+    def _pin_stone_index_to_start(self, state, stone_index: int) -> None:
+        state.joint_q[self.stone_q_slices[stone_index]].assign(self.stone_qs[stone_index])
+        state.joint_qd[self.stone_qd_slices[stone_index]].zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _pin_stone_to_start(self, state) -> None:
-        state.joint_q[self.stone_q_slice].assign(self.stone_q)
-        state.joint_qd[self.stone_qd_slice].zero_()
-        newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+        self._pin_stone_index_to_start(state, self.current_stone_index)
 
     def _attach_stone_to_gripper(self, state) -> None:
         body_q = state.body_q.numpy()
@@ -819,6 +884,7 @@ class SpotPickPlaceDemo:
     def _release_stone(self, state) -> None:
         state.joint_qd[self.stone_qd_slice].zero_()
         self.stone_attached = False
+        self.stone_released_flags[self.current_stone_index] = True
         self.stone_released = True
         self.stone_grasp_offset_pos = None
         self.stone_grasp_offset_quat = None
