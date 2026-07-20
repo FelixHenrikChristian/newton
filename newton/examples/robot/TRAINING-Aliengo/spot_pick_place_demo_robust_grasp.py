@@ -21,6 +21,7 @@ import torch as th
 import warp as wp
 from gymnasium import spaces
 from PIL import Image
+from spot_pick_place_mesh import grasp_axis_surface_points, load_obj_triangles, scale_to_ellipsoid_bounds
 from stable_baselines3 import PPO
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
@@ -33,6 +34,9 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 SCENE_PATH = SCRIPT_DIR / "spot_scene.xml"
 MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_transfer_3p5m" / "best_eval" / "best_model.zip"
 VECNORMALIZE_PATH = MODEL_PATH.parent / "best_vecnormalize.pkl"
+MESH_STONE_ASSET_DIR = SCRIPT_DIR / "lunar_mujoco_spot_arm_mining_scene"
+MESH_STONE_ASSET_FILENAMES = ("rock1_centered_unit.obj", "rock2_centered_unit.obj")
+MESH_STONE_ASSET_PATHS = tuple(MESH_STONE_ASSET_DIR / filename for filename in MESH_STONE_ASSET_FILENAMES)
 
 LEG_JOINTS = (
     "fl_hx",
@@ -428,6 +432,19 @@ class SpotPickPlaceDemo:
         self.arm_final_retracted = False
         self.arm_final_retract_start_q = None
         self.show_ik_targets = getattr(args, "show_ik_targets", False)
+        self.stone_meshes = {}
+        self.stone_mesh_indices = {}
+        self.stone_mesh_vertices = {}
+        self.stone_mesh_scales = {}
+        for stone_index, asset_path in enumerate(MESH_STONE_ASSET_PATHS):
+            if stone_index >= len(self.stone_specs):
+                break
+            vertices, indices = load_obj_triangles(asset_path)
+            scale = scale_to_ellipsoid_bounds(vertices, self.stone_specs[stone_index].size)
+            self.stone_meshes[stone_index] = newton.Mesh(vertices=vertices, indices=indices)
+            self.stone_mesh_indices[stone_index] = indices
+            self.stone_mesh_vertices[stone_index] = vertices * scale
+            self.stone_mesh_scales[stone_index] = scale
 
         builder = newton.ModelBuilder()
         builder.add_mjcf(
@@ -437,17 +454,28 @@ class SpotPickPlaceDemo:
             ctrl_direct=True,
         )
         stone_cfg = newton.ModelBuilder.ShapeConfig(density=1800.0, mu=1.5, mu_torsional=0.08, mu_rolling=0.08)
-        for spec in self.stone_specs:
+        for stone_index, spec in enumerate(self.stone_specs):
             stone_body = builder.add_body(xform=wp.transform(wp.vec3(*spec.pos), wp.quat(*spec.quat)), label=spec.label)
-            builder.add_shape_ellipsoid(
-                stone_body,
-                rx=float(spec.size[0]),
-                ry=float(spec.size[1]),
-                rz=float(spec.size[2]),
-                cfg=stone_cfg,
-                color=wp.vec3(0.18, 0.17, 0.15),
-                label=spec.label,
-            )
+            mesh = self.stone_meshes.get(stone_index)
+            if mesh is not None:
+                builder.add_shape_mesh(
+                    stone_body,
+                    mesh=mesh,
+                    scale=wp.vec3(*self.stone_mesh_scales[stone_index]),
+                    cfg=stone_cfg,
+                    color=wp.vec3(0.18, 0.17, 0.15),
+                    label=spec.label,
+                )
+            else:
+                builder.add_shape_ellipsoid(
+                    stone_body,
+                    rx=float(spec.size[0]),
+                    ry=float(spec.size[1]),
+                    rz=float(spec.size[2]),
+                    cfg=stone_cfg,
+                    color=wp.vec3(0.18, 0.17, 0.15),
+                    label=spec.label,
+                )
         self.c_rover_shape_indices = self._add_c_rover(builder)
 
         self.model = builder.finalize()
@@ -1586,6 +1614,13 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         self.stone_grip_slide_active = False
         self.grasp_hold_gripper_q = None
         self.next_grasp_status_time = 0.0
+        grasp_height = self.robust_stone_size[2] * np.clip(self.robust_grasp_height_fraction, 0.0, 0.95)
+        self.stone_mesh_grasp_points = {
+            stone_index: grasp_axis_surface_points(
+                self.stone_mesh_vertices[stone_index], self.stone_mesh_indices[stone_index], float(grasp_height)
+            )
+            for stone_index in self.stone_meshes
+        }
         self.reset()
         print(
             "Robust grasp setup: "
@@ -1687,10 +1722,20 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
     def _stone_side_surface_targets(self, state=None) -> tuple[np.ndarray, np.ndarray]:
         """计算 stator 和 mover 应触碰的石子长轴两侧表面点."""
 
-        if state is None:
-            stone_center = self.stone_pos.astype(np.float64)
-        else:
-            stone_center = state.body_q.numpy()[self.stone_body_index, :3].astype(np.float64)
+        mesh_points = self.stone_mesh_grasp_points.get(self.current_stone_index)
+        if mesh_points is not None:
+            stone_tf = self.stone_q if state is None else state.body_q.numpy()[self.stone_body_index]
+            negative_side, positive_side = mesh_points
+            stator_local, mover_local = (negative_side, positive_side)
+            if self.robust_stator_side > 0.0:
+                stator_local, mover_local = mover_local, stator_local
+            stone_rotation = _xyzw_to_matrix(stone_tf[3:7])
+            return (
+                (stone_tf[:3] + stone_rotation @ stator_local).astype(np.float32),
+                (stone_tf[:3] + stone_rotation @ mover_local).astype(np.float32),
+            )
+
+        stone_center = self.stone_pos.astype(np.float64) if state is None else state.body_q.numpy()[self.stone_body_index, :3]
 
         long_axis, _ = _xy_axes_from_yaw(self.robust_stone_yaw)
         height_fraction = float(np.clip(self.robust_grasp_height_fraction, 0.0, 0.95))
