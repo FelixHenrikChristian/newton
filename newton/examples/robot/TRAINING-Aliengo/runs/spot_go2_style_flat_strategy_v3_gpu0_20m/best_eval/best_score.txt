@@ -1,0 +1,11 @@
+num_timesteps=11500000
+robust_score=28.979352
+worst_scenario_score=28.494862
+mean_score=29.186991
+mean_survival=1.000000
+mean_forward_distance=6.428778
+mean_linear_rmse=0.029333
+mean_yaw_rmse=0.067263
+mean_gait_match=0.904710
+mean_foot_slip=0.001652
+mean_episode_length=1000.000000
