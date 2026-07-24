@@ -96,7 +96,7 @@ ARM_RETRACT_SECONDS = 2.5
 ARM_PLACE_SECONDS = ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS
 ARM_RELEASE_CLEARANCE = 0.33
 GRIPPER_RELEASE_SECONDS = 1.5
-IK_ITERATIONS = 32
+IK_ITERATIONS = 12
 IK_STEP_SIZE = 0.8
 IK_LAMBDA_INITIAL = 0.1
 IK_DOWN_AXIS_WEIGHT = 0.25
@@ -648,6 +648,10 @@ class SpotPickPlaceDemo:
             mu_torsional=0.03,
             mu_rolling=0.01,
         )
+        rover_visual_cfg = newton.ModelBuilder.ShapeConfig(
+            density=0.0,
+            has_shape_collision=False,
+        )
         shape_indices = []
 
         def add_box(
@@ -658,6 +662,7 @@ class SpotPickPlaceDemo:
             hy: float,
             hz: float,
             color: wp.vec3,
+            has_collision: bool = False,
         ) -> None:
             shape_indices.append(
                 builder.add_shape_box(
@@ -666,7 +671,7 @@ class SpotPickPlaceDemo:
                     hx=float(hx),
                     hy=float(hy),
                     hz=float(hz),
-                    cfg=rover_cfg,
+                    cfg=rover_cfg if has_collision else rover_visual_cfg,
                     color=color,
                     label=f"{C_ROVER_LABEL}_{suffix}",
                 )
@@ -704,6 +709,7 @@ class SpotPickPlaceDemo:
             inner_hy + thickness,
             0.5 * C_ROVER_CARGO_FLOOR_THICKNESS,
             cargo_color,
+            has_collision=True,
         )
         cargo_wall_specs = (
             ("cargo_front", (inner_hx + half_thickness, 0.0), half_thickness, inner_hy + thickness),
@@ -712,7 +718,16 @@ class SpotPickPlaceDemo:
             ("cargo_right", (0.0, -inner_hy - half_thickness), inner_hx, half_thickness),
         )
         for suffix, offset, hx, hy in cargo_wall_specs:
-            add_box(suffix, offset, wall_center_z, hx, hy, 0.5 * C_ROVER_CARGO_WALL_HEIGHT, cargo_color)
+            add_box(
+                suffix,
+                offset,
+                wall_center_z,
+                hx,
+                hy,
+                0.5 * C_ROVER_CARGO_WALL_HEIGHT,
+                cargo_color,
+                has_collision=True,
+            )
 
         add_box("front_equipment_box", (0.62, 0.0), floor_top_z + 0.11, 0.20, 0.28, 0.11, cabin_color)
         add_box("front_roof", (0.62, 0.0), floor_top_z + 0.245, 0.23, 0.31, 0.025, rail_color)
@@ -726,7 +741,7 @@ class SpotPickPlaceDemo:
                         xform=make_xform((x_offset, y_offset), wheel_center_z, wheel_quat),
                         radius=C_ROVER_WHEEL_RADIUS,
                         half_height=C_ROVER_WHEEL_HALF_WIDTH,
-                        cfg=rover_cfg,
+                        cfg=rover_visual_cfg,
                         color=wheel_color,
                         label=f"{C_ROVER_LABEL}_wheel_{side_name}_{axle_index}",
                     )
@@ -739,7 +754,7 @@ class SpotPickPlaceDemo:
                 xform=make_xform((0.62, 0.26), mast_center_z),
                 radius=0.012,
                 half_height=0.24,
-                cfg=rover_cfg,
+                cfg=rover_visual_cfg,
                 color=rail_color,
                 label=f"{C_ROVER_LABEL}_antenna_mast",
             )
@@ -861,7 +876,7 @@ class SpotPickPlaceDemo:
         self._attach_stone_pose(state)
         print("Attached stone to gripper; retracting arm")
 
-    def _attach_stone_pose(self, state) -> None:
+    def _attach_stone_pose(self, state, update_fk: bool = True) -> None:
         body_q = state.body_q.numpy()
         gripper_tf = body_q[self.wr1_body_index]
         gripper_rot = _xyzw_to_matrix(gripper_tf[3:7])
@@ -869,7 +884,8 @@ class SpotPickPlaceDemo:
         stone_quat = _quat_multiply(gripper_tf[3:7], self.stone_grasp_offset_quat)
         state.joint_q[self.stone_q_slice].assign((*stone_pos, *stone_quat))
         state.joint_qd[self.stone_qd_slice].zero_()
-        newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+        if update_fk:
+            newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _update_stone_constraint(self, state) -> None:
         if self.stone_attached:
@@ -1622,6 +1638,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             for stone_index in self.stone_meshes
         }
         self.reset()
+        self._warm_up_arm_ik()
         print(
             "Robust grasp setup: "
             f"stone_count={self.robust_stone_count}, "
@@ -1808,7 +1825,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         local_target = current_rot.T @ (target.astype(np.float64) - current_pos)
         return (initial_pos + initial_rot @ local_target).astype(np.float32)
 
-    def _start_arm_ik_motion(self, final_target: np.ndarray, label: str) -> None:
+    def _start_arm_ik_motion(self, final_target: np.ndarray, label: str, log: bool = True) -> None:
         """创建机械臂 IK 模型和目标, 用于抓取下放或 C 点下放."""
 
         self.phase_time = 0.0
@@ -1870,13 +1887,22 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         )
         link_offset_label = "stator_track" if approach_motion else "gripper_track"
 
-        print(
-            f"Start robust arm IK {label}: "
-            f"pregrasp={np.round(self.ik_pregrasp_target, 3).tolist()}, "
-            f"final={np.round(self.ik_final_target, 3).tolist()}, "
-            f"wr1_rot={np.round(self.ik_final_rotation, 3).tolist()}, "
-            f"link_offset={link_offset_label}"
-        )
+        if log:
+            print(
+                f"Start robust arm IK {label}: "
+                f"pregrasp={np.round(self.ik_pregrasp_target, 3).tolist()}, "
+                f"final={np.round(self.ik_final_target, 3).tolist()}, "
+                f"wr1_rot={np.round(self.ik_final_rotation, 3).tolist()}, "
+                f"link_offset={link_offset_label}"
+            )
+
+    def _warm_up_arm_ik(self) -> None:
+        """在场景加载时编译 IK 内核, 避免首次抓取中途停顿."""
+
+        self._start_arm_ik_motion(self._stone_approach_target(), "approach", log=False)
+        self.arm_q_cmd = self._solve_arm_ik(self.ik_start_target)
+        self.reset()
+        print("Arm IK kernels warmed up during scene initialization")
 
     def reset(self) -> None:
         """重置 demo 状态, 并恢复 robust 抓取相关标志."""
@@ -2038,6 +2064,13 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         self.ik_joint_q.assign(arm_q.reshape(1, -1))
         return arm_q
 
+    def _close_gripper_without_ik(self) -> np.ndarray:
+        """保持机械臂关节不动, 仅更新夹爪闭合目标."""
+
+        arm_q = self.arm_q_cmd.copy()
+        arm_q[-1] = self._gripper_target_at_time()
+        return self._limit_arm_joint_step(arm_q)
+
     def _arm_stowed_q(self) -> np.ndarray:
         """返回收臂姿态, 搬运时保持吸附瞬间夹爪 q."""
 
@@ -2099,7 +2132,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         self.state_1.joint_qd[self.stone_qd_slice].zero_()
         print("Stone horizontal slide released; closing gripper until both jaws touch")
 
-    def _update_stone_constraint(self, state) -> None:
+    def _update_stone_constraint(self, state, update_fk: bool = True) -> None:
         """根据当前阶段更新石子约束状态."""
 
         if not self.stone_settled:
@@ -2113,12 +2146,14 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
                 stone_qd[:2] = 0.0
                 stone_qd[3:] = 0.0
                 state.joint_qd[self.stone_qd_slices[stone_index]].assign(stone_qd)
-            newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
+            if update_fk:
+                newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
             return
 
         needs_fk = False
         if self.stone_attached:
-            self._attach_stone_pose(state)
+            self._attach_stone_pose(state, update_fk=False)
+            needs_fk = True
         elif self.pin_stone_until_grasp:
             state.joint_q[self.stone_q_slice].assign(self.stone_q)
             state.joint_qd[self.stone_qd_slice].zero_()
@@ -2140,7 +2175,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             state.joint_qd[self.stone_qd_slices[stone_index]].zero_()
             needs_fk = True
 
-        if needs_fk:
+        if needs_fk and update_fk:
             newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _finish_stone_settle(self) -> None:
@@ -2178,10 +2213,14 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             self._start_arm_approach()
 
         self.command.fill(0.0)
-        if self.phase_time >= ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS:
+        closing_gripper = self.phase_time >= ARM_PREGRASP_SECONDS + ARM_DESCENT_SECONDS
+        if closing_gripper:
             self._release_stone_pin_for_grip()
         self.current_ik_target = self._arm_target_at_time()
-        self.arm_q_cmd = self._solve_arm_ik(self.current_ik_target)
+        if closing_gripper:
+            self.arm_q_cmd = self._close_gripper_without_ik()
+        else:
+            self.arm_q_cmd = self._solve_arm_ik(self.current_ik_target)
         self._write_arm_ctrl(self.arm_q_cmd)
 
         body_q = self.state_0.body_q.numpy()
@@ -2293,20 +2332,23 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             self.command.fill(0.0)
             self._write_arm_ctrl(self.arm_q_cmd)
 
-        for _ in range(CONTROL_DECIMATION):
+        for substep in range(CONTROL_DECIMATION):
             self.state_0.clear_forces()
             if self.viewer is not None:
                 self.viewer.apply_forces(self.state_0)
             self.solver.step(self.state_0, self.state_1, self.control, None, self.sim_dt)
             self.state_0, self.state_1 = self.state_1, self.state_0
-            self._update_stone_constraint(self.state_0)
-            if (
-                self.stone_settled
-                and not self.stone_attached
-                and not self.stone_released
-                and self._grasp_contact_ready(self.state_0)
-            ):
-                self._attach_stone_to_gripper(self.state_0)
+            self._update_stone_constraint(
+                self.state_0,
+                update_fk=substep == CONTROL_DECIMATION - 1,
+            )
+        if (
+            self.stone_settled
+            and not self.stone_attached
+            and not self.stone_released
+            and self._grasp_contact_ready(self.state_0)
+        ):
+            self._attach_stone_to_gripper(self.state_0)
         if not self.stone_settled:
             self.stone_settle_time += self.frame_dt
             if self.stone_settle_time >= STONE_SETTLE_SECONDS:
