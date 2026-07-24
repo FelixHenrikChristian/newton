@@ -131,6 +131,10 @@ class StoneSpec:
 
 
 NOMINAL_LEG_CTRL = np.array((0.0, -0.22, 0.55) * 4, dtype=np.float32)
+MANIPULATION_LEG_CTRL = np.array(
+    (0.18, -0.10, 0.15, -0.18, -0.10, 0.15, 0.18, -0.10, 0.15, -0.18, -0.10, 0.15),
+    dtype=np.float32,
+)
 ACTION_SCALE = np.array((0.18, 0.30, 0.48) * 4, dtype=np.float32)
 ACTUATOR_GAIN_SCALE = 1.8
 GAIT_PERIOD = 0.56
@@ -971,7 +975,7 @@ class SpotPickPlaceDemo:
     def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
         self.last_action.fill(0.0)
         self.gait_phase = 0.0
-        self._write_ctrl(self.nominal_leg_ctrl, arm_q)
+        self._write_ctrl(MANIPULATION_LEG_CTRL, arm_q)
 
     def _base_xy(self) -> np.ndarray:
         return self.state_0.joint_q.numpy()[self.root_q_slice.start : self.root_q_slice.start + 2].copy()

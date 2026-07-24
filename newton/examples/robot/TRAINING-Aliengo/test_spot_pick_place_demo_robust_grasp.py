@@ -41,6 +41,40 @@ class TestSpotPickPlaceDemoRobustGrasp(unittest.TestCase):
         self.assertEqual(demo.GAIT_PERIOD, 0.56)
         self.assertEqual(demo.GAIT_CONTACT_SHARPNESS, 3.0)
 
+    def test_arm_control_uses_low_wide_fixed_stance(self) -> None:
+        example = object.__new__(demo.SpotPickPlaceDemo)
+        example.last_action = np.ones(demo.ACT_DIM, dtype=np.float32)
+        example.gait_phase = 1.0
+        example.nominal_leg_ctrl = demo.NOMINAL_LEG_CTRL.copy()
+        writes: list[tuple[np.ndarray, np.ndarray]] = []
+        example._write_ctrl = lambda leg_ctrl, arm_q: writes.append((leg_ctrl.copy(), arm_q.copy()))
+        arm_q = np.arange(demo.ARM_ACTUATOR_COUNT, dtype=np.float32)
+
+        example._write_arm_ctrl(arm_q)
+
+        expected_leg_ctrl = np.array(
+            (
+                0.18,
+                -0.10,
+                0.15,
+                -0.18,
+                -0.10,
+                0.15,
+                0.18,
+                -0.10,
+                0.15,
+                -0.18,
+                -0.10,
+                0.15,
+            ),
+            dtype=np.float32,
+        )
+        np.testing.assert_allclose(demo.MANIPULATION_LEG_CTRL, expected_leg_ctrl)
+        np.testing.assert_allclose(writes[0][0], expected_leg_ctrl)
+        np.testing.assert_array_equal(writes[0][1], arm_q)
+        np.testing.assert_array_equal(example.last_action, np.zeros(demo.ACT_DIM, dtype=np.float32))
+        self.assertEqual(example.gait_phase, 0.0)
+
     def test_build_locomotion_observation_uses_v2_layout(self) -> None:
         base_angular = np.array((1.0, 2.0, 3.0), dtype=np.float32)
         projected_gravity = np.array((4.0, 5.0, 6.0), dtype=np.float32)
