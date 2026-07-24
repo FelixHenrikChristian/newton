@@ -5,11 +5,10 @@ import re
 import time
 from pathlib import Path
 
+from play_spot_policy import patch_sb3_zip_loader
+from spot_go2_style_env import LEGACY_OBS_DIM, OBS_DIM, SpotGo2StyleEnv
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-
-from play_spot_policy import patch_sb3_zip_loader
-from spot_go2_style_env import SpotGo2StyleEnv
 from train_spot_go2_style_ppo import _resolve_scene_path
 
 
@@ -42,25 +41,48 @@ def main() -> None:
     parser.add_argument("--model", type=Path, default=Path("runs/spot_go2_style_walk/ppo_spot_go2_style_final.zip"))
     parser.add_argument("--vecnormalize", type=Path, default=None)
     parser.add_argument("--seconds", type=float, default=60.0)
-    parser.add_argument("--reset-base-height", type=float, default=1.72)
-    parser.add_argument("--target-base-height", type=float, default=1.68)
+    parser.add_argument("--reset-base-height", type=float, default=1.80)
+    parser.add_argument("--target-base-height", type=float, default=1.65)
     parser.add_argument("--control-decimation", type=int, default=10)
-    parser.add_argument("--action-scale", type=float, default=0.25)
-    parser.add_argument("--nominal-leg-ctrl", type=float, nargs=3, default=(0.0, -0.1, 0.3), metavar=("HX", "HY", "KN"))
-    parser.add_argument("--actuator-gain-scale", type=float, default=3.0)
+    parser.add_argument("--action-scale", type=float, default=0.35)
+    parser.add_argument(
+        "--nominal-leg-ctrl", type=float, nargs=3, default=(0.0, -0.22, 0.55), metavar=("HX", "HY", "KN")
+    )
+    parser.add_argument("--actuator-gain-scale", type=float, default=1.8)
+    parser.add_argument("--gait-period", type=float, default=0.56)
+    parser.add_argument("--gait-contact-sharpness", type=float, default=3.0)
+    parser.add_argument("--swing-height", type=float, default=0.10)
     parser.add_argument("--command-vx", type=float, default=0.3)
     parser.add_argument("--command-vy", type=float, default=0.0)
     parser.add_argument("--command-yaw", type=float, default=0.0)
-    parser.add_argument("--render-camera", type=str, default="tracking_side_view")
+    parser.add_argument(
+        "--render-camera",
+        type=str,
+        default="tracking_side_view",
+        help="Fixed camera name, or 'free' to use the interactive viewer camera.",
+    )
     args = parser.parse_args()
 
     patch_sb3_zip_loader()
+    probe_model = PPO.load(args.model, device="cpu")
+    model_obs_dim = int(probe_model.observation_space.shape[0])
+    del probe_model
+    if model_obs_dim == LEGACY_OBS_DIM:
+        observation_version = "v1"
+        print("Loading legacy 55-dimensional observation layout for this model.")
+    elif model_obs_dim == OBS_DIM:
+        observation_version = "v2"
+    else:
+        raise ValueError(
+            f"Unsupported model observation dimension {model_obs_dim}; expected {LEGACY_OBS_DIM} or {OBS_DIM}."
+        )
 
     command_range = (
         (args.command_vx, args.command_vx),
         (args.command_vy, args.command_vy),
         (args.command_yaw, args.command_yaw),
     )
+    render_camera = None if args.render_camera.lower() == "free" else args.render_camera
     raw_env = SpotGo2StyleEnv(
         xml_path=_resolve_scene_path(args.xml),
         command_range=command_range,
@@ -70,10 +92,16 @@ def main() -> None:
         action_scale=args.action_scale,
         nominal_leg_ctrl=tuple(args.nominal_leg_ctrl),
         actuator_gain_scale=args.actuator_gain_scale,
+        gait_period=args.gait_period,
+        gait_contact_sharpness=args.gait_contact_sharpness,
+        swing_height=args.swing_height,
         randomize_domain=False,
         use_curriculum=False,
+        observation_version=observation_version,
+        command_resample_seconds=0.0,
+        max_action_delay=0,
         render_mode="human",
-        render_camera=args.render_camera or None,
+        render_camera=render_camera,
     )
     vec_env = DummyVecEnv([lambda: raw_env])
     vecnormalize_path = _resolve_vecnormalize_path(args.model, args.vecnormalize)

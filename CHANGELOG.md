@@ -23,6 +23,7 @@
 - Build mesh SDFs via the texture-based sparse path only; sample via `SDF.texture_data` instead of `SDF.sparse_volume` / `SDF.coarse_volume`.
 - Render all GL viewer lines (joints, contacts, wireframes) as geometry-shader quads instead of ``GL_LINES`` for uniform width across zoom levels and non-square viewports
 - Pin `mujoco` and `mujoco-warp` dependencies to `~=3.6.0`
+- Use the lunar Go2-style best-evaluation policy in the robust Spot grasp demo
 - Update default environment map texture in GL viewer (source: https://polyhaven.com/a/brown_photostudio_02)
 - Bump `mujoco` and `mujoco-warp` dependencies to `~=3.7.0` (`mujoco-warp` requires `>=3.7.0.1`)
 - Increase conveyor rail roughness in `example_basic_conveyor` to reduce mirror-like reflections

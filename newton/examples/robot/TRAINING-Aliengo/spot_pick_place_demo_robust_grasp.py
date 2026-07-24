@@ -32,7 +32,7 @@ import newton.ik as ik
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCENE_PATH = SCRIPT_DIR / "spot_scene.xml"
-MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_transfer_3p5m" / "best_eval" / "best_model.zip"
+MODEL_PATH = SCRIPT_DIR / "runs" / "spot_go2_style_lunar_strategy_v3_gpu1_30m" / "best_eval" / "best_model.zip"
 VECNORMALIZE_PATH = MODEL_PATH.parent / "best_vecnormalize.pkl"
 MESH_STONE_ASSET_DIR = SCRIPT_DIR / "lunar_mujoco_spot_arm_mining_scene"
 MESH_STONE_ASSET_FILENAMES = ("rock1_centered_unit.obj", "rock2_centered_unit.obj")
@@ -54,15 +54,9 @@ LEG_JOINTS = (
 )
 ARM_JOINTS = ("arm_sh0", "arm_sh1", "arm_el0", "arm_el1", "arm_wr0", "arm_wr1", "arm_f1x")
 
-OBS_DIM = 54
+OBS_DIM = 58
 ACT_DIM = 12
 ARM_ACTUATOR_COUNT = 7
-
-# The full scene keeps Newton's imported local leg order (FL, FR, HL, HR), but
-# the transfer policy was trained with the original Go2 order (FR, FL, HR, HL).
-POLICY_FROM_LOCAL = np.array([3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8], dtype=np.int32)
-LOCAL_FROM_POLICY = np.argsort(POLICY_FROM_LOCAL)
-POLICY_CONTACT_FROM_LOCAL = np.array([1, 0, 3, 2], dtype=np.int32)
 
 A_POINT = np.array([5.0, -6.0], dtype=np.float64)
 B_POINT = np.array([9.0, -3.5], dtype=np.float64)
@@ -136,8 +130,11 @@ class StoneSpec:
     size: np.ndarray
 
 
-ACTION_SCALE = np.array((0.125, 0.55, 0.55) * 4, dtype=np.float32)
-GAIT_CYCLE_SECONDS = 0.5
+NOMINAL_LEG_CTRL = np.array((0.0, -0.22, 0.55) * 4, dtype=np.float32)
+ACTION_SCALE = np.array((0.18, 0.30, 0.48) * 4, dtype=np.float32)
+ACTUATOR_GAIN_SCALE = 1.8
+GAIT_PERIOD = 0.56
+GAIT_CONTACT_SHARPNESS = 3.0
 B_ALIGN_SECONDS = 1.0
 B_GRASP_ROOT_Q = np.array(
     [9.076134, -3.625636, 1.593325, -0.032121, 0.035750, 0.373366, 0.926438],
@@ -229,6 +226,34 @@ class _VecNormalizeEnv(gym.Env):
 
 def _wrap_angle(angle: float) -> float:
     return (angle + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def _build_locomotion_observation(
+    *,
+    base_angular: np.ndarray,
+    projected_gravity: np.ndarray,
+    command: np.ndarray,
+    gait_observation: np.ndarray,
+    joint_pos: np.ndarray,
+    joint_vel: np.ndarray,
+    last_action: np.ndarray,
+    foot_contacts: np.ndarray,
+    base_linear: np.ndarray,
+) -> np.ndarray:
+    """Build the lunar locomotion policy's 58-D observation."""
+    return np.concatenate(
+        [
+            base_angular * 0.25,
+            projected_gravity,
+            command * np.array((2.0, 2.0, 0.25), dtype=np.float32),
+            gait_observation,
+            joint_pos,
+            joint_vel * 0.05,
+            last_action,
+            foot_contacts,
+            base_linear * 0.5,
+        ]
+    ).astype(np.float32)
 
 
 def _smoothstep(alpha: float) -> float:
@@ -391,7 +416,7 @@ class SpotPickPlaceDemo:
         self.sim_dt = self.frame_dt / CONTROL_DECIMATION
         self.sim_time = 0.0
         self.last_action = np.zeros(ACT_DIM, dtype=np.float32)
-        self.policy_step_count = 0
+        self.gait_phase = 0.0
         self.command = np.zeros(3, dtype=np.float32)
         self.reached_b = False
         self.reached_c = False
@@ -404,7 +429,7 @@ class SpotPickPlaceDemo:
 
         stand_qpos, stand_ctrl = _scene_keyframe()
         self.stand_ctrl = stand_ctrl.astype(np.float32)
-        self.nominal_leg_ctrl = np.array((0.0, -0.1, 0.3) * 4, dtype=np.float32)
+        self.nominal_leg_ctrl = NOMINAL_LEG_CTRL.copy()
         self.nominal_leg_qpos = (stand_qpos[7 : 7 + ACT_DIM] + self.nominal_leg_ctrl).astype(np.float32)
         self.reset_leg_noise = np.random.default_rng(RESET_SEED).uniform(-0.05, 0.05, ACT_DIM).astype(np.float32)
         self.arm_qpos = stand_qpos[7 + ACT_DIM :].astype(np.float32)
@@ -790,10 +815,10 @@ class SpotPickPlaceDemo:
     def _apply_training_actuator_scale(self) -> None:
         gain = self.model.mujoco.actuator_gainprm.numpy()
         bias = self.model.mujoco.actuator_biasprm.numpy()
-        gain[:ACT_DIM, 0] *= 3.0
-        bias[:ACT_DIM, 0] *= 3.0
-        bias[:ACT_DIM, 1] *= 3.0
-        bias[:ACT_DIM, 2] *= 3.0**0.5
+        gain[:ACT_DIM, 0] *= ACTUATOR_GAIN_SCALE
+        bias[:ACT_DIM, 0] *= ACTUATOR_GAIN_SCALE
+        bias[:ACT_DIM, 1] *= ACTUATOR_GAIN_SCALE
+        bias[:ACT_DIM, 2] *= ACTUATOR_GAIN_SCALE**0.5
         self.model.mujoco.actuator_gainprm.assign(gain)
         self.model.mujoco.actuator_biasprm.assign(bias)
 
@@ -804,7 +829,7 @@ class SpotPickPlaceDemo:
         self.sim_time = 0.0
         self.phase_time = 0.0
         self.last_action.fill(0.0)
-        self.policy_step_count = 0
+        self.gait_phase = 0.0
         self.reached_b = False
         self.reached_c = False
         self.b_aligned = False
@@ -945,7 +970,7 @@ class SpotPickPlaceDemo:
 
     def _write_arm_ctrl(self, arm_q: np.ndarray) -> None:
         self.last_action.fill(0.0)
-        self.policy_step_count = 0
+        self.gait_phase = 0.0
         self._write_ctrl(self.nominal_leg_ctrl, arm_q)
 
     def _base_xy(self) -> np.ndarray:
@@ -966,10 +991,40 @@ class SpotPickPlaceDemo:
         angular = rotation.T @ qd[self.root_qd_slice.start + 3 : self.root_qd_slice.start + 6]
         return linear, angular
 
-    def _gait_clock(self) -> np.ndarray:
-        phase = (self.policy_step_count * self.frame_dt / GAIT_CYCLE_SECONDS) % 1.0
-        angle = 2.0 * math.pi * phase
-        return np.array([math.sin(angle), math.cos(angle)], dtype=np.float32)
+    def _gait_activity(self) -> float:
+        command_speed = float(np.linalg.norm(self.command[:2]) + 0.2 * abs(self.command[2]))
+        return float(np.clip((command_speed - 0.04) / 0.08, 0.0, 1.0))
+
+    def _gait_frequency_scale(self) -> float:
+        command_speed = float(np.linalg.norm(self.command[:2]) + 0.2 * abs(self.command[2]))
+        speed_ratio = float(np.clip(command_speed / 0.5, 0.0, 1.5))
+        return 0.7 + 0.3 * speed_ratio
+
+    def _advance_gait_phase(self) -> None:
+        activity = self._gait_activity()
+        if activity <= 0.0:
+            self.gait_phase = 0.0
+            return
+        phase_step = self.frame_dt * self._gait_frequency_scale() / GAIT_PERIOD
+        self.gait_phase = float((self.gait_phase + activity * phase_step) % 1.0)
+
+    def _desired_contacts(self) -> np.ndarray:
+        activity = self._gait_activity()
+        if activity <= 0.0:
+            return np.ones(4, dtype=np.float32)
+        diagonal_a = 0.5 + 0.5 * np.tanh(GAIT_CONTACT_SHARPNESS * np.sin(2.0 * np.pi * self.gait_phase))
+        diagonal_b = 1.0 - diagonal_a
+        trot_contacts = np.array([diagonal_a, diagonal_b, diagonal_b, diagonal_a], dtype=np.float32)
+        return activity * trot_contacts + (1.0 - activity) * np.ones(4, dtype=np.float32)
+
+    def _gait_observation(self) -> np.ndarray:
+        angle = 2.0 * np.pi * self.gait_phase
+        return np.concatenate(
+            [
+                np.array([np.sin(angle), np.cos(angle)], dtype=np.float32),
+                self._desired_contacts(),
+            ]
+        )
 
     def _base_tilt_degrees(self) -> float:
         projected_gravity = self._base_rotation().T @ np.array([0.0, 0.0, -1.0], dtype=np.float64)
@@ -1015,19 +1070,17 @@ class SpotPickPlaceDemo:
         joint_q = self.state_0.joint_q.numpy()[self.leg_q_slice]
         joint_qd = self.state_0.joint_qd.numpy()[self.leg_qd_slice]
         joint_pos = joint_q - self.nominal_leg_qpos
-        obs = np.concatenate(
-            [
-                projected_gravity,
-                base_linear,
-                base_angular,
-                self.command,
-                self._gait_clock(),
-                joint_pos[POLICY_FROM_LOCAL],
-                joint_qd[POLICY_FROM_LOCAL],
-                self.last_action,
-                self._foot_contacts()[POLICY_CONTACT_FROM_LOCAL],
-            ]
-        ).astype(np.float32)
+        obs = _build_locomotion_observation(
+            base_angular=base_angular,
+            projected_gravity=projected_gravity,
+            command=self.command,
+            gait_observation=self._gait_observation(),
+            joint_pos=joint_pos,
+            joint_vel=joint_qd,
+            last_action=self.last_action,
+            foot_contacts=self._foot_contacts(),
+            base_linear=base_linear,
+        )
         return self.vecnormalize.normalize_obs(obs[np.newaxis, :])
 
     def _foot_contacts(self) -> np.ndarray:
@@ -1346,10 +1399,13 @@ class SpotPickPlaceDemo:
         action, _ = self.policy.predict(self._observation(), deterministic=True)
         policy_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
         self.last_action = policy_action
-        local_action = policy_action[LOCAL_FROM_POLICY]
-        leg_ctrl = np.clip(self.nominal_leg_ctrl + local_action * ACTION_SCALE, self.leg_ctrl_low, self.leg_ctrl_high)
+        leg_ctrl = np.clip(
+            self.nominal_leg_ctrl + policy_action * ACTION_SCALE,
+            self.leg_ctrl_low,
+            self.leg_ctrl_high,
+        )
         self._write_ctrl(leg_ctrl, arm_q)
-        self.policy_step_count += 1
+        self._advance_gait_phase()
         return False
 
     def step(self) -> None:
@@ -1428,7 +1484,7 @@ def _create_base_parser() -> argparse.ArgumentParser:
     parser.set_defaults(num_frames=100000, viewer="gl", usd_fps=FPS)
     parser.add_argument("--show-ik-targets", action="store_true", help="Draw the current WR1 IK target when supported.")
     parser.add_argument(
-        "--locomotion-model", type=Path, default=MODEL_PATH, help="Path to the 54-D locomotion PPO zip."
+        "--locomotion-model", type=Path, default=MODEL_PATH, help="Path to the 58-D locomotion PPO zip."
     )
     parser.add_argument(
         "--locomotion-vecnormalize",
@@ -1500,7 +1556,6 @@ STONE_SETTLE_SECONDS = 1.0
 # 直走 A->C 时给 locomotion policy 的内部小段目标半径 [m].
 C_ROUTE_WAYPOINT_RADIUS = 0.45
 C_ROUTE_STAND_RADIUS = 0.16
-
 
 
 def _matrix_to_xyzw(rotation: np.ndarray) -> np.ndarray:
@@ -1752,7 +1807,9 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
                 (stone_tf[:3] + stone_rotation @ mover_local).astype(np.float32),
             )
 
-        stone_center = self.stone_pos.astype(np.float64) if state is None else state.body_q.numpy()[self.stone_body_index, :3]
+        stone_center = (
+            self.stone_pos.astype(np.float64) if state is None else state.body_q.numpy()[self.stone_body_index, :3]
+        )
 
         long_axis, _ = _xy_axes_from_yaw(self.robust_stone_yaw)
         height_fraction = float(np.clip(self.robust_grasp_height_fraction, 0.0, 0.95))
@@ -1848,9 +1905,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         body_q = self.state_0.body_q.numpy()
         self.ik_start_target = self._link_point_position(body_q, self.wr1_body_index, self.ik_link_offset)
         self.ik_final_target = final_target
-        self.ik_pregrasp_target = self.ik_final_target + np.array(
-            [0.0, 0.0, ARM_PREGRASP_HEIGHT], dtype=np.float32
-        )
+        self.ik_pregrasp_target = self.ik_final_target + np.array([0.0, 0.0, ARM_PREGRASP_HEIGHT], dtype=np.float32)
         self.current_ik_target = self.ik_start_target.copy()
         self.ik_axis_yaw = self.robust_stone_yaw if approach_motion else self._base_yaw()
         self.ik_final_rotation = self._wr1_rotation_target(self.ik_axis_yaw)
@@ -1982,7 +2037,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
                     f"command_target={target_xy.tolist()}"
                 )
                 self.command.fill(0.0)
-                self._write_arm_ctrl(self.stand_ctrl[ACT_DIM :])
+                self._write_arm_ctrl(self.stand_ctrl[ACT_DIM:])
                 self.c_route_target_index += 1
                 self.reached_c = True
                 return
@@ -1996,14 +2051,13 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             action, _ = self.policy.predict(self._observation(), deterministic=True)
             policy_action = np.clip(action[0], -1.0, 1.0).astype(np.float32)
             self.last_action = policy_action
-            local_action = policy_action[LOCAL_FROM_POLICY]
             leg_ctrl = np.clip(
-                self.nominal_leg_ctrl + local_action * ACTION_SCALE,
+                self.nominal_leg_ctrl + policy_action * ACTION_SCALE,
                 self.leg_ctrl_low,
                 self.leg_ctrl_high,
             )
-            self._write_ctrl(leg_ctrl, self.stand_ctrl[ACT_DIM :])
-            self.policy_step_count += 1
+            self._write_ctrl(leg_ctrl, self.stand_ctrl[ACT_DIM:])
+            self._advance_gait_phase()
             return
 
         arrival_radius = C_ROUTE_WAYPOINT_RADIUS
@@ -2011,7 +2065,7 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         reached = self._apply_policy(
             target_xy,
             target_label,
-            self.stand_ctrl[ACT_DIM :],
+            self.stand_ctrl[ACT_DIM:],
             face_xy=self.stone_pos[:2] if final_target else None,
             arrival_radius=arrival_radius,
             require_yaw=False,
@@ -2302,12 +2356,12 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
 
         if not self.stone_settled:
             self.command.fill(0.0)
-            self._write_arm_ctrl(self.stand_ctrl[ACT_DIM :])
+            self._write_arm_ctrl(self.stand_ctrl[ACT_DIM:])
         elif not self.reached_c:
             self._apply_c_route_policy()
         elif self.reached_c and not self.b_aligned:
             self.command.fill(0.0)
-            self._write_arm_ctrl(self.stand_ctrl[ACT_DIM :])
+            self._write_arm_ctrl(self.stand_ctrl[ACT_DIM:])
             self.b_aligned = True
             print(
                 "Standing at C grasp stand without forced pose: "
