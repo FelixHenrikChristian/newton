@@ -110,8 +110,6 @@ C_ROVER_LABEL = "c_lunar_rover"
 C_ROVER_CARGO_INNER_HALF_EXTENTS = np.array([0.30, 0.24], dtype=np.float64)
 C_ROVER_CARGO_WALL_THICKNESS = 0.045
 C_ROVER_CARGO_WALL_HEIGHT = 0.26
-C_ROVER_CARGO_FLOOR_THICKNESS = 0.035
-C_ROVER_CARGO_FLOOR_CLEARANCE = 0.13
 C_ROVER_CHASSIS_HALF_EXTENTS = np.array([0.62, 0.39, 0.06], dtype=np.float64)
 C_ROVER_CHASSIS_CENTER_OFFSET = np.array([0.24, 0.0], dtype=np.float64)
 C_ROVER_WHEEL_RADIUS = 0.135
@@ -721,25 +719,15 @@ class SpotPickPlaceDemo:
             C_ROVER_CHASSIS_HALF_EXTENTS[1],
             C_ROVER_CHASSIS_HALF_EXTENTS[2],
             chassis_color,
+            has_collision=True,
         )
 
-        floor_center_z = ground_z + C_ROVER_CARGO_FLOOR_CLEARANCE + 0.5 * C_ROVER_CARGO_FLOOR_THICKNESS
-        floor_top_z = floor_center_z + 0.5 * C_ROVER_CARGO_FLOOR_THICKNESS
-        wall_center_z = floor_top_z + 0.5 * C_ROVER_CARGO_WALL_HEIGHT
+        chassis_top_z = chassis_z + C_ROVER_CHASSIS_HALF_EXTENTS[2]
+        wall_center_z = chassis_top_z + 0.5 * C_ROVER_CARGO_WALL_HEIGHT
         inner_hx, inner_hy = C_ROVER_CARGO_INNER_HALF_EXTENTS
         thickness = C_ROVER_CARGO_WALL_THICKNESS
         half_thickness = 0.5 * thickness
 
-        add_box(
-            "cargo_floor",
-            (0.0, 0.0),
-            floor_center_z,
-            inner_hx + thickness,
-            inner_hy + thickness,
-            0.5 * C_ROVER_CARGO_FLOOR_THICKNESS,
-            cargo_color,
-            has_collision=True,
-        )
         cargo_wall_specs = (
             ("cargo_front", (inner_hx + half_thickness, 0.0), half_thickness, inner_hy + thickness),
             ("cargo_rear", (-inner_hx - half_thickness, 0.0), half_thickness, inner_hy + thickness),
@@ -758,8 +746,8 @@ class SpotPickPlaceDemo:
                 has_collision=True,
             )
 
-        add_box("front_equipment_box", (0.62, 0.0), floor_top_z + 0.11, 0.20, 0.28, 0.11, cabin_color)
-        add_box("front_roof", (0.62, 0.0), floor_top_z + 0.245, 0.23, 0.31, 0.025, rail_color)
+        add_box("front_equipment_box", (0.62, 0.0), chassis_top_z + 0.11, 0.20, 0.28, 0.11, cabin_color)
+        add_box("front_roof", (0.62, 0.0), chassis_top_z + 0.245, 0.23, 0.31, 0.025, rail_color)
         wheel_center_z = ground_z + C_ROVER_WHEEL_RADIUS
         for axle_index, x_offset in enumerate(C_ROVER_WHEEL_X_OFFSETS):
             add_box(f"axle_{axle_index}", (x_offset, 0.0), wheel_center_z, 0.035, 0.42, 0.025, rail_color)
@@ -776,7 +764,7 @@ class SpotPickPlaceDemo:
                     )
                 )
 
-        mast_center_z = floor_top_z + 0.33
+        mast_center_z = chassis_top_z + 0.33
         shape_indices.append(
             builder.add_shape_cylinder(
                 body=-1,
@@ -788,7 +776,7 @@ class SpotPickPlaceDemo:
                 label=f"{C_ROVER_LABEL}_antenna_mast",
             )
         )
-        add_box("antenna_panel", (0.62, 0.26), floor_top_z + 0.58, 0.055, 0.012, 0.045, rail_color)
+        add_box("antenna_panel", (0.62, 0.26), chassis_top_z + 0.58, 0.055, 0.012, 0.045, rail_color)
 
         return shape_indices
 
