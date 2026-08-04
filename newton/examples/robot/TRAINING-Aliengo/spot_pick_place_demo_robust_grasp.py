@@ -116,6 +116,9 @@ C_ROVER_WHEEL_RADIUS = 0.135
 C_ROVER_WHEEL_HALF_WIDTH = 0.045
 C_ROVER_WHEEL_X_OFFSETS = (-0.17, 0.24, 0.65)
 C_ROVER_WHEEL_Y_OFFSET = 0.43
+C_ROVER_DROP_HEIGHT = 0.18
+C_ROVER_WHEEL_COLLISION_TYPE = 8
+C_ROVER_BODY_COLLISION_TYPE = 16
 
 
 @dataclass(frozen=True)
@@ -503,7 +506,11 @@ class SpotPickPlaceDemo:
                     color=wp.vec3(0.18, 0.17, 0.15),
                     label=spec.label,
                 )
-        self.c_rover_shape_indices = self._add_c_rover(builder)
+        (
+            self.c_rover_shape_indices,
+            self.c_rover_wheel_shape_indices,
+            self.c_rover_initial_q,
+        ) = self._add_c_rover(builder)
 
         self.model = builder.finalize()
         self._apply_training_actuator_scale()
@@ -520,6 +527,14 @@ class SpotPickPlaceDemo:
         self.stone_geom_ids = np.array([self._find_mj_geom_id(spec.label) for spec in self.stone_specs], dtype=np.int32)
         self.stone_geom_id = int(self.stone_geom_ids[self.current_stone_index])
         self.c_rover_geom_ids = np.array(self._find_mj_geom_ids(C_ROVER_LABEL), dtype=np.int32)
+        self.c_rover_wheel_geom_ids = np.array(
+            self._find_mj_geom_ids(f"{C_ROVER_LABEL}_wheel"),
+            dtype=np.int32,
+        )
+        self.c_rover_body_geom_ids = np.setdiff1d(
+            self.c_rover_geom_ids,
+            self.c_rover_wheel_geom_ids,
+        )
         self._configure_mj_collision_filters()
 
         self.state_0 = self.model.state()
@@ -541,6 +556,11 @@ class SpotPickPlaceDemo:
             self.stone_qd_slices.append(stone_qd_slice)
         self.stone_q_slice = self.stone_q_slices[self.current_stone_index]
         self.stone_qd_slice = self.stone_qd_slices[self.current_stone_index]
+        self.c_rover_q_slice, self.c_rover_qd_slice = self._find_joint_slices(
+            (f"{C_ROVER_LABEL}_free_joint",),
+            q_width=7,
+            qd_width=6,
+        )
         self.spot_body_index = self._find_body_index("body")
         self.wr1_body_index = self._find_body_index(ARM_EE_BODY)
         self.stone_body_indices = np.array(
@@ -645,32 +665,41 @@ class SpotPickPlaceDemo:
         return matches[0]
 
     @staticmethod
-    def _add_c_rover(builder: newton.ModelBuilder) -> list[int]:
+    def _add_c_rover(builder: newton.ModelBuilder) -> tuple[list[int], list[int], np.ndarray]:
         cargo_center = _c_release_box_center()
         yaw = _approach_yaw()
         ground_z = _terrain_height_at(cargo_center)
-        cos_yaw = math.cos(yaw)
-        sin_yaw = math.sin(yaw)
         yaw_quat = np.array(_yaw_to_xyzw(yaw), dtype=np.float32)
         wheel_local_quat = np.array(
             [math.sin(-0.25 * math.pi), 0.0, 0.0, math.cos(-0.25 * math.pi)],
             dtype=np.float32,
         )
-        wheel_quat = _quat_multiply(yaw_quat, wheel_local_quat)
-
-        def local_xy(offset: tuple[float, float] | np.ndarray) -> np.ndarray:
-            ox, oy = float(offset[0]), float(offset[1])
-            return cargo_center + np.array([cos_yaw * ox - sin_yaw * oy, sin_yaw * ox + cos_yaw * oy])
 
         def to_wp_quat(quat: np.ndarray) -> wp.quat:
             return wp.quat(float(quat[0]), float(quat[1]), float(quat[2]), float(quat[3]))
 
         def make_xform(offset: tuple[float, float] | np.ndarray, z: float, quat: np.ndarray = yaw_quat):
-            xy = local_xy(offset)
-            return wp.transform(wp.vec3(float(xy[0]), float(xy[1]), float(z)), to_wp_quat(quat))
+            return wp.transform(
+                wp.vec3(float(offset[0]), float(offset[1]), float(z - ground_z)),
+                to_wp_quat(quat),
+            )
+
+        rover_initial_q = np.array(
+            (
+                cargo_center[0],
+                cargo_center[1],
+                ground_z + C_ROVER_DROP_HEIGHT,
+                *yaw_quat,
+            ),
+            dtype=np.float32,
+        )
+        rover_body = builder.add_body(
+            xform=wp.transform(wp.vec3(*rover_initial_q[:3]), to_wp_quat(yaw_quat)),
+            label=C_ROVER_LABEL,
+        )
 
         rover_cfg = newton.ModelBuilder.ShapeConfig(
-            density=0.0,
+            density=250.0,
             mu=1.5,
             mu_torsional=0.03,
             mu_rolling=0.01,
@@ -680,6 +709,7 @@ class SpotPickPlaceDemo:
             has_shape_collision=False,
         )
         shape_indices = []
+        wheel_shape_indices = []
 
         def add_box(
             suffix: str,
@@ -693,8 +723,8 @@ class SpotPickPlaceDemo:
         ) -> None:
             shape_indices.append(
                 builder.add_shape_box(
-                    body=-1,
-                    xform=make_xform(offset, z),
+                    body=rover_body,
+                    xform=make_xform(offset, z, np.array((0.0, 0.0, 0.0, 1.0), dtype=np.float32)),
                     hx=float(hx),
                     hy=float(hy),
                     hz=float(hz),
@@ -754,21 +784,26 @@ class SpotPickPlaceDemo:
             for side_name, y_offset in (("left", C_ROVER_WHEEL_Y_OFFSET), ("right", -C_ROVER_WHEEL_Y_OFFSET)):
                 shape_indices.append(
                     builder.add_shape_cylinder(
-                        body=-1,
-                        xform=make_xform((x_offset, y_offset), wheel_center_z, wheel_quat),
+                        body=rover_body,
+                        xform=make_xform((x_offset, y_offset), wheel_center_z, wheel_local_quat),
                         radius=C_ROVER_WHEEL_RADIUS,
                         half_height=C_ROVER_WHEEL_HALF_WIDTH,
-                        cfg=rover_visual_cfg,
+                        cfg=rover_cfg,
                         color=wheel_color,
                         label=f"{C_ROVER_LABEL}_wheel_{side_name}_{axle_index}",
                     )
                 )
+                wheel_shape_indices.append(shape_indices[-1])
 
         mast_center_z = chassis_top_z + 0.33
         shape_indices.append(
             builder.add_shape_cylinder(
-                body=-1,
-                xform=make_xform((0.62, 0.26), mast_center_z),
+                body=rover_body,
+                xform=make_xform(
+                    (0.62, 0.26),
+                    mast_center_z,
+                    np.array((0.0, 0.0, 0.0, 1.0), dtype=np.float32),
+                ),
                 radius=0.012,
                 half_height=0.24,
                 cfg=rover_visual_cfg,
@@ -778,7 +813,7 @@ class SpotPickPlaceDemo:
         )
         add_box("antenna_panel", (0.62, 0.26), chassis_top_z + 0.58, 0.055, 0.012, 0.045, rail_color)
 
-        return shape_indices
+        return shape_indices, wheel_shape_indices, rover_initial_q
 
     def _configure_mj_collision_filters(self) -> None:
         robot_mask = np.ones(self.solver.mj_model.ngeom, dtype=bool)
@@ -794,13 +829,15 @@ class SpotPickPlaceDemo:
         self.solver.mj_model.geom_contype[robot_mask] = 2
         self.solver.mj_model.geom_conaffinity[robot_mask] = 5
         self.solver.mj_model.geom_contype[self.terrain_geom_id] = 1
-        self.solver.mj_model.geom_conaffinity[self.terrain_geom_id] = 6
+        self.solver.mj_model.geom_conaffinity[self.terrain_geom_id] = 6 | C_ROVER_WHEEL_COLLISION_TYPE
         self.solver.mj_model.geom_contype[self.stone_geom_ids] = 4
-        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = 3
+        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = 3 | C_ROVER_BODY_COLLISION_TYPE
         self.solver.mj_model.geom_condim[self.stone_geom_ids] = 6
         self.solver.mj_model.geom_priority[self.stone_geom_ids] = 2
-        self.solver.mj_model.geom_contype[self.c_rover_geom_ids] = 0
-        self.solver.mj_model.geom_conaffinity[self.c_rover_geom_ids] = 4
+        self.solver.mj_model.geom_contype[self.c_rover_wheel_geom_ids] = C_ROVER_WHEEL_COLLISION_TYPE
+        self.solver.mj_model.geom_conaffinity[self.c_rover_wheel_geom_ids] = 1
+        self.solver.mj_model.geom_contype[self.c_rover_body_geom_ids] = C_ROVER_BODY_COLLISION_TYPE
+        self.solver.mj_model.geom_conaffinity[self.c_rover_body_geom_ids] = 4
         self.solver.mj_model.geom_condim[self.c_rover_geom_ids] = 6
         self.solver.mj_model.geom_priority[self.c_rover_geom_ids] = 2
 
@@ -870,6 +907,8 @@ class SpotPickPlaceDemo:
         state.joint_q[self.arm_q_slice].assign(self.arm_qpos)
         for stone_q_slice, stone_q in zip(self.stone_q_slices, self.stone_qs, strict=True):
             state.joint_q[stone_q_slice].assign(stone_q)
+        state.joint_q[self.c_rover_q_slice].assign(self.c_rover_initial_q)
+        state.joint_qd[self.c_rover_qd_slice].zero_()
         newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
     def _pin_stone_index_to_start(self, state, stone_index: int) -> None:
@@ -1542,8 +1581,12 @@ MOVER_VISUAL_CLOSE_TOLERANCE = 0.02
 # 视觉闭合目标. 吸附后会记录实际夹爪 q, 搬运和下放期间保持该 q.
 GRIPPER_CLOSED_VISUAL = -0.5
 
-# 石子生成后先自由稳定的时间 [s].
-STONE_SETTLE_SECONDS = 1.0
+# 石子生成后先自由稳定；低速时提前结束，最迟不超过最大等待时间 [s].
+STONE_SETTLE_MIN_SECONDS = 1.0
+STONE_SETTLE_MAX_SECONDS = 3.0
+STONE_SETTLE_LINEAR_SPEED = 0.03
+STONE_SETTLE_ANGULAR_SPEED = 0.15
+STONE_TERRAIN_CLEARANCE = 0.002
 
 # 直走 A->C 时给 locomotion policy 的内部小段目标半径 [m].
 C_ROUTE_WAYPOINT_RADIUS = 0.45
@@ -1715,7 +1758,9 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         super()._configure_mj_collision_filters()
         stone_contype, stone_conaffinity = layout.stone_collision_masks()
         self.solver.mj_model.geom_contype[self.stone_geom_ids] = stone_contype
-        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = stone_conaffinity
+        self.solver.mj_model.geom_conaffinity[self.stone_geom_ids] = (
+            stone_conaffinity | C_ROVER_BODY_COLLISION_TYPE
+        )
         self.solver.mj_model.geom_friction[self.stone_geom_ids] = np.array(layout.stone_contact_friction())
 
     def _stone_specs(self) -> tuple[StoneSpec, ...]:
@@ -2182,18 +2227,6 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         """根据当前阶段更新石子约束状态."""
 
         if not self.stone_settled:
-            for stone_index, stone_q_slice in enumerate(self.stone_q_slices):
-                stone_q = state.joint_q.numpy()[stone_q_slice].copy()
-                planned_q = self.stone_qs[stone_index]
-                stone_q[:2] = planned_q[:2]
-                stone_q[3:7] = planned_q[3:7]
-                state.joint_q[stone_q_slice].assign(stone_q)
-                stone_qd = state.joint_qd.numpy()[self.stone_qd_slices[stone_index]].copy()
-                stone_qd[:2] = 0.0
-                stone_qd[3:] = 0.0
-                state.joint_qd[self.stone_qd_slices[stone_index]].assign(stone_qd)
-            if update_fk:
-                newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
             return
 
         needs_fk = False
@@ -2224,15 +2257,49 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
         if needs_fk and update_fk:
             newton.eval_fk(self.model, state.joint_q, state.joint_qd, state)
 
+    def _stone_pose_above_terrain(self, stone_index: int, stone_q: np.ndarray) -> np.ndarray:
+        """Raise a settled mesh just enough to keep every vertex above the heightfield."""
+
+        corrected_q = stone_q.copy().astype(np.float32)
+        vertices = self.stone_mesh_vertices.get(stone_index)
+        if vertices is None:
+            minimum_center_z = (
+                _terrain_height_at(corrected_q[:2].astype(np.float64))
+                + self.robust_stone_size[2]
+                + STONE_TERRAIN_CLEARANCE
+            )
+            corrected_q[2] = max(float(corrected_q[2]), float(minimum_center_z))
+            return corrected_q
+
+        rotation = _xyzw_to_matrix(corrected_q[3:7])
+        world_vertices = corrected_q[:3] + vertices @ rotation.T
+        required_raise = max(
+            _terrain_height_at(vertex[:2].astype(np.float64)) + STONE_TERRAIN_CLEARANCE - float(vertex[2])
+            for vertex in world_vertices
+        )
+        corrected_q[2] += np.float32(max(0.0, required_raise))
+        return corrected_q
+
+    def _stones_are_slow(self) -> bool:
+        """Return whether all freely settling stones are nearly stationary."""
+
+        joint_qd = self.state_0.joint_qd.numpy()
+        return all(
+            float(np.linalg.norm(joint_qd[stone_qd_slice.start : stone_qd_slice.start + 3]))
+            <= STONE_SETTLE_LINEAR_SPEED
+            and float(np.linalg.norm(joint_qd[stone_qd_slice.start + 3 : stone_qd_slice.stop]))
+            <= STONE_SETTLE_ANGULAR_SPEED
+            for stone_qd_slice in self.stone_qd_slices
+        )
+
     def _finish_stone_settle(self) -> None:
         """结束石子自由稳定阶段, 记录真实落点并固定到抓取前."""
 
+        joint_q = self.state_0.joint_q.numpy()
         for stone_index in range(len(self.stone_qs)):
-            settled_q = self.stone_qs[stone_index].copy().astype(np.float32)
+            settled_q = joint_q[self.stone_q_slices[stone_index]].copy().astype(np.float32)
+            settled_q = self._stone_pose_above_terrain(stone_index, settled_q)
             stone_xy = settled_q[:2].astype(np.float64)
-            settled_q[2] = np.float32(
-                layout.settled_stone_center_z(_terrain_height_at(stone_xy), self.robust_stone_size[2])
-            )
             self.stone_qs[stone_index] = settled_q
             self.robust_stone_xy_list[stone_index] = stone_xy
 
@@ -2397,7 +2464,11 @@ class RobustSpotPickPlaceDemo(SpotPickPlaceDemo):
             self._attach_stone_to_gripper(self.state_0)
         if not self.stone_settled:
             self.stone_settle_time += self.frame_dt
-            if self.stone_settle_time >= STONE_SETTLE_SECONDS:
+            settle_timed_out = self.stone_settle_time >= STONE_SETTLE_MAX_SECONDS
+            settled_and_slow = (
+                self.stone_settle_time >= STONE_SETTLE_MIN_SECONDS and self._stones_are_slow()
+            )
+            if settled_and_slow or settle_timed_out:
                 self._finish_stone_settle()
         self.sim_time += self.frame_dt
         self.contacts_ready = True
